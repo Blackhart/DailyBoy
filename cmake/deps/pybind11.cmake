@@ -1,0 +1,66 @@
+# pybind11 — Python bindings
+# https://github.com/pybind/pybind11
+# Python interpreter/dev is a toolchain requirement (not a bundled lib).
+
+if(TARGET pybind11::pybind11)
+    return()
+endif()
+
+set(PYBIND11_FINDPYTHON ON CACHE BOOL "Use CMake FindPython for pybind11" FORCE)
+
+if(NOT Python3_FOUND)
+    set(Python3_FIND_REGISTRY NEVER)
+    set(Python3_FIND_IMPLEMENTATIONS CPython)
+    # Prefer the VFX-year binary when the user did not pass -DPython3_EXECUTABLE=…
+    if(NOT Python3_EXECUTABLE)
+        set(_dailyboy_python_hint "/usr/bin/python${DAILYBOY_PYTHON_VERSION}")
+        if(EXISTS "${_dailyboy_python_hint}")
+            set(Python3_EXECUTABLE "${_dailyboy_python_hint}")
+        endif()
+        unset(_dailyboy_python_hint)
+    endif()
+    find_package(
+        Python3
+        ${DAILYBOY_PYTHON_VERSION}
+        COMPONENTS Interpreter Development
+    )
+    if(NOT Python3_FOUND)
+        message(
+            FATAL_ERROR
+            "Python ${DAILYBOY_PYTHON_VERSION} (interpreter + development headers) "
+            "is required for VFX ${DAILYBOY_VFX_PLATFORM_LABEL} when "
+            "DAILYBOY_BUILD_PYTHON=ON.\n"
+            "  Host (Ubuntu): sudo add-apt-repository ppa:deadsnakes/ppa && "
+            "sudo apt install python${DAILYBOY_PYTHON_VERSION} "
+            "python${DAILYBOY_PYTHON_VERSION}-dev python${DAILYBOY_PYTHON_VERSION}-venv\n"
+            "  Or point CMake: -DPython3_EXECUTABLE=/path/to/python${DAILYBOY_PYTHON_VERSION}\n"
+            "  Or C++ only:    cmake --preset debug -DDAILYBOY_BUILD_PYTHON=OFF"
+        )
+    endif()
+endif()
+
+FetchContent_Declare(
+    dailyboy_pybind11
+    GIT_REPOSITORY https://github.com/pybind/pybind11.git
+    GIT_TAG "${DAILYBOY_PYBIND11_GIT_TAG}"
+    GIT_SHALLOW TRUE
+    EXCLUDE_FROM_ALL
+)
+FetchContent_MakeAvailable(dailyboy_pybind11)
+
+if(NOT TARGET pybind11::pybind11 AND TARGET pybind11::headers)
+    add_library(pybind11::pybind11 ALIAS pybind11::headers)
+endif()
+
+if(Python3_VERSION VERSION_LESS "${DAILYBOY_PYTHON_VERSION}")
+    message(
+        WARNING
+        "Python ${Python3_VERSION} — VFX ${DAILYBOY_VFX_PLATFORM_LABEL} recommends "
+        "${DAILYBOY_PYTHON_VERSION}.x for production."
+    )
+endif()
+
+message(
+    STATUS
+    "deps: pybind11 ${DAILYBOY_PYBIND11_GIT_TAG} (Python ${Python3_VERSION})"
+)

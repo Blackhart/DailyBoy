@@ -1,0 +1,180 @@
+name: Nightly
+
+on:
+  schedule:
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: nightly-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CI_IMAGE_BASE: dailyboy-ci:base
+  CI_IMAGE_CY2026: dailyboy-ci:cy2026
+
+jobs:
+  image-base:
+    name: image-base
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build base image
+        uses: docker/build-push-action@v6
+        with:
+          context: docker
+          file: docker/Dockerfile.base
+          load: true
+          tags: ${{ env.CI_IMAGE_BASE }}
+          cache-from: type=gha,scope=dailyboy-ci-base
+          cache-to: type=gha,mode=max,scope=dailyboy-ci-base
+      - name: Export base image
+        run: docker save ${{ env.CI_IMAGE_BASE }} -o /tmp/dailyboy-ci-base.tar
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dailyboy-ci-base-nightly
+          path: /tmp/dailyboy-ci-base.tar
+          retention-days: 1
+
+  image-cy2026:
+    name: image-cy2026
+    needs: image-base
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: dailyboy-ci-base-nightly
+          path: /tmp
+      - name: Load base image
+        run: docker load -i /tmp/dailyboy-ci-base.tar
+      # Plain docker build: buildx container driver cannot see locally loaded
+      # dailyboy-ci:base and would try to pull it from Docker Hub.
+      - name: Build CY2026 image
+        run: docker build -t ${{ env.CI_IMAGE_CY2026 }} -f docker/Dockerfile.cy2026 docker/
+      - name: Export CY2026 image
+        run: docker save ${{ env.CI_IMAGE_CY2026 }} -o /tmp/dailyboy-ci-cy2026.tar
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dailyboy-ci-cy2026-nightly
+          path: /tmp/dailyboy-ci-cy2026.tar
+          retention-days: 1
+
+  test:
+    name: run tests (CY2026)
+    needs: image-cy2026
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: dailyboy-ci-cy2026-nightly
+          path: /tmp
+      - name: Load CY2026 image
+        run: docker load -i /tmp/dailyboy-ci-cy2026.tar
+      - name: Cache ccache
+        uses: actions/cache@v4
+        with:
+          path: .ccache
+          key: ccache-cy2026-nightly-${{ hashFiles('cmake/Versions.cmake', 'cmake/versions/**', 'cmake/deps/**', 'CMakePresets.json') }}-${{ github.sha }}
+          restore-keys: |
+            ccache-cy2026-nightly-${{ hashFiles('cmake/Versions.cmake', 'cmake/versions/**', 'cmake/deps/**', 'CMakePresets.json') }}-
+            ccache-cy2026-debug-
+      - name: Cache CMake deps
+        uses: actions/cache@v4
+        with:
+          path: build/docker/CY2026/debug/_deps
+          key: deps-cy2026-debug-${{ hashFiles('cmake/Versions.cmake', 'cmake/versions/**', 'cmake/deps/**') }}
+          restore-keys: |
+            deps-cy2026-debug-
+      - name: Build debug CY2026
+        run: DAILYBOY_CI_IMAGE=${{ env.CI_IMAGE_CY2026 }} ./ci/docker.sh ./ci/build.sh 2026 debug
+      - name: Run tests CY2026
+        run: DAILYBOY_CI_IMAGE=${{ env.CI_IMAGE_CY2026 }} ./ci/docker.sh ./ci/test.sh 2026 tests
+      - name: Coverage reports
+        run: DAILYBOY_CI_IMAGE=${{ env.CI_IMAGE_CY2026 }} ./ci/docker.sh ./ci/coverage_upload.sh 2026
+      - name: Upload coverage HTML
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-html-nightly
+          path: build/docker/CY2026/debug/coverage/
+      - name: Upload to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          files: build/docker/CY2026/debug/coverage/coverage.info,build/docker/CY2026/debug/coverage/coverage.xml
+          flags: nightly-cy2026
+          name: nightly-debug-cy2026
+          fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+  sanitize:
+    name: sanitize-cy2026
+    needs: image-cy2026
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: dailyboy-ci-cy2026-nightly
+          path: /tmp
+      - name: Load CY2026 image
+        run: docker load -i /tmp/dailyboy-ci-cy2026.tar
+      - name: Cache ccache
+        uses: actions/cache@v4
+        with:
+          path: .ccache
+          key: ccache-cy2026-sanitize-${{ hashFiles('cmake/Versions.cmake', 'cmake/versions/**', 'cmake/deps/**', 'CMakePresets.json') }}-${{ github.sha }}
+          restore-keys: |
+            ccache-cy2026-sanitize-${{ hashFiles('cmake/Versions.cmake', 'cmake/versions/**', 'cmake/deps/**', 'CMakePresets.json') }}-
+            ccache-cy2026-sanitize-
+      - name: Cache CMake deps
+        uses: actions/cache@v4
+        with:
+          path: build/docker/CY2026/sanitize/_deps
+          key: deps-cy2026-sanitize-${{ hashFiles('cmake/Versions.cmake', 'cmake/versions/**', 'cmake/deps/**') }}
+          restore-keys: |
+            deps-cy2026-sanitize-
+      - name: Build sanitize CY2026
+        run: DAILYBOY_CI_IMAGE=${{ env.CI_IMAGE_CY2026 }} ./ci/docker.sh ./ci/build.sh 2026 sanitize
+      - name: Run sanitize tests
+        run: |
+          DAILYBOY_CI_IMAGE=${{ env.CI_IMAGE_CY2026 }} ./ci/docker.sh \
+            -e ASAN_OPTIONS=detect_leaks=0:halt_on_error=1 \
+            -e UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1 \
+            -- ./ci/test.sh 2026 sanitize
+
+  tidy:
+    name: tidy-cy2026
+    needs: image-cy2026
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: dailyboy-ci-cy2026-nightly
+          path: /tmp
+      - name: Load CY2026 image
+        run: docker load -i /tmp/dailyboy-ci-cy2026.tar
+      - name: Cache ccache
+        uses: actions/cache@v4
+        with:
+          path: .ccache
+          key: ccache-cy2026-debug-${{ hashFiles('cmake/Versions.cmake', 'cmake/versions/**', 'cmake/deps/**', 'CMakePresets.json') }}-${{ github.sha }}
+          restore-keys: |
+            ccache-cy2026-debug-${{ hashFiles('cmake/Versions.cmake', 'cmake/versions/**', 'cmake/deps/**', 'CMakePresets.json') }}-
+            ccache-cy2026-debug-
+      - name: Cache CMake deps
+        uses: actions/cache@v4
+        with:
+          path: build/docker/CY2026/debug/_deps
+          key: deps-cy2026-debug-${{ hashFiles('cmake/Versions.cmake', 'cmake/versions/**', 'cmake/deps/**') }}
+          restore-keys: |
+            deps-cy2026-debug-
+      - name: Clang-tidy
+        run: DAILYBOY_CI_IMAGE=${{ env.CI_IMAGE_CY2026 }} ./ci/docker.sh ./ci/tidy.sh

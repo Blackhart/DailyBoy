@@ -1,0 +1,34 @@
+dailyboy_version: 1
+color:
+  ocio_config: "/unused/config.ocio"
+layout:
+  canvas:
+    width: 8
+    height: 8
+  image:
+    fit: "contain"
+  slate:
+    duration_frames: 0
+    lines: []
+output:
+  videos:
+    - id: preview
+      enabled: true
+      display_view:
+        display: "passthrough"
+        view: "passthrough"
+      signal:
+        range: tv
+        matrix: bt709
+        primaries: bt709
+        transfer: bt709
+      path: /tmp/dailyboy_omit_mjpeg_options.mov
+      codec: mjpeg
+  image_sequences: []
+plans:
+  - id: plate
+    input_colorspace: ACES - ACEScg
+    sequence:
+      path: /tmp/plate.%04d.png
+      frame_start: 1001
+      frame_end: 1003

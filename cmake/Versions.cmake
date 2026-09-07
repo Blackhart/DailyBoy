@@ -1,0 +1,50 @@
+# Sole source of truth for versions and git tags.
+# Deps files must use these variables — no hardcoded tags in cmake/deps/.
+
+set(
+    DAILYBOY_VFX_PLATFORM
+    "2026"
+    CACHE STRING
+    "VFX Reference Platform calendar year (2024, 2025, or 2026)"
+)
+set_property(CACHE DAILYBOY_VFX_PLATFORM PROPERTY STRINGS 2024 2025 2026)
+
+if(DAILYBOY_VFX_PLATFORM STREQUAL "2024")
+    include("${CMAKE_CURRENT_LIST_DIR}/versions/cy2024.cmake")
+elseif(DAILYBOY_VFX_PLATFORM STREQUAL "2025")
+    include("${CMAKE_CURRENT_LIST_DIR}/versions/cy2025.cmake")
+elseif(DAILYBOY_VFX_PLATFORM STREQUAL "2026")
+    include("${CMAKE_CURRENT_LIST_DIR}/versions/cy2026.cmake")
+else()
+    message(
+        FATAL_ERROR
+        "DAILYBOY_VFX_PLATFORM must be 2024, 2025, or 2026 (got '${DAILYBOY_VFX_PLATFORM}')"
+    )
+endif()
+
+set(DAILYBOY_VFX_PLATFORM_LABEL "CY${DAILYBOY_VFX_PLATFORM_YEAR}")
+
+# --- Shared across platform years (not in the VFX table, or stable) ---
+set(DAILYBOY_FFMPEG_VERSION "7.1")
+set(DAILYBOY_FFMPEG_GIT_TAG "n7.1.1")
+set(DAILYBOY_X264_GIT_TAG "stable")
+set(DAILYBOY_X265_GIT_TAG "4.1")
+
+set(DAILYBOY_ZLIB_GIT_TAG "v1.3.1")
+set(DAILYBOY_JPEG_TURBO_GIT_TAG "3.1.0")
+set(DAILYBOY_LIBPNG_GIT_TAG "v1.6.47")
+set(DAILYBOY_LIBTIFF_GIT_TAG "v4.7.0")
+set(DAILYBOY_LIBRAW_GIT_TAG "0.21.4")
+set(DAILYBOY_LIBDE265_GIT_TAG "v1.0.15")
+set(DAILYBOY_LIBHEIF_GIT_TAG "v1.19.7")
+set(DAILYBOY_AOM_GIT_TAG "v3.11.0")
+
+set(DAILYBOY_CXXOPTS_GIT_TAG "v3.2.0")
+set(DAILYBOY_SPDLOG_GIT_TAG "v1.15.1")
+set(DAILYBOY_YAML_CPP_GIT_TAG "0.8.0")
+set(DAILYBOY_NLOHMANN_JSON_GIT_TAG "v3.11.3")
+set(DAILYBOY_JSON_SCHEMA_VALIDATOR_GIT_TAG "2.3.0")
+set(DAILYBOY_PYBIND11_GIT_TAG "v2.13.6")
+set(DAILYBOY_GTEST_GIT_TAG "v1.15.2")
+set(DAILYBOY_GBENCH_GIT_TAG "v1.9.4")
+set(DAILYBOY_FILESEQ_GIT_TAG "v3.2.0")

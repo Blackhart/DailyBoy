@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# Relocatable: prefix = parent of share/ (this file lives at share/dailyboy/env.sh).
+#   source /path/to/install/share/dailyboy/env.sh
+#   makeDaily --help
+
+_DAILYBOY_ENV_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
+_DAILYBOY_PREFIX="$(cd "${_DAILYBOY_ENV_DIR}/../.." && pwd)"
+_DAILYBOY_LIBDIR="${_DAILYBOY_PREFIX}/lib"
+
+if [[ ! -d "${_DAILYBOY_LIBDIR}" ]]; then
+    echo "dailyboy env.sh: no lib directory at ${_DAILYBOY_LIBDIR}" >&2
+    return 1 2>/dev/null || exit 1
+fi
+
+export LD_LIBRARY_PATH="${_DAILYBOY_LIBDIR}${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}"
+unset _DAILYBOY_ENV_DIR _DAILYBOY_PREFIX _DAILYBOY_LIBDIR

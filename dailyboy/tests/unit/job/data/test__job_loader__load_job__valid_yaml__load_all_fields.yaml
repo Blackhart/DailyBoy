@@ -1,0 +1,258 @@
+# Maximal job fixture for job_loader / validate_job_schema tests (dailyboy_version 1).
+# One plan, one video, two image sequences; burn-ins exercise every position mode and box variant.
+
+dailyboy_version: 1
+
+metadata:
+  substitutions:
+    project: "JOB_LOADER_TEST"
+    episode: "101"
+    shot: "sh010"
+    version: "v004"
+    artist: "tester"
+    facility: "dailyboy_unit"
+    note_prod: "Global production note"
+    dailies_root: "/tmp/dailyboy/job_loader_test"
+    working_colorspace: "ACES - ACEScg"
+    review_mov_path: "{dailies_root}/deliver/review.mov"
+    note_frame:
+      "1001": "Frame 1001"
+      "1005-1010": "Frames 100-1010"
+      "1048": "Last frame"
+
+color:
+  ocio_config: "${OCIO_CONFIGS}/aces_1.2/config.ocio"
+  working_colorspace: "{working_colorspace}"
+  context:
+    "SHOT": "sh010"
+    "SEQUENCE": "seq010"
+    "FACILITY": "dailyboy"
+
+layout:
+  canvas:
+    width: 1920
+    height: 1080
+  pixel_aspect: 1.0
+  image:
+    fit: "cover"
+    filter: "bilinear"
+    min_margin_px:
+      top: 40
+      right: 24
+      bottom: 64
+      left: 24
+  background:
+    r: 0.12
+    g: 0.14
+    b: 0.18
+  burn_ins:
+    - template: "{shot}  {frame}  {plan_id}  {source_file}"
+      position:
+        mode: "layout"
+        anchor: "bottom_left"
+      font:
+        path: "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+        size_px: 22
+      box:
+        mode: fill
+        color:
+          r: 0
+          g: 0
+          b: 0
+        opacity: 0.5
+        margin: 8
+    - template: "{project} — {version}"
+      position:
+        mode: "layout"
+        anchor: "bottom_right"
+      font:
+        path: "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+        size_px: 18
+      box:
+        mode: outline
+        color:
+          r: 1
+          g: 1
+          b: 1
+        opacity: 0.85
+        margin:
+          top: 4
+          right: 12
+          bottom: 4
+          left: 8
+    - template: "{note_frame}"
+      position:
+        mode: "layout"
+        anchor: "center_center"
+      font:
+        path: "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+        size_px: 24
+      box:
+        mode: fill
+        color:
+          r: 0.1
+          g: 0.1
+          b: 0.2
+        opacity: 0.4
+        margin: 6
+    - template: "PIXEL {frame}"
+      position:
+        mode: "pixel"
+        x: 64
+        y: 48
+      font:
+        path: "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf"
+        size_px: 16
+      box:
+        mode: outline
+        color:
+          r: 0.9
+          g: 0.9
+          b: 0.2
+        opacity: 0.7
+        margin: 4
+    - template: "PCT {frame_start}-{frame_end}"
+      position:
+        mode: "percent"
+        x: 5
+        y: 92
+      font:
+        path: "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+        size_px: 20
+      box:
+        mode: fill
+        color:
+          r: 0
+          g: 0
+          b: 0
+        opacity: 0.35
+        margin:
+          top: 2
+          right: 2
+          bottom: 2
+          left: 2
+    - template: "TOP {shot}"
+      position:
+        mode: "layout"
+        anchor: "top_left"
+      font:
+        path: "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+        size_px: 14
+      box:
+        mode: fill
+        color:
+          r: 0
+          g: 0
+          b: 0
+        opacity: 0.25
+        margin: 0
+    - template: "TOP-R {episode}"
+      position:
+        mode: "layout"
+        anchor: "top_right"
+      font:
+        path: "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+        size_px: 14
+      box:
+        mode: outline
+        color:
+          r: 1
+          g: 0.5
+          b: 0
+        opacity: 0.6
+        margin: 10
+  slate:
+    duration_frames: 16
+    lines:
+      - text: "PROJECT — {project}"
+        position:
+          mode: "layout"
+          anchor: "top_left"
+        font:
+          path: "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+          size_px: 36
+      - text: "SHOT — {shot}"
+        position:
+          mode: "layout"
+          anchor: "top_right"
+        font:
+          path: "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+          size_px: 32
+      - text: "CENTER — {artist}"
+        position:
+          mode: "layout"
+          anchor: "center_center"
+        font:
+          path: "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+          size_px: 28
+      - text: "NOTE — {note_prod}"
+        position:
+          mode: "layout"
+          anchor: "bottom_left"
+        font:
+          path: "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+          size_px: 22
+      - text: "FRAME NOTE — {note_frame}"
+        position:
+          mode: "layout"
+          anchor: "bottom_right"
+        font:
+          path: "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+          size_px: 20
+      - text: "SLATE PIXEL"
+        position:
+          mode: "pixel"
+          x: 120
+          y: 900
+        font:
+          path: "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf"
+          size_px: 18
+      - text: "SLATE %"
+        position:
+          mode: "percent"
+          x: 50
+          y: 50
+        font:
+          path: "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+          size_px: 18
+
+output:
+  videos:
+    - id: review_mov
+      enabled: true
+      display_view:
+        display: "passthrough"
+        view: "passthrough"
+      signal:
+        range: tv
+        matrix: bt709
+        primaries: bt709
+        transfer: bt709
+      path: "{review_mov_path}"
+      codec: h264
+      codec_options:
+        preset: slow
+        crf: 18
+        gop: 24
+        pix_fmt: yuv422p
+  image_sequences:
+    - id: archive_acescg
+      enabled: true
+      display_view:
+        display: "passthrough"
+        view: "passthrough"
+      path_pattern: "{dailies_root}/archive.%04d.png"
+    - id: share_srgb
+      enabled: false
+      display_view:
+        display: "passthrough"
+        view: "passthrough"
+      path_pattern: "{dailies_root}/share.%04d.png"
+
+plans:
+  - id: sh010_plate
+    input_colorspace: ACES - ACEScg
+    sequence:
+      path: "{dailies_root}/plate.%04d.png"
+      frame_start: 1001
+      frame_end: 1048

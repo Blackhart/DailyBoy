@@ -1,0 +1,850 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dailyboy.dev/schemas/job.schema.json",
+  "title": "DailyBoyJob",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["dailyboy_version", "output", "layout", "color", "plans"],
+  "properties": {
+    "dailyboy_version": {
+      "type": "integer",
+      "const": 1,
+      "description": "Job contract identifier; increment for incompatible evolutions."
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["substitutions"],
+      "description": "Optional. Production values for {key} tokens. Omit the whole section if unused; when present, substitutions must contain at least one key.",
+      "properties": {
+        "substitutions": {
+          "type": "object",
+          "description": "Key → string (anywhere in the job) or frame map → string (burn-ins / slate at render).",
+          "minProperties": 1,
+          "additionalProperties": {
+            "$ref": "#/$defs/substitutionValue"
+          }
+        }
+      }
+    },
+    "output": { "$ref": "#/$defs/output" },
+    "layout": { "$ref": "#/$defs/layout" },
+    "color": { "$ref": "#/$defs/color" },
+    "plans": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 1,
+      "description": "Source plans. The schema limits the number of items (see maxItems).",
+      "items": { "$ref": "#/$defs/plan" }
+    }
+  },
+  "$defs": {
+    "output": {
+      "type": "object",
+      "additionalProperties": false,
+      "anyOf": [
+        { "required": ["videos"] },
+        { "required": ["image_sequences"] }
+      ],
+      "properties": {
+        "videos": {
+          "type": "array",
+          "description": "Video deliverables. Disabled entries are skipped at render. Optional if image_sequences has an enabled entry. At least one enabled video or image sequence is required.",
+          "items": { "$ref": "#/$defs/outputVideo" }
+        },
+        "image_sequences": {
+          "type": "array",
+          "description": "Image sequence deliverables. Format is inferred from path_pattern. Disabled entries are skipped at render. Optional if videos has an enabled entry.",
+          "items": { "$ref": "#/$defs/outputImageSequence" }
+        }
+      }
+    },
+    "displayView": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["display", "view"],
+      "description": "OCIO DisplayViewTransform target for this review deliverable.",
+      "properties": {
+        "display": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Quoted OCIO display name (e.g. Rec.1886 Rec.709 - Display)."
+        },
+        "view": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Quoted OCIO view name (e.g. ACES 2.0 - SDR 100 nits (Rec.709))."
+        }
+      }
+    },
+    "videoSignal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["range", "matrix", "primaries", "transfer"],
+      "description": "Container/bitstream color tags and RGB→YCbCr matrix for video encode.",
+      "properties": {
+        "range": {
+          "type": "string",
+          "enum": ["tv", "pc"],
+          "description": "Limited (tv) or full (pc) range."
+        },
+        "matrix": {
+          "type": "string",
+          "enum": ["bt709"],
+          "description": "YCbCr matrix coefficients (AVCOL_SPC) and swscale RGB→YUV matrix."
+        },
+        "primaries": {
+          "type": "string",
+          "enum": ["bt709"],
+          "description": "Color primaries metadata."
+        },
+        "transfer": {
+          "type": "string",
+          "enum": ["bt709"],
+          "description": "Transfer characteristic metadata."
+        }
+      }
+    },
+    "outputVideo": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "enabled", "path", "display_view", "signal", "codec"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Unique id among all output.videos and output.image_sequences entries (logs)."
+        },
+        "enabled": { "type": "boolean" },
+        "display_view": { "$ref": "#/$defs/displayView" },
+        "signal": { "$ref": "#/$defs/videoSignal" },
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Video file path (e.g. QuickTime .mov container with H.264)."
+        },
+        "fps": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 24,
+          "description": "Output frame rate (time base). FFmpeg does not require this field; omitted uses 24."
+        },
+        "codec": {
+          "type": "string",
+          "enum": ["h264", "mjpeg", "dnxhd"],
+          "description": "Video encoder."
+        },
+        "codec_options": {
+          "type": "object",
+          "description": "Encoder-specific settings. Keys depend on codec."
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "codec": { "const": "h264" } },
+            "required": ["codec"]
+          },
+          "then": {
+            "properties": {
+              "codec_options": { "$ref": "#/$defs/h264CodecOptions" }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "codec": { "const": "mjpeg" } },
+            "required": ["codec"]
+          },
+          "then": {
+            "properties": {
+              "codec_options": { "$ref": "#/$defs/mjpegCodecOptions" }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "codec": { "const": "dnxhd" } },
+            "required": ["codec"]
+          },
+          "then": {
+            "properties": {
+              "codec_options": { "$ref": "#/$defs/dnxhdCodecOptions" }
+            }
+          }
+        }
+      ]
+    },
+    "h264CodecOptions": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Optional libx264/MOV settings when codec is h264. Omit the block or any key to use defaults. crf and bitrate_kbps are mutually exclusive.",
+      "properties": {
+        "preset": {
+          "type": "string",
+          "enum": [
+            "ultrafast",
+            "superfast",
+            "veryfast",
+            "faster",
+            "fast",
+            "medium",
+            "slow"
+          ],
+          "default": "medium"
+        },
+        "crf": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 51,
+          "default": 23,
+          "description": "CRF mode. Mutually exclusive with bitrate_kbps."
+        },
+        "bitrate_kbps": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Target video bitrate (kbps) when CRF is not used."
+        },
+        "gop": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Keyframe interval (FFmpeg -g). Omit for the x264 default."
+        },
+        "pix_fmt": {
+          "type": "string",
+          "enum": ["yuv420p", "yuv422p"],
+          "default": "yuv420p"
+        },
+        "tune": {
+          "type": "string",
+          "enum": [
+            "film",
+            "animation",
+            "grain",
+            "stillimage",
+            "fastdecode",
+            "zerolatency"
+          ]
+        },
+        "profile": {
+          "type": "string",
+          "enum": ["baseline", "main", "high", "high422"],
+          "description": "Must match pix_fmt (high422 only with yuv422p). Omit for high / high422 from pix_fmt."
+        },
+        "level": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": ["3.0", "3.1", "4.0", "4.1", "4.2", "5.0", "5.1", "5.2"]
+            },
+            {
+              "type": "number",
+              "enum": [3, 3.1, 4, 4.1, 4.2, 5, 5.1, 5.2]
+            }
+          ],
+          "description": "H.264 level. YAML number (4.1) or quoted string (\"4.1\") are both accepted."
+        },
+        "faststart": {
+          "type": "boolean",
+          "default": true,
+          "description": "MOV muxer movflags +faststart."
+        }
+      }
+    },
+    "dnxhdCodecOptions": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Optional DNxHD/DNxHR MOV settings when codec is dnxhd. Omit the block or any key to use defaults (DNxHR HQ). bitrate_kbps is required when profile is dnxhd and forbidden on DNxHR profiles.",
+      "properties": {
+        "profile": {
+          "type": "string",
+          "enum": [
+            "dnxhd",
+            "dnxhr_lb",
+            "dnxhr_sq",
+            "dnxhr_hq",
+            "dnxhr_hqx",
+            "dnxhr_444"
+          ],
+          "default": "dnxhr_hq"
+        },
+        "pix_fmt": {
+          "type": "string",
+          "enum": ["yuv422p", "yuv422p10", "yuv444p10"],
+          "description": "Must match profile. Omitted uses yuv422p (lb/sq/hq/dnxhd), yuv422p10 (hqx), or yuv444p10 (444)."
+        },
+        "bitrate_kbps": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Required for profile dnxhd: Avid CID bitrate in kbps (Mbps×1000). Forbidden on DNxHR."
+        },
+        "interlaced": {
+          "type": "boolean",
+          "default": false,
+          "description": "DNxHD CID interlaced. Forbidden when true on DNxHR profiles."
+        },
+        "nitris_compat": {
+          "type": "boolean",
+          "default": false,
+          "description": "Avid Nitris coding-unit padding."
+        },
+        "faststart": {
+          "type": "boolean",
+          "default": true,
+          "description": "MOV muxer movflags +faststart."
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "profile": { "const": "dnxhd" } },
+            "required": ["profile"]
+          },
+          "then": { "required": ["bitrate_kbps"] }
+        },
+        {
+          "if": {
+            "properties": {
+              "profile": {
+                "enum": [
+                  "dnxhr_lb",
+                  "dnxhr_sq",
+                  "dnxhr_hq",
+                  "dnxhr_hqx",
+                  "dnxhr_444"
+                ]
+              }
+            },
+            "required": ["profile"]
+          },
+          "then": {
+            "properties": {
+              "bitrate_kbps": false,
+              "interlaced": { "const": false }
+            }
+          }
+        }
+      ]
+    },
+    "mjpegCodecOptions": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Optional MJPEG/MOV settings when codec is mjpeg. Omit the block or any key to use defaults.",
+      "properties": {
+        "qscale": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 31,
+          "default": 3,
+          "description": "JPEG quality (FFmpeg -q:v). Lower is better quality."
+        },
+        "pix_fmt": {
+          "type": "string",
+          "enum": ["yuv420p", "yuv422p", "yuv444p"],
+          "default": "yuv422p"
+        },
+        "huffman": {
+          "type": "string",
+          "enum": ["default", "optimal"],
+          "default": "optimal"
+        },
+        "faststart": {
+          "type": "boolean",
+          "default": true,
+          "description": "MOV muxer movflags +faststart."
+        }
+      }
+    },
+    "outputImageSequence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "enabled", "display_view", "path_pattern"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Unique id among all output.videos and output.image_sequences entries (logs)."
+        },
+        "enabled": { "type": "boolean" },
+        "display_view": { "$ref": "#/$defs/displayView" },
+        "path_pattern": {
+          "type": "string",
+          "minLength": 1,
+          "description": "File sequence path (ShotGrid fileseq / libfileseq): #, @, %04d, $F4, optional embedded range (e.g. 1001-1100). Validated after metadata substitution. The file extension selects the OpenImageIO writer and which format_options keys apply."
+        },
+        "format_options": {
+          "type": "object",
+          "description": "Optional OpenImageIO writer settings. Allowed keys depend on the path_pattern extension (png, jpeg, tiff, exr, heif). Validated at parse time.",
+          "minProperties": 1
+        }
+      }
+    },
+    "pngFormatOptions": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "bit_depth": { "type": "integer", "enum": [8, 16], "default": 8 },
+        "compression": {
+          "type": "string",
+          "enum": [
+            "default",
+            "filtered",
+            "huffman",
+            "rle",
+            "fixed",
+            "pngfast",
+            "none"
+          ],
+          "default": "default"
+        },
+        "compression_level": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 6,
+          "default": 6
+        },
+        "filter": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4,
+          "default": 0
+        }
+      }
+    },
+    "jpegFormatOptions": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "bit_depth": { "type": "integer", "enum": [8], "default": 8 },
+        "compression_level": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 98,
+          "description": "JPEG quality (OIIO CompressionQuality)."
+        },
+        "subsampling": {
+          "type": "string",
+          "enum": ["4:4:4", "4:2:2", "4:2:0", "4:1:1"]
+        },
+        "progressive": { "type": "boolean", "default": false }
+      }
+    },
+    "tiffFormatOptions": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "bit_depth": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "enum": [1, 2, 4, 6, 8, 10, 12, 14, 16, 24, 32, 64]
+            },
+            { "type": "string", "enum": ["h16", "f32", "1", "2", "4", "6", "8", "10", "12", "14", "16", "24", "32", "64"] }
+          ],
+          "default": 8
+        },
+        "bigtiff": { "type": "boolean", "default": false },
+        "compression": {
+          "type": "string",
+          "enum": ["none", "lzw", "zip", "ccittrle", "packbits"],
+          "default": "zip"
+        },
+        "compression_level": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9,
+          "default": 6
+        }
+      }
+    },
+    "exrFormatOptions": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "bit_depth": {
+          "type": "string",
+          "enum": ["h16", "f32"],
+          "default": "h16"
+        },
+        "compression": {
+          "type": "string",
+          "enum": [
+            "none",
+            "rle",
+            "zips",
+            "zip",
+            "piz",
+            "pxr24",
+            "b44",
+            "b44a",
+            "dwaa",
+            "dwab"
+          ],
+          "default": "zip"
+        },
+        "compression_level": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "zip/zips: 1-9 (default 4). dwaa/dwab: quality. Forbidden for other compressions."
+        }
+      }
+    },
+    "heifFormatOptions": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "bit_depth": { "type": "integer", "enum": [8], "default": 8 },
+        "compression": {
+          "type": "string",
+          "enum": ["heic", "avif", "hevc"],
+          "default": "heic",
+          "description": "hevc is accepted as an alias for heic. Default is avif when path_pattern ends with .avif."
+        },
+        "compression_level": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100,
+          "default": 75
+        }
+      }
+    },
+    "layout": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["canvas", "image"],
+      "description": "Required: canvas, image. Optional: pixel_aspect, background, burn_ins, slate.",
+      "properties": {
+        "canvas": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["width", "height"],
+          "properties": {
+            "width": {
+              "type": "integer",
+              "minimum": 2,
+              "multipleOf": 2,
+              "description": "Output width in pixels. Must be even and at least 2 (codec-friendly)."
+            },
+            "height": {
+              "type": "integer",
+              "minimum": 2,
+              "multipleOf": 2,
+              "description": "Output height in pixels. Must be even and at least 2 (codec-friendly)."
+            }
+          }
+        },
+        "pixel_aspect": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "default": 1.0
+        },
+        "image": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["fit"],
+          "properties": {
+            "fit": {
+              "type": "string",
+              "enum": ["contain", "cover"],
+              "description": "Quoted YAML string. contain = show the whole plate (may leave background bars); cover = fill the frame (may crop)."
+            },
+            "filter": {
+              "type": "string",
+              "enum": ["bilinear", "lanczos3"],
+              "default": "lanczos3",
+              "description": "Quoted YAML string. Omitted uses lanczos3."
+            },
+            "min_margin_px": {
+              "$ref": "#/$defs/sideInsetsPx",
+              "description": "Minimum pixel margins on each canvas side before applying fit; absent or all-zero = full canvas."
+            }
+          }
+        },
+        "background": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Canvas fill behind the plate (0-1 display RGB). Keys r, g, b only; omitted channels default to 0. Omit the block for black.",
+          "properties": {
+            "r": { "type": "number", "minimum": 0, "maximum": 1, "default": 0 },
+            "g": { "type": "number", "minimum": 0, "maximum": 1, "default": 0 },
+            "b": { "type": "number", "minimum": 0, "maximum": 1, "default": 0 }
+          }
+        },
+        "burn_ins": {
+          "type": "array",
+          "minItems": 1,
+          "description": "Optional. Text overlays on every frame except the slate. Omit the key if none. If present, at least one burn-in.",
+          "items": { "$ref": "#/$defs/burnIn" }
+        },
+        "slate": { "$ref": "#/$defs/slate" }
+      }
+    },
+    "burnInBox": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Text box appearance: fill/outline mode, color, opacity, inner margin.",
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": ["fill", "outline"],
+          "default": "fill",
+          "description": "fill = solid surface; outline = box stroke (width from engine if not overridden)."
+        },
+        "color": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Box color (fill background or outline stroke). Same convention as layout.background.",
+          "properties": {
+            "r": { "type": "number", "minimum": 0, "maximum": 1, "default": 0 },
+            "g": { "type": "number", "minimum": 0, "maximum": 1, "default": 0 },
+            "b": { "type": "number", "minimum": 0, "maximum": 1, "default": 0 }
+          }
+        },
+        "opacity": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "default": 1,
+          "description": "Box opacity (fill or stroke per mode); 0 = no box rendered."
+        },
+        "margin": {
+          "description": "Padding in pixels between the inner box edge and the glyph. Uniform integer or per-side. Absent = 0.",
+          "default": 0,
+          "oneOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Same value on all four sides."
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "top": { "type": "integer", "minimum": 0 },
+                "right": { "type": "integer", "minimum": 0 },
+                "bottom": { "type": "integer", "minimum": 0 },
+                "left": { "type": "integer", "minimum": 0 }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "burnInFont": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Font for text (burn-in or slate line). `path` and `size_px` are required in the object.",
+      "required": ["path", "size_px"],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Quoted YAML string. Path to a .ttf or .otf file."
+        },
+        "size_px": {
+          "type": "integer",
+          "minimum": 4,
+          "description": "Unquoted integer >= 4."
+        },
+        "color": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Text color in display RGB. Same shape as layout.background. Omitted block or channel defaults to 1 (white).",
+          "properties": {
+            "r": { "type": "number", "minimum": 0, "maximum": 1, "default": 1 },
+            "g": { "type": "number", "minimum": 0, "maximum": 1, "default": 1 },
+            "b": { "type": "number", "minimum": 0, "maximum": 1, "default": 1 }
+          }
+        }
+      }
+    },
+    "burnInPosition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode"],
+      "description": "Quoted mode layout (anchor), pixel (x/y integers on the canvas), or percent (x/y integers 0-100).",
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": ["layout", "pixel", "percent"],
+          "description": "Quoted YAML string."
+        },
+        "anchor": {
+          "type": "string",
+          "enum": [
+            "top_left",
+            "top_center",
+            "top_right",
+            "center_left",
+            "center_center",
+            "center_right",
+            "bottom_left",
+            "bottom_center",
+            "bottom_right"
+          ],
+          "description": "Quoted YAML string. Only valid when mode is layout."
+        },
+        "x": {
+          "type": "integer",
+          "description": "Unquoted integer. Pixel: 0 to canvas.width. Percent: 0 to 100. Only valid when mode is pixel or percent."
+        },
+        "y": {
+          "type": "integer",
+          "description": "Unquoted integer. Pixel: 0 to canvas.height. Percent: 0 to 100. Only valid when mode is pixel or percent."
+        }
+      }
+    },
+    "burnIn": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["template", "position", "font"],
+      "properties": {
+        "template": {
+          "type": "string",
+          "description": "Text with engine-implemented tokens (e.g. {frame}, {source_file})."
+        },
+        "position": {
+          "$ref": "#/$defs/burnInPosition",
+          "description": "Places the box + text set relative to the final image (usable rectangle): layout (anchor), pixel, or percent mode."
+        },
+        "font": {
+          "$ref": "#/$defs/burnInFont",
+          "description": "Font: `path` and `size_px` required in the object."
+        },
+        "box": {
+          "$ref": "#/$defs/burnInBox",
+          "description": "Box appearance: fill/outline mode, color, opacity, margin."
+        }
+      }
+    },
+    "slate": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Optional head slate. Omit the whole block to skip the slate. Presence writes duration_frames copies at the start of each enabled movie and image sequence.",
+      "required": ["duration_frames", "lines"],
+      "properties": {
+        "duration_frames": { "type": "integer", "minimum": 0 },
+        "lines": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["text", "position", "font"],
+            "properties": {
+              "text": {
+                "type": "string",
+                "description": "Text or template (same convention as burn-ins)."
+              },
+              "position": {
+                "$ref": "#/$defs/burnInPosition",
+                "description": "Same structure as layout.burn_ins[].position."
+              },
+              "font": {
+                "$ref": "#/$defs/burnInFont",
+                "description": "Same structure as layout.burn_ins[].font."
+              }
+            }
+          }
+        }
+      }
+    },
+    "color": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ocio_config"],
+      "properties": {
+        "ocio_config": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Quoted YAML path to config.ocio."
+        },
+        "working_colorspace": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Quoted YAML linear working space for plate resize (and I→W). If absent with a single plan: falls back to plans[0].input_colorspace. With multiple plans: required in practice (distinct source spaces)."
+        },
+        "context": {
+          "type": "object",
+          "minProperties": 1,
+          "description": "Optional OCIO context key/value pairs. When present, must contain at least one quoted key and quoted string value.",
+          "additionalProperties": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "input_colorspace", "sequence"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "input_colorspace": {
+          "type": "string",
+          "minLength": 1,
+          "description": "OCIO space of this plan's source files (must exist in color.ocio_config)."
+        },
+        "sequence": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["path", "frame_start", "frame_end"],
+          "properties": {
+            "path": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Input file sequence (ShotGrid fileseq / libfileseq). Padding: #, @, %04d, $F4; ranges in path or via frame_start/frame_end. MVP: typically .png."
+            },
+            "frame_start": { "type": "integer" },
+            "frame_end": { "type": "integer" }
+          }
+        },
+        "audio": { "$ref": "#/$defs/planAudio" }
+      }
+    },
+    "planAudio": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path"],
+      "description": "Optional guide track for this plan. Muxed into every enabled MOV after the slate (silence during slate). Trimmed or padded to the plan plate duration.",
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "WAV or AAC (.wav, .aac, .m4a, or audio-only .mov). Metadata tokens allowed."
+        }
+      }
+    },
+    "sideInsetsPx": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Per-side pixel insets (top/right/bottom/left). Absent keys default to 0.",
+      "properties": {
+        "top": { "type": "integer", "minimum": 0, "default": 0 },
+        "right": { "type": "integer", "minimum": 0, "default": 0 },
+        "bottom": { "type": "integer", "minimum": 0, "default": 0 },
+        "left": { "type": "integer", "minimum": 0, "default": 0 }
+      }
+    },
+    "substitutionValue": {
+      "description": "Constant value or per-frame / range map (burn-ins and slate only at render).",
+      "oneOf": [
+        { "type": "string" },
+        { "$ref": "#/$defs/frameMap" }
+      ]
+    },
+    "frameMap": {
+      "type": "object",
+      "description": "Keys and values must be YAML quoted strings. Keys = frame number (e.g. \"1001\") or inclusive range (e.g. \"1001-1048\"). Values = text shown for that frame.",
+      "minProperties": 1,
+      "propertyNames": {
+        "type": "string",
+        "pattern": "^[0-9]+(-[0-9]+)?$"
+      },
+      "additionalProperties": {
+        "type": "string"
+      }
+    }
+  }
+}

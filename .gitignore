@@ -1,0 +1,114 @@
+# ---------------------------------------------------------------------------
+# OS
+# ---------------------------------------------------------------------------
+.DS_Store
+Thumbs.db
+*~
+*.swp
+*.swo
+
+# ---------------------------------------------------------------------------
+# Editors / IDEs
+# ---------------------------------------------------------------------------
+.idea/
+.vs/
+*.user
+*.suo
+*.VC.db
+*.VC.opendb
+
+# Cursor
+.cursor/
+
+# VSCode
+.vscode
+
+# ---------------------------------------------------------------------------
+# Caches
+# ---------------------------------------------------------------------------
+.cache/
+.ccache/
+.clangd/
+.ccls-cache/
+
+# ---------------------------------------------------------------------------
+# CMake / C++ build
+# ---------------------------------------------------------------------------
+build/
+cmake-build-*/
+install/
+out/
+compile_commands.json
+
+*.o
+*.obj
+*.a
+*.lib
+*.dylib
+*.dll
+*.exe
+*.pdb
+*.ilk
+*.exp
+
+# Coverage / sanitizers (host leftovers outside build/)
+*.gcda
+*.gcno
+*.gcov
+*.profraw
+*.profdata
+default.profraw
+
+# ---------------------------------------------------------------------------
+# Python
+# ---------------------------------------------------------------------------
+.venv/
+venv/
+ENV/
+env/
+.env
+.env.*
+!.env.example
+
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.pyd
+
+.Python
+*.egg
+*.egg-info/
+.eggs/
+dist/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.manifest
+*.spec
+
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+.tox/
+.nox/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+*.cover
+.cache/pytest/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# pybind11 extension (also built under api/python when in-source)
+api/python/dailyboy/_dailyboy_native*.so
+api/python/dailyboy/_dailyboy_native*.pyd
+
+# ---------------------------------------------------------------------------
+# Local / misc
+# ---------------------------------------------------------------------------
+todo.txt
+examples/output/

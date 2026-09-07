@@ -1,0 +1,267 @@
+dailyboy_version: 1
+
+metadata:
+  substitutions:
+    "project": "DEMO_PROJECT"
+    "episode": "103"
+    "shot": "sh010"
+    "version": "v003"
+    "artist": "jdoe"
+    "note_prod": "WIP lighting — not for distribution"
+    "dailies_root": "/home/blackhart/Development/Personnal/DailyBoy/examples/output"
+    "working_colorspace": "ACEScg"
+    "note_frame":
+      "1001": "Start"
+      "1005-1010": "Action mid"
+      "1020": "Plan end"
+
+color:
+  ocio_config: "ocio://studio-config-v4.0.0_aces-v2.0_ocio-v2.5"
+  working_colorspace: "{working_colorspace}"
+  context:
+    "SHOT": "sh010"
+
+layout:
+  canvas:
+    width: 1920
+    height: 1080
+  pixel_aspect: 1.0
+  image:
+    fit: "contain"
+    filter: "lanczos3"
+    min_margin_px:
+      top: 50
+      right: 0
+      bottom: 50
+      left: 0
+  background:
+    r: 0
+    g: 0
+    b: 0
+  burn_ins:
+    - template: "{project}  {shot}  {version}"
+      position:
+        mode: "layout"
+        anchor: "top_left"
+      font:
+        path: "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+        size_px: 18
+      box:
+        mode: fill
+        color:
+          r: 0
+          g: 0
+          b: 0
+        opacity: 0.45
+        margin: 6
+    - template: "{note_frame}"
+      position:
+        mode: "layout"
+        anchor: "top_center"
+      font:
+        path: "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+        size_px: 18
+        color:
+          r: 1
+          g: 0.85
+          b: 0.2
+      box:
+        mode: fill
+        color:
+          r: 0
+          g: 0
+          b: 0
+        opacity: 0.45
+        margin: 6
+    - template: "{artist}"
+      position:
+        mode: "layout"
+        anchor: "top_right"
+      font:
+        path: "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+        size_px: 18
+      box:
+        mode: outline
+        color:
+          r: 1
+          g: 1
+          b: 1
+        opacity: 0.85
+        margin: 6
+    - template: "{shot}  {frame}  {source_file}"
+      position:
+        mode: "layout"
+        anchor: "bottom_left"
+      font:
+        path: "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+        size_px: 18
+      box:
+        mode: fill
+        color:
+          r: 0
+          g: 0
+          b: 0
+        opacity: 0.45
+        margin: 6
+    - template: "{note_prod}"
+      position:
+        mode: "layout"
+        anchor: "bottom_center"
+      font:
+        path: "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+        size_px: 16
+    - template: "{frame_start}-{frame_end}  {plan_id}"
+      position:
+        mode: "layout"
+        anchor: "bottom_right"
+      font:
+        path: "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+        size_px: 18
+      box:
+        mode: fill
+        color:
+          r: 0
+          g: 0
+          b: 0
+        opacity: 0.45
+        margin: 6
+  slate:
+    duration_frames: 24
+    lines:
+      - text: "PROJECT — {project}"
+        position:
+          mode: "percent"
+          x: 50
+          y: 40
+        font:
+          path: "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+          size_px: 32
+      - text: "SHOT — {shot}"
+        position:
+          mode: "percent"
+          x: 50
+          y: 50
+        font:
+          path: "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+          size_px: 28
+      - text: "{frame_start}-{frame_end}  {plan_id}"
+        position:
+          mode: "percent"
+          x: 50
+          y: 60
+        font:
+          path: "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+          size_px: 20
+
+output:
+  videos:
+    - id: review_mjpeg
+      enabled: true
+      display_view:
+        display: "Rec.1886 Rec.709 - Display"
+        view: "ACES 2.0 - SDR 100 nits (Rec.709)"
+      signal:
+        range: pc
+        matrix: bt709
+        primaries: bt709
+        transfer: bt709
+      path: "{dailies_root}/sh010_review_mjpeg.mov"
+      fps: 24
+      codec: mjpeg
+      codec_options:
+        qscale: 3
+        pix_fmt: yuv422p
+        huffman: optimal
+        faststart: true
+    - id: review_h264
+      enabled: true
+      display_view:
+        display: "Rec.1886 Rec.709 - Display"
+        view: "ACES 2.0 - SDR 100 nits (Rec.709)"
+      signal:
+        range: tv
+        matrix: bt709
+        primaries: bt709
+        transfer: bt709
+      path: "{dailies_root}/sh010_review_h264.mov"
+      fps: 24
+      codec: h264
+      codec_options:
+        preset: medium
+        crf: 20
+        gop: 12
+        pix_fmt: yuv420p
+        tune: film
+        profile: high
+        level: 4.1
+        faststart: true
+    - id: review_dnxhr
+      enabled: true
+      display_view:
+        display: "Rec.1886 Rec.709 - Display"
+        view: "ACES 2.0 - SDR 100 nits (Rec.709)"
+      signal:
+        range: tv
+        matrix: bt709
+        primaries: bt709
+        transfer: bt709
+      path: "{dailies_root}/sh010_review_dnxhr.mov"
+      fps: 24
+      codec: dnxhd
+      codec_options:
+        profile: dnxhr_hq
+        pix_fmt: yuv422p
+        nitris_compat: false
+        faststart: true
+    - id: review_dnxhd
+      enabled: true
+      display_view:
+        display: "Rec.1886 Rec.709 - Display"
+        view: "ACES 2.0 - SDR 100 nits (Rec.709)"
+      signal:
+        range: tv
+        matrix: bt709
+        primaries: bt709
+        transfer: bt709
+      path: "{dailies_root}/sh010_review_dnxhd.mov"
+      fps: 24
+      codec: dnxhd
+      codec_options:
+        profile: dnxhd
+        bitrate_kbps: 36000
+        pix_fmt: yuv422p
+        interlaced: false
+        nitris_compat: false
+        faststart: true
+  image_sequences:
+    - id: archive_acescg
+      enabled: true
+      display_view:
+        display: "Rec.1886 Rec.709 - Display"
+        view: "ACES 2.0 - SDR 100 nits (Rec.709)"
+      path_pattern: "{dailies_root}/archive/sh010_archive.%04d.png"
+      format_options:
+        bit_depth: 8
+        compression: default
+        compression_level: 6
+        filter: 0
+    - id: share_srgb
+      enabled: true
+      display_view:
+        display: "Rec.1886 Rec.709 - Display"
+        view: "ACES 2.0 - SDR 100 nits (Rec.709)"
+      path_pattern: "{dailies_root}/share/sh010_share.%04d.tiff"
+      format_options:
+        bit_depth: 8
+        compression: zip
+        compression_level: 6
+
+plans:
+  - id: sh010_bg
+    input_colorspace: "ACEScg"
+    sequence:
+      path: examples/frames/2048x1080/plate.%04d.png
+      frame_start: 1001
+      frame_end: 1048
+    audio:
+      path: examples/audio/sh010_bg_guide.wav

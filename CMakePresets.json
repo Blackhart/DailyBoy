@@ -1,0 +1,238 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 28,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "cy2026-debug",
+      "displayName": "CY2026 Debug (tests + coverage)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/$env{DAILYBOY_BUILD_ROOT}CY2026/debug",
+      "cacheVariables": {
+        "DAILYBOY_VFX_PLATFORM": "2026",
+        "CMAKE_BUILD_TYPE": "Debug",
+        "BUILD_TESTING": "ON",
+        "DAILYBOY_BUILD_PYTHON": "ON",
+        "DAILYBOY_ENABLE_COVERAGE": "ON",
+        "DAILYBOY_ENABLE_SANITIZERS": "OFF"
+      }
+    },
+    {
+      "name": "cy2026-release",
+      "displayName": "CY2026 Release (perf/load + install)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/$env{DAILYBOY_BUILD_ROOT}CY2026/release",
+      "cacheVariables": {
+        "DAILYBOY_VFX_PLATFORM": "2026",
+        "CMAKE_BUILD_TYPE": "Release",
+        "BUILD_TESTING": "ON",
+        "DAILYBOY_BUILD_PYTHON": "ON",
+        "DAILYBOY_ENABLE_COVERAGE": "OFF",
+        "DAILYBOY_ENABLE_SANITIZERS": "OFF"
+      }
+    },
+    {
+      "name": "cy2026-sanitize",
+      "displayName": "CY2026 Sanitize (ASan + UBSan)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/$env{DAILYBOY_BUILD_ROOT}CY2026/sanitize",
+      "cacheVariables": {
+        "DAILYBOY_VFX_PLATFORM": "2026",
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "BUILD_TESTING": "ON",
+        "DAILYBOY_BUILD_PYTHON": "OFF",
+        "DAILYBOY_ENABLE_COVERAGE": "OFF",
+        "DAILYBOY_ENABLE_SANITIZERS": "ON"
+      }
+    },
+    {
+      "name": "cy2025-debug",
+      "displayName": "CY2025 Debug (tests)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/$env{DAILYBOY_BUILD_ROOT}CY2025/debug",
+      "cacheVariables": {
+        "DAILYBOY_VFX_PLATFORM": "2025",
+        "CMAKE_BUILD_TYPE": "Debug",
+        "BUILD_TESTING": "ON",
+        "DAILYBOY_BUILD_PYTHON": "ON",
+        "DAILYBOY_ENABLE_COVERAGE": "OFF",
+        "DAILYBOY_ENABLE_SANITIZERS": "OFF"
+      }
+    },
+    {
+      "name": "cy2025-release",
+      "displayName": "CY2025 Release (perf/load + install)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/$env{DAILYBOY_BUILD_ROOT}CY2025/release",
+      "cacheVariables": {
+        "DAILYBOY_VFX_PLATFORM": "2025",
+        "CMAKE_BUILD_TYPE": "Release",
+        "BUILD_TESTING": "ON",
+        "DAILYBOY_BUILD_PYTHON": "ON",
+        "DAILYBOY_ENABLE_COVERAGE": "OFF",
+        "DAILYBOY_ENABLE_SANITIZERS": "OFF"
+      }
+    },
+    {
+      "name": "cy2025-sanitize",
+      "displayName": "CY2025 Sanitize (ASan + UBSan)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/$env{DAILYBOY_BUILD_ROOT}CY2025/sanitize",
+      "cacheVariables": {
+        "DAILYBOY_VFX_PLATFORM": "2025",
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "BUILD_TESTING": "ON",
+        "DAILYBOY_BUILD_PYTHON": "OFF",
+        "DAILYBOY_ENABLE_COVERAGE": "OFF",
+        "DAILYBOY_ENABLE_SANITIZERS": "ON"
+      }
+    },
+    {
+      "name": "cy2024-debug",
+      "displayName": "CY2024 Debug (tests)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/$env{DAILYBOY_BUILD_ROOT}CY2024/debug",
+      "cacheVariables": {
+        "DAILYBOY_VFX_PLATFORM": "2024",
+        "CMAKE_BUILD_TYPE": "Debug",
+        "BUILD_TESTING": "ON",
+        "DAILYBOY_BUILD_PYTHON": "ON",
+        "DAILYBOY_ENABLE_COVERAGE": "OFF",
+        "DAILYBOY_ENABLE_SANITIZERS": "OFF"
+      }
+    },
+    {
+      "name": "cy2024-release",
+      "displayName": "CY2024 Release (perf/load + install)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/$env{DAILYBOY_BUILD_ROOT}CY2024/release",
+      "cacheVariables": {
+        "DAILYBOY_VFX_PLATFORM": "2024",
+        "CMAKE_BUILD_TYPE": "Release",
+        "BUILD_TESTING": "ON",
+        "DAILYBOY_BUILD_PYTHON": "ON",
+        "DAILYBOY_ENABLE_COVERAGE": "OFF",
+        "DAILYBOY_ENABLE_SANITIZERS": "OFF"
+      }
+    },
+    {
+      "name": "cy2024-sanitize",
+      "displayName": "CY2024 Sanitize (ASan + UBSan)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/$env{DAILYBOY_BUILD_ROOT}CY2024/sanitize",
+      "cacheVariables": {
+        "DAILYBOY_VFX_PLATFORM": "2024",
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "BUILD_TESTING": "ON",
+        "DAILYBOY_BUILD_PYTHON": "OFF",
+        "DAILYBOY_ENABLE_COVERAGE": "OFF",
+        "DAILYBOY_ENABLE_SANITIZERS": "ON"
+      }
+    },
+    {
+      "name": "debug",
+      "displayName": "Debug (alias → CY2026)",
+      "inherits": "cy2026-debug"
+    },
+    {
+      "name": "release",
+      "displayName": "Release (alias → CY2026)",
+      "inherits": "cy2026-release"
+    },
+    {
+      "name": "sanitize",
+      "displayName": "Sanitize (alias → CY2026)",
+      "inherits": "cy2026-sanitize"
+    }
+  ],
+  "buildPresets": [
+    { "name": "cy2026-debug", "configurePreset": "cy2026-debug" },
+    { "name": "cy2026-release", "configurePreset": "cy2026-release" },
+    { "name": "cy2026-sanitize", "configurePreset": "cy2026-sanitize" },
+    { "name": "cy2025-debug", "configurePreset": "cy2025-debug" },
+    { "name": "cy2025-release", "configurePreset": "cy2025-release" },
+    { "name": "cy2025-sanitize", "configurePreset": "cy2025-sanitize" },
+    { "name": "cy2024-debug", "configurePreset": "cy2024-debug" },
+    { "name": "cy2024-release", "configurePreset": "cy2024-release" },
+    { "name": "cy2024-sanitize", "configurePreset": "cy2024-sanitize" },
+    { "name": "debug", "configurePreset": "debug" },
+    { "name": "release", "configurePreset": "release" },
+    { "name": "sanitize", "configurePreset": "sanitize" },
+    {
+      "name": "tidy-check",
+      "configurePreset": "cy2026-debug",
+      "targets": ["clang-tidy-check"]
+    },
+    {
+      "name": "coverage-report",
+      "configurePreset": "cy2026-debug",
+      "targets": ["coverage-report"]
+    },
+    {
+      "name": "cy2025-coverage-report",
+      "configurePreset": "cy2025-debug",
+      "targets": ["coverage-report"]
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "cy2026-tests",
+      "configurePreset": "cy2026-debug",
+      "output": { "outputOnFailure": true },
+      "filter": { "include": { "label": "unit" } }
+    },
+    {
+      "name": "cy2025-tests",
+      "configurePreset": "cy2025-debug",
+      "output": { "outputOnFailure": true },
+      "filter": { "include": { "label": "unit" } }
+    },
+    {
+      "name": "cy2024-tests",
+      "configurePreset": "cy2024-debug",
+      "output": { "outputOnFailure": true },
+      "filter": { "include": { "label": "unit" } }
+    },
+    {
+      "name": "tests",
+      "inherits": "cy2026-tests"
+    },
+    {
+      "name": "cy2026-sanitize",
+      "configurePreset": "cy2026-sanitize",
+      "output": { "outputOnFailure": true },
+      "filter": { "include": { "label": "unit" } }
+    },
+    {
+      "name": "cy2025-sanitize",
+      "configurePreset": "cy2025-sanitize",
+      "output": { "outputOnFailure": true },
+      "filter": { "include": { "label": "unit" } }
+    },
+    {
+      "name": "cy2024-sanitize",
+      "configurePreset": "cy2024-sanitize",
+      "output": { "outputOnFailure": true },
+      "filter": { "include": { "label": "unit" } }
+    },
+    {
+      "name": "sanitize",
+      "inherits": "cy2026-sanitize"
+    },
+    {
+      "name": "perf",
+      "configurePreset": "cy2026-release",
+      "output": { "outputOnFailure": true, "verbosity": "verbose" },
+      "filter": { "include": { "label": "perf" } }
+    },
+    {
+      "name": "load",
+      "configurePreset": "cy2026-release",
+      "output": { "outputOnFailure": true, "verbosity": "verbose" },
+      "filter": { "include": { "label": "load" } }
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+---
+Language: Cpp
+BasedOnStyle: Google
+# Keep Doxygen /*! ... */ blocks intact (Google style reflows and breaks \brief lines).
+ReflowComments: false

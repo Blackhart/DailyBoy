@@ -1,0 +1,11 @@
+coverage:
+  status: true
+  patch: true
+
+ignore:
+  - "dailyboy/tests/**"
+  - "build/**"
+  - "_deps/**"
+
+fixes:
+  - "**/dailyboy/src/::dailyboy/src/"
