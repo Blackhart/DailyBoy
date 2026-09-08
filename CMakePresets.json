@@ -167,6 +167,11 @@
       "targets": ["clang-tidy-check"]
     },
     {
+      "name": "cy2025-tidy-check",
+      "configurePreset": "cy2025-debug",
+      "targets": ["clang-tidy-check"]
+    },
+    {
       "name": "coverage-report",
       "configurePreset": "cy2026-debug",
       "targets": ["coverage-report"]

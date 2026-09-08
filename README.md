@@ -258,10 +258,10 @@ docker build -t dailyboy-ci:cy2024 -f docker/Dockerfile.cy2024 docker/
 
 DAILYBOY_CI_IMAGE=dailyboy-ci:cy2026 ./ci/docker.sh ./ci/format.sh
 DAILYBOY_CI_IMAGE=dailyboy-ci:cy2026 ./ci/docker.sh ./ci/build.sh 2026 debug
-DAILYBOY_CI_IMAGE=dailyboy-ci:cy2026 ./ci/docker.sh ./ci/test.sh 2026 tests
 DAILYBOY_CI_IMAGE=dailyboy-ci:cy2025 ./ci/docker.sh ./ci/build.sh 2025 debug
-DAILYBOY_CI_IMAGE=dailyboy-ci:cy2025 ./ci/docker.sh ./ci/test.sh 2025 tests
 DAILYBOY_CI_IMAGE=dailyboy-ci:cy2024 ./ci/docker.sh ./ci/build.sh 2024 debug
+DAILYBOY_CI_IMAGE=dailyboy-ci:cy2026 ./ci/docker.sh ./ci/test.sh 2026 tests
+DAILYBOY_CI_IMAGE=dailyboy-ci:cy2025 ./ci/docker.sh ./ci/test.sh 2025 tests
 DAILYBOY_CI_IMAGE=dailyboy-ci:cy2024 ./ci/docker.sh ./ci/test.sh 2024 tests
 DAILYBOY_CI_IMAGE=dailyboy-ci:cy2026 ./ci/docker.sh ./ci/tidy.sh
 ```
