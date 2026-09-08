@@ -19,10 +19,26 @@ usage="usage: ci/docker.sh [docker-run-args...] [--] <command> [args...]"
 
 mkdir -p .ccache
 
+# Collect docker-run flags. Options that take a separate value (-e VAR=val)
+# must consume the next argv; otherwise Docker treats that value as the image.
 extra=()
 while [[ $# -gt 0 && "$1" == -* && "$1" != -- ]]; do
-  extra+=("$1")
+  flag=$1
+  extra+=("${flag}")
   shift
+  case "${flag}" in
+    -e | --env | -v | --volume | -w | --workdir | -u | --user | -p | --publish | \
+    --name | --network | --entrypoint)
+      if [[ "${flag}" != *=* ]]; then
+        [[ $# -gt 0 ]] || {
+          echo "error: ${flag} requires a value" >&2
+          exit 1
+        }
+        extra+=("$1")
+        shift
+      fi
+      ;;
+  esac
 done
 [[ "${1:-}" == -- ]] && shift
 [[ $# -gt 0 ]] || { echo "$usage" >&2; exit 1; }

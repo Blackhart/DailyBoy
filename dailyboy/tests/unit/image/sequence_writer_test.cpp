@@ -18,9 +18,9 @@
 
 namespace {
 
-dailyboy::Frame solid_frame() {
-  OIIO::ImageSpec spec(dailyboy::test::kPlateWidth,
-                       dailyboy::test::kPlateHeight, 3, OIIO::TypeDesc::FLOAT);
+dailyboy::Frame solid_frame(int width = dailyboy::test::kPlateWidth,
+                            int height = dailyboy::test::kPlateHeight) {
+  OIIO::ImageSpec spec(width, height, 3, OIIO::TypeDesc::FLOAT);
   OIIO::ImageBuf buf(spec);
   const float rgb[3] = {0.2f, 0.4f, 0.6f};
   EXPECT_TRUE(OIIO::ImageBufAlgo::fill(buf, OIIO::cspan<float>(rgb, 3)));
@@ -49,7 +49,8 @@ void expect_written_file(const std::filesystem::path& path,
 
 dailyboy::Status write_one(
     const std::filesystem::path& pattern,
-    dailyboy::JobOutputImageSequenceFormatOptions options) {
+    dailyboy::JobOutputImageSequenceFormatOptions options,
+    dailyboy::Frame frame = solid_frame()) {
   dailyboy::JobSequence sequence;
   sequence.set_path(pattern.string());
   dailyboy::StatusOr<dailyboy::SequenceWriter> writer =
@@ -57,7 +58,7 @@ dailyboy::Status write_one(
   if (!writer.ok()) {
     return writer.status();
   }
-  return writer.value().write(solid_frame(), 1001);
+  return writer.value().write(std::move(frame), 1001);
 }
 
 }  // namespace
@@ -211,6 +212,10 @@ TEST(SequenceWriter, Write_ExrHalfZip_CreatesReadableFile) {
 
 /*!
  * \brief Writes HEIC and reopens the file.
+ *
+ * Uses 64x64 pixels: OIIO HeifOutput pads scanlines to a multiple of 64 and
+ * used to memcpy the padded stride from the source (OIIO #5095), which ASan
+ * flags for smaller frames under our pinned OIIO 3.0.11.
  */
 TEST(SequenceWriter, Write_HeifHeic_CreatesReadableFile) {
   // Prepare
@@ -222,7 +227,7 @@ TEST(SequenceWriter, Write_HeifHeic_CreatesReadableFile) {
 
   // Test
   const dailyboy::Status status =
-      write_one(dir / "out.%04d.heic", std::move(options));
+      write_one(dir / "out.%04d.heic", std::move(options), solid_frame(64, 64));
 
   // Assert
   ASSERT_TRUE(status.ok()) << status.message();
@@ -231,6 +236,9 @@ TEST(SequenceWriter, Write_HeifHeic_CreatesReadableFile) {
 
 /*!
  * \brief Writes AVIF and reopens the file.
+ *
+ * Uses 64x64 pixels: same OIIO HeifOutput stride padding issue as HEIC
+ * (OIIO #5095) under our pinned OIIO 3.0.11.
  */
 TEST(SequenceWriter, Write_HeifAvif_CreatesReadableFile) {
   // Prepare
@@ -242,7 +250,7 @@ TEST(SequenceWriter, Write_HeifAvif_CreatesReadableFile) {
 
   // Test
   const dailyboy::Status status =
-      write_one(dir / "out.%04d.avif", std::move(options));
+      write_one(dir / "out.%04d.avif", std::move(options), solid_frame(64, 64));
 
   // Assert
   ASSERT_TRUE(status.ok()) << status.message();
