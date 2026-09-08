@@ -2,26 +2,49 @@
 # Build: docker build -t dailyboy-ci:ubuntu24-base -f docker/ubuntu/Dockerfile.ubuntu24.base docker/ubuntu
 #        docker build -t dailyboy-ci:ubuntu24-cy2024 -f docker/ubuntu/Dockerfile.ubuntu24.cy2024 docker/ubuntu
 
+# ---------------------------------------------------------------------------
+# Base image
+# ---------------------------------------------------------------------------
 FROM dailyboy-ci:ubuntu24-base
 
+# ---------------------------------------------------------------------------
+# Environment
+# ---------------------------------------------------------------------------
 ENV Python3_EXECUTABLE=/usr/bin/python3.11
 
+# ---------------------------------------------------------------------------
+# Apt: deadsnakes PPA
+# ---------------------------------------------------------------------------
 RUN apt-get update && apt-get install -y --no-install-recommends \
         software-properties-common \
     && add-apt-repository -y ppa:deadsnakes/ppa \
-    && apt-get update && apt-get install -y --no-install-recommends \
+    && rm -rf /var/lib/apt/lists/*
+
+# ---------------------------------------------------------------------------
+# Compiler (GCC 11)
+# ---------------------------------------------------------------------------
+RUN apt-get update && apt-get install -y --no-install-recommends \
         g++-11 \
         gcc-11 \
-        python3.11 \
-        python3.11-dev \
-        python3.11-venv \
     && update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 100 \
     && update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-11 100 \
     && update-alternatives --install /usr/bin/cc cc /usr/bin/gcc-11 100 \
     && update-alternatives --install /usr/bin/c++ c++ /usr/bin/g++-11 100 \
     && update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-11 100 \
+    && rm -rf /var/lib/apt/lists/*
+
+# ---------------------------------------------------------------------------
+# Python 3.11
+# ---------------------------------------------------------------------------
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        python3.11 \
+        python3.11-dev \
+        python3.11-venv \
     && ln -sf /usr/bin/python3.11 /usr/local/bin/python3 \
     && ln -sf /usr/bin/python3.11 /usr/local/bin/python \
     && rm -rf /var/lib/apt/lists/*
 
+# ---------------------------------------------------------------------------
+# Workspace
+# ---------------------------------------------------------------------------
 WORKDIR /src

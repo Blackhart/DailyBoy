@@ -1,37 +1,74 @@
 # Ubuntu 24.04 — packages shared by all VFX platform year images.
 # Toolchain (gcc / Python) lives in Dockerfile.ubuntu24.cy202*.
 
+# ---------------------------------------------------------------------------
+# Base image
+# ---------------------------------------------------------------------------
 FROM ubuntu:24.04
 
+# ---------------------------------------------------------------------------
+# Environment
+# ---------------------------------------------------------------------------
 ENV DEBIAN_FRONTEND=noninteractive \
     CMAKE_GENERATOR=Ninja \
     CCACHE_DIR=/ccache
 
+# ---------------------------------------------------------------------------
+# Apt bootstrap (HTTPS / PPAs)
+# ---------------------------------------------------------------------------
 RUN apt-get update && apt-get install -y --no-install-recommends \
         ca-certificates \
         curl \
         gnupg \
         software-properties-common \
+    && rm -rf /var/lib/apt/lists/*
+
+# ---------------------------------------------------------------------------
+# Build tools
+# ---------------------------------------------------------------------------
+RUN apt-get update && apt-get install -y --no-install-recommends \
         autoconf \
         automake \
         build-essential \
         ccache \
-        clang-format \
-        clang-tidy \
         cmake \
-        gcovr \
         git \
-        fonts-dejavu-core \
-        libfreetype6-dev \
-        libssl-dev \
         libtool \
+        make \
         nasm \
         ninja-build \
         pkg-config \
-        uuid-dev \
         wget \
         xz-utils \
+    && rm -rf /var/lib/apt/lists/*
+
+# ---------------------------------------------------------------------------
+# CI / quality tools
+# ---------------------------------------------------------------------------
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        clang-format \
+        clang-tidy \
+        gcovr \
+    && rm -rf /var/lib/apt/lists/*
+
+# ---------------------------------------------------------------------------
+# Libraries (OpenSSL, zlib, uuid, FreeType)
+# ---------------------------------------------------------------------------
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        libfreetype6-dev \
+        libssl-dev \
+        uuid-dev \
         zlib1g-dev \
     && rm -rf /var/lib/apt/lists/*
 
+# ---------------------------------------------------------------------------
+# Fonts (DejaVu — burn-in / slate tests)
+# ---------------------------------------------------------------------------
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        fonts-dejavu-core \
+    && rm -rf /var/lib/apt/lists/*
+
+# ---------------------------------------------------------------------------
+# Workspace
+# ---------------------------------------------------------------------------
 WORKDIR /src
