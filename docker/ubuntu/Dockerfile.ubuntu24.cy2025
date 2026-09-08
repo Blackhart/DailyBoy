@@ -1,8 +1,8 @@
-# VFX Reference Platform CY2025 toolchain on top of dailyboy-ci:base.
-# Build: docker build -t dailyboy-ci:base -f docker/Dockerfile.base docker/
-#        docker build -t dailyboy-ci:cy2025 -f docker/Dockerfile.cy2025 docker/
+# VFX Reference Platform CY2025 toolchain on top of dailyboy-ci:ubuntu24-base.
+# Build: docker build -t dailyboy-ci:ubuntu24-base -f docker/ubuntu/Dockerfile.ubuntu24.base docker/ubuntu
+#        docker build -t dailyboy-ci:ubuntu24-cy2025 -f docker/ubuntu/Dockerfile.ubuntu24.cy2025 docker/ubuntu
 
-FROM dailyboy-ci:base
+FROM dailyboy-ci:ubuntu24-base
 
 ENV Python3_EXECUTABLE=/usr/bin/python3.11
 

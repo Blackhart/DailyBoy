@@ -5,14 +5,14 @@
 # Docker would create the bind mount as root and break `--user`.
 #
 # Usage:
-#   DAILYBOY_CI_IMAGE=dailyboy-ci:cy2026 ./ci/docker.sh ./ci/build.sh 2026 debug
+#   DAILYBOY_CI_IMAGE=dailyboy-ci:ubuntu24-cy2026 ./ci/docker.sh ./ci/build.sh 2026 debug
 #   ./ci/docker.sh -e ASAN_OPTIONS=detect_leaks=0 -- ./ci/test.sh 2026 sanitize
 set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$root"
 
-image="${DAILYBOY_CI_IMAGE:-dailyboy-ci:cy2026}"
+image="${DAILYBOY_CI_IMAGE:-dailyboy-ci:ubuntu24-cy2026}"
 usage="usage: ci/docker.sh [docker-run-args...] [--] <command> [args...]"
 
 [[ $# -gt 0 ]] || { echo "$usage" >&2; exit 1; }
@@ -51,7 +51,7 @@ exec docker run \
   -v "${root}/.ccache:/ccache" \
   -e CCACHE_DIR=/ccache \
   -e HOME=/tmp \
-  -e DAILYBOY_BUILD_ROOT="${DAILYBOY_BUILD_ROOT:-docker/}" \
+  -e DAILYBOY_BUILD_ROOT="${DAILYBOY_BUILD_ROOT:-docker/ubuntu24/}" \
   -e CMAKE_C_COMPILER_LAUNCHER="${CMAKE_C_COMPILER_LAUNCHER:-ccache}" \
   -e CMAKE_CXX_COMPILER_LAUNCHER="${CMAKE_CXX_COMPILER_LAUNCHER:-ccache}" \
   "${extra[@]}" \

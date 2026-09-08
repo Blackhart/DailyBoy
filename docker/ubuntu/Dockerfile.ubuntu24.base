@@ -1,5 +1,5 @@
 # Ubuntu 24.04 — packages shared by all VFX platform year images.
-# Toolchain (gcc / Python) lives in Dockerfile.cy2025 / Dockerfile.cy2026.
+# Toolchain (gcc / Python) lives in Dockerfile.ubuntu24.cy202*.
 
 FROM ubuntu:24.04
 

@@ -237,36 +237,52 @@ ctest --preset cy2024-tests
 
 ## Continuous integration
 
-The CI system is built around a **base Ubuntu 24.04 image** ([`docker/Dockerfile.base`](docker/Dockerfile.base)), and there is a separate Docker image for each VFX platform year ([`Dockerfile.cy2026`](docker/Dockerfile.cy2026), [`Dockerfile.cy2025`](docker/Dockerfile.cy2025), and [`Dockerfile.cy2024`](docker/Dockerfile.cy2024)). The workflow definitions are in [`.github/workflows/`](.github/workflows/), and supporting shell scripts are found in [`ci/`](ci/).
+The CI system is built around a **base Ubuntu 24.04 image** ([`docker/Dockerfile.base`](docker/Dockerfile.base)) and a **base Rocky Linux 9 image** ([`docker/rocky/Dockerfile.rocky9.base`](docker/rocky/Dockerfile.rocky9.base)), and there is a separate Docker image for each VFX platform year ([`Dockerfile.cy2026`](docker/Dockerfile.cy2026), [`Dockerfile.cy2025`](docker/Dockerfile.cy2025), and [`Dockerfile.cy2024`](docker/Dockerfile.cy2024) for Ubuntu; [`Dockerfile.rocky9.cy2026`](docker/rocky/Dockerfile.rocky9.cy2026), [`Dockerfile.rocky9.cy2025`](docker/rocky/Dockerfile.rocky9.cy2025), and [`Dockerfile.rocky9.cy2024`](docker/rocky/Dockerfile.rocky9.cy2024) for Rocky). The workflow definitions are in [`.github/workflows/`](.github/workflows/), and supporting shell scripts are found in [`ci/`](ci/).
 
 Here is how CI is organized:
 
 | Workflow | What triggers it? | What does it run? |
 | --- | --- | --- |
-| [`ci.yml`](.github/workflows/ci.yml) | On PRs or pushes to `develop` or `main` | **Formatting check** → in parallel: **CY2024**, **CY2025**, **CY2026** debug + tests (coverage on CY2026 only) |
-| [`nightly.yml`](.github/workflows/nightly.yml) | On scheduled cron or manual trigger | **CY2026 only:** debug (+ Codecov) ∥ sanitize ∥ **clang-tidy** |
+| [`ci.yml`](.github/workflows/ci.yml) | On PRs or pushes to `develop` or `main` | **Ubuntu:** format + CY2024/25/26 debug + tests (coverage on CY2026). **Rocky 9:** CY2024/25/26 debug + tests (no sanitize/tidy/coverage) |
+| [`nightly.yml`](.github/workflows/nightly.yml) | On scheduled cron or manual trigger | **Ubuntu CY2026 only:** debug (+ Codecov) ∥ sanitize ∥ **clang-tidy** |
 
-**Code coverage** is collected only for **CY2026** builds. In CY2024/CY2025 debug builds, coverage is disabled (`DAILYBOY_ENABLE_COVERAGE=OFF`).
+**Code coverage** is collected only for **Ubuntu CY2026** builds. In CY2024/CY2025 debug builds, coverage is disabled (`DAILYBOY_ENABLE_COVERAGE=OFF`).
 
 You can manually build and run CI jobs in Docker with the following commands:
 
 ```bash
-docker build -t dailyboy-ci:base -f docker/Dockerfile.base docker/
-docker build -t dailyboy-ci:cy2026 -f docker/Dockerfile.cy2026 docker/
-docker build -t dailyboy-ci:cy2025 -f docker/Dockerfile.cy2025 docker/
-docker build -t dailyboy-ci:cy2024 -f docker/Dockerfile.cy2024 docker/
+# Ubuntu 24.04
+docker build -t dailyboy-ci:ubuntu24-base -f docker/ubuntu/Dockerfile.ubuntu24.base docker/ubuntu
+docker build -t dailyboy-ci:ubuntu24-cy2026 -f docker/ubuntu/Dockerfile.ubuntu24.cy2026 docker/ubuntu
+docker build -t dailyboy-ci:ubuntu24-cy2025 -f docker/ubuntu/Dockerfile.ubuntu24.cy2025 docker/ubuntu
+docker build -t dailyboy-ci:ubuntu24-cy2024 -f docker/ubuntu/Dockerfile.ubuntu24.cy2024 docker/ubuntu
 
-DAILYBOY_CI_IMAGE=dailyboy-ci:cy2026 ./ci/docker.sh ./ci/format.sh
-DAILYBOY_CI_IMAGE=dailyboy-ci:cy2026 ./ci/docker.sh ./ci/build.sh 2026 debug
-DAILYBOY_CI_IMAGE=dailyboy-ci:cy2025 ./ci/docker.sh ./ci/build.sh 2025 debug
-DAILYBOY_CI_IMAGE=dailyboy-ci:cy2024 ./ci/docker.sh ./ci/build.sh 2024 debug
-DAILYBOY_CI_IMAGE=dailyboy-ci:cy2026 ./ci/docker.sh ./ci/test.sh 2026 tests
-DAILYBOY_CI_IMAGE=dailyboy-ci:cy2025 ./ci/docker.sh ./ci/test.sh 2025 tests
-DAILYBOY_CI_IMAGE=dailyboy-ci:cy2024 ./ci/docker.sh ./ci/test.sh 2024 tests
-DAILYBOY_CI_IMAGE=dailyboy-ci:cy2026 ./ci/docker.sh ./ci/tidy.sh
+DAILYBOY_CI_IMAGE=dailyboy-ci:ubuntu24-cy2026 ./ci/docker.sh ./ci/format.sh
+DAILYBOY_CI_IMAGE=dailyboy-ci:ubuntu24-cy2026 ./ci/docker.sh ./ci/build.sh 2026 debug
+DAILYBOY_CI_IMAGE=dailyboy-ci:ubuntu24-cy2025 ./ci/docker.sh ./ci/build.sh 2025 debug
+DAILYBOY_CI_IMAGE=dailyboy-ci:ubuntu24-cy2024 ./ci/docker.sh ./ci/build.sh 2024 debug
+DAILYBOY_CI_IMAGE=dailyboy-ci:ubuntu24-cy2026 ./ci/docker.sh ./ci/test.sh 2026 tests
+DAILYBOY_CI_IMAGE=dailyboy-ci:ubuntu24-cy2025 ./ci/docker.sh ./ci/test.sh 2025 tests
+DAILYBOY_CI_IMAGE=dailyboy-ci:ubuntu24-cy2024 ./ci/docker.sh ./ci/test.sh 2024 tests
+DAILYBOY_CI_IMAGE=dailyboy-ci:ubuntu24-cy2026 ./ci/docker.sh ./ci/tidy.sh
+
+# Rocky Linux 9
+docker build -t dailyboy-ci:rocky9-base -f docker/rocky/Dockerfile.rocky9.base docker/rocky
+docker build -t dailyboy-ci:rocky9-cy2026 -f docker/rocky/Dockerfile.rocky9.cy2026 docker/rocky
+docker build -t dailyboy-ci:rocky9-cy2025 -f docker/rocky/Dockerfile.rocky9.cy2025 docker/rocky
+docker build -t dailyboy-ci:rocky9-cy2024 -f docker/rocky/Dockerfile.rocky9.cy2024 docker/rocky
+
+# Rocky uses DAILYBOY_BUILD_ROOT=docker/rocky9/ (Ubuntu default: docker/ubuntu24/)
+DAILYBOY_BUILD_ROOT=docker/rocky9/ DAILYBOY_CI_IMAGE=dailyboy-ci:rocky9-cy2026 ./ci/docker.sh ./ci/build.sh 2026 debug
+DAILYBOY_BUILD_ROOT=docker/rocky9/ DAILYBOY_CI_IMAGE=dailyboy-ci:rocky9-cy2025 ./ci/docker.sh ./ci/build.sh 2025 debug
+DAILYBOY_BUILD_ROOT=docker/rocky9/ DAILYBOY_CI_IMAGE=dailyboy-ci:rocky9-cy2024 ./ci/docker.sh ./ci/build.sh 2024 debug
+DAILYBOY_BUILD_ROOT=docker/rocky9/ DAILYBOY_CI_IMAGE=dailyboy-ci:rocky9-cy2026 ./ci/docker.sh ./ci/test.sh 2026 tests
+DAILYBOY_BUILD_ROOT=docker/rocky9/ DAILYBOY_CI_IMAGE=dailyboy-ci:rocky9-cy2025 ./ci/docker.sh ./ci/test.sh 2025 tests
+DAILYBOY_BUILD_ROOT=docker/rocky9/ DAILYBOY_CI_IMAGE=dailyboy-ci:rocky9-cy2024 ./ci/docker.sh ./ci/test.sh 2024 tests
 ```
 
-**Build caching:** GitHub Actions caches both **ccache** (for fast rebuilds) and dependency directories in `build/docker/CY*/…/_deps`. 
+**Build caching:** GitHub Actions caches **ccache** and deps under `build/docker/ubuntu24/CY*/…/_deps` or `build/docker/rocky9/CY*/…/_deps`.
+ 
 
 If you want to run tests with `ctest` directly (not using the helper scripts), remember to set `LD_LIBRARY_PATH` as shown above, so the build can find its dependencies.
 

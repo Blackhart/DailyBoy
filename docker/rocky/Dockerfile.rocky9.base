@@ -1,0 +1,47 @@
+# Rocky Linux 9 — packages shared by all VFX platform year images.
+# Toolchain (gcc-toolset / Python) lives in Dockerfile.rocky9.cy202*.
+
+FROM rockylinux:9
+
+ENV CMAKE_GENERATOR=Ninja \
+    CCACHE_DIR=/ccache
+
+RUN dnf -y install dnf-plugins-core epel-release \
+    && dnf -y config-manager --set-enabled crb \
+    && dnf -y update \
+    && dnf -y install \
+        autoconf \
+        automake \
+        ca-certificates \
+        ccache \
+        dejavu-sans-fonts \
+        dejavu-sans-mono-fonts \
+        file \
+        freetype-devel \
+        git \
+        libtool \
+        libuuid-devel \
+        make \
+        nasm \
+        ninja-build \
+        openssl-devel \
+        pkgconf-pkg-config \
+        wget \
+        which \
+        xz \
+        zlib-devel \
+    && mkdir -p /usr/share/fonts/truetype/dejavu \
+    && ln -sf /usr/share/fonts/dejavu-sans-fonts/DejaVuSans.ttf \
+        /usr/share/fonts/truetype/dejavu/DejaVuSans.ttf \
+    && ln -sf /usr/share/fonts/dejavu-sans-fonts/DejaVuSans-Bold.ttf \
+        /usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf \
+    && ln -sf /usr/share/fonts/dejavu-sans-mono-fonts/DejaVuSansMono.ttf \
+        /usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf \
+    && CMAKE_VERSION=3.28.6 \
+    && curl -fsSL "https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-linux-x86_64.tar.gz" \
+        | tar -xz -C /usr/local --strip-components=1 \
+    && dnf clean all \
+    && cmake --version | grep -E 'cmake version 3\.(2[8-9]|[3-9][0-9])' \
+    && test -f /usr/share/fonts/truetype/dejavu/DejaVuSans.ttf
+
+WORKDIR /src

@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # Configure and build a CMake preset for a VFX platform year.
 #
-# CI default tree: build/docker/CY<year>/<config>
-# Host (unset DAILYBOY_BUILD_ROOT): build/CY<year>/<config>
+# CI default tree: build/docker/ubuntu24/CY<year>/<config>
+# Rocky CI: DAILYBOY_BUILD_ROOT=docker/rocky9/
+# Host (empty DAILYBOY_BUILD_ROOT): build/CY<year>/<config>
 #
 # Usage: ci/build.sh <2024|2025|2026> <debug|release|sanitize>
 set -euo pipefail
@@ -21,7 +22,7 @@ case "${config}" in
   *) echo "error: config must be debug|release|sanitize" >&2; exit 1 ;;
 esac
 
-export DAILYBOY_BUILD_ROOT="${DAILYBOY_BUILD_ROOT:-docker/}"
+export DAILYBOY_BUILD_ROOT="${DAILYBOY_BUILD_ROOT:-docker/ubuntu24/}"
 export DAILYBOY_VFX_PLATFORM="${year}"
 preset="cy${year}-${config}"
 binary_dir="build/${DAILYBOY_BUILD_ROOT}CY${year}/${config}"

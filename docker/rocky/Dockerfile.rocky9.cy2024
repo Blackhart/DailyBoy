@@ -1,0 +1,26 @@
+# VFX Reference Platform CY2024 toolchain on top of dailyboy-ci:rocky9-base.
+# GCC Toolset 12 (GCC ≥ 11.2); Toolset 11 is no longer in Rocky 9 AppStream.
+# Build: docker build -t dailyboy-ci:rocky9-base -f docker/rocky/Dockerfile.rocky9.base docker/rocky
+#        docker build -t dailyboy-ci:rocky9-cy2024 -f docker/rocky/Dockerfile.rocky9.cy2024 docker/rocky
+
+FROM dailyboy-ci:rocky9-base
+
+ENV Python3_EXECUTABLE=/usr/bin/python3.11 \
+    PATH=/opt/rh/gcc-toolset-12/root/usr/bin:${PATH} \
+    LD_LIBRARY_PATH=/opt/rh/gcc-toolset-12/root/usr/lib64 \
+    CC=/opt/rh/gcc-toolset-12/root/usr/bin/gcc \
+    CXX=/opt/rh/gcc-toolset-12/root/usr/bin/g++ \
+    GCCOV=/opt/rh/gcc-toolset-12/root/usr/bin/gcov
+
+RUN dnf -y install \
+        gcc-toolset-12 \
+        gcc-toolset-12-gcc-c++ \
+        python3.11 \
+        python3.11-devel \
+    && ln -sf /usr/bin/python3.11 /usr/local/bin/python3 \
+    && ln -sf /usr/bin/python3.11 /usr/local/bin/python \
+    && dnf clean all \
+    && gcc --version | head -n1 | grep -E ' 1[2-9]\.' \
+    && python3.11 --version | grep -E 'Python 3\.11'
+
+WORKDIR /src

@@ -9,7 +9,7 @@ set -euo pipefail
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$root"
 
-export DAILYBOY_BUILD_ROOT="${DAILYBOY_BUILD_ROOT:-docker/}"
+export DAILYBOY_BUILD_ROOT="${DAILYBOY_BUILD_ROOT:-docker/ubuntu24/}"
 export DAILYBOY_VFX_PLATFORM=2026
 
 binary_dir="build/${DAILYBOY_BUILD_ROOT}CY2026/debug"
