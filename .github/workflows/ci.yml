@@ -10,232 +10,440 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  CI_IMAGE_BASE: dailyboy-ci:base
-  CI_IMAGE_CY2026: dailyboy-ci:cy2026
-  CI_IMAGE_CY2025: dailyboy-ci:cy2025
-  CI_IMAGE_CY2024: dailyboy-ci:cy2024
+  CI_IMAGE_UBUNTU_BASE: dailyboy-ci:ubuntu24-base
+  CI_IMAGE_UBUNTU_CY2026: dailyboy-ci:ubuntu24-cy2026
+  CI_IMAGE_UBUNTU_CY2025: dailyboy-ci:ubuntu24-cy2025
+  CI_IMAGE_UBUNTU_CY2024: dailyboy-ci:ubuntu24-cy2024
+  CI_IMAGE_ROCKY_BASE: dailyboy-ci:rocky9-base
+  CI_IMAGE_ROCKY_CY2026: dailyboy-ci:rocky9-cy2026
+  CI_IMAGE_ROCKY_CY2025: dailyboy-ci:rocky9-cy2025
+  CI_IMAGE_ROCKY_CY2024: dailyboy-ci:rocky9-cy2024
 
 jobs:
-  image-base:
-    name: image-base
+  image-ubuntu24-base:
+    name: image-ubuntu24-base
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
-      - name: Build base image
+      - name: Build Ubuntu base image
         uses: docker/build-push-action@v6
         with:
-          context: docker
-          file: docker/Dockerfile.base
+          context: docker/ubuntu
+          file: docker/ubuntu/Dockerfile.ubuntu24.base
           load: true
-          tags: ${{ env.CI_IMAGE_BASE }}
-          cache-from: type=gha,scope=dailyboy-ci-base
-          cache-to: type=gha,mode=max,scope=dailyboy-ci-base
-      - name: Export base image
-        run: docker save ${{ env.CI_IMAGE_BASE }} -o /tmp/dailyboy-ci-base.tar
+          tags: ${{ env.CI_IMAGE_UBUNTU_BASE }}
+          cache-from: type=gha,scope=dailyboy-ci-ubuntu24-base
+          cache-to: type=gha,mode=max,scope=dailyboy-ci-ubuntu24-base
+      - name: Export Ubuntu base image
+        run: docker save ${{ env.CI_IMAGE_UBUNTU_BASE }} -o /tmp/dailyboy-ci-ubuntu24-base.tar
       - uses: actions/upload-artifact@v4
         with:
-          name: dailyboy-ci-base
-          path: /tmp/dailyboy-ci-base.tar
+          name: dailyboy-ci-ubuntu24-base
+          path: /tmp/dailyboy-ci-ubuntu24-base.tar
           retention-days: 1
 
-  image-cy2026:
-    name: image-cy2026
-    needs: image-base
+  image-ubuntu24-cy2026:
+    name: image-ubuntu24-cy2026
+    needs: image-ubuntu24-base
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
-          name: dailyboy-ci-base
+          name: dailyboy-ci-ubuntu24-base
           path: /tmp
-      - name: Load base image
-        run: docker load -i /tmp/dailyboy-ci-base.tar
-      - name: Build CY2026 image
-        run: docker build -t ${{ env.CI_IMAGE_CY2026 }} -f docker/Dockerfile.cy2026 docker/
-      - name: Export CY2026 image
-        run: docker save ${{ env.CI_IMAGE_CY2026 }} -o /tmp/dailyboy-ci-cy2026.tar
+      - name: Load Ubuntu base image
+        run: docker load -i /tmp/dailyboy-ci-ubuntu24-base.tar
+      - name: Build Ubuntu CY2026 image
+        run: docker build -t ${{ env.CI_IMAGE_UBUNTU_CY2026 }} -f docker/ubuntu/Dockerfile.ubuntu24.cy2026 docker/ubuntu
+      - name: Export Ubuntu CY2026 image
+        run: docker save ${{ env.CI_IMAGE_UBUNTU_CY2026 }} -o /tmp/dailyboy-ci-ubuntu24-cy2026.tar
       - uses: actions/upload-artifact@v4
         with:
-          name: dailyboy-ci-cy2026
-          path: /tmp/dailyboy-ci-cy2026.tar
+          name: dailyboy-ci-ubuntu24-cy2026
+          path: /tmp/dailyboy-ci-ubuntu24-cy2026.tar
           retention-days: 1
 
-  image-cy2025:
-    name: image-cy2025
-    needs: image-base
+  image-ubuntu24-cy2025:
+    name: image-ubuntu24-cy2025
+    needs: image-ubuntu24-base
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
-          name: dailyboy-ci-base
+          name: dailyboy-ci-ubuntu24-base
           path: /tmp
-      - name: Load base image
-        run: docker load -i /tmp/dailyboy-ci-base.tar
-      - name: Build CY2025 image
-        run: docker build -t ${{ env.CI_IMAGE_CY2025 }} -f docker/Dockerfile.cy2025 docker/
-      - name: Export CY2025 image
-        run: docker save ${{ env.CI_IMAGE_CY2025 }} -o /tmp/dailyboy-ci-cy2025.tar
+      - name: Load Ubuntu base image
+        run: docker load -i /tmp/dailyboy-ci-ubuntu24-base.tar
+      - name: Build Ubuntu CY2025 image
+        run: docker build -t ${{ env.CI_IMAGE_UBUNTU_CY2025 }} -f docker/ubuntu/Dockerfile.ubuntu24.cy2025 docker/ubuntu
+      - name: Export Ubuntu CY2025 image
+        run: docker save ${{ env.CI_IMAGE_UBUNTU_CY2025 }} -o /tmp/dailyboy-ci-ubuntu24-cy2025.tar
       - uses: actions/upload-artifact@v4
         with:
-          name: dailyboy-ci-cy2025
-          path: /tmp/dailyboy-ci-cy2025.tar
+          name: dailyboy-ci-ubuntu24-cy2025
+          path: /tmp/dailyboy-ci-ubuntu24-cy2025.tar
           retention-days: 1
 
-  image-cy2024:
-    name: image-cy2024
-    needs: image-base
+  image-ubuntu24-cy2024:
+    name: image-ubuntu24-cy2024
+    needs: image-ubuntu24-base
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
-          name: dailyboy-ci-base
+          name: dailyboy-ci-ubuntu24-base
           path: /tmp
-      - name: Load base image
-        run: docker load -i /tmp/dailyboy-ci-base.tar
-      - name: Build CY2024 image
-        run: docker build -t ${{ env.CI_IMAGE_CY2024 }} -f docker/Dockerfile.cy2024 docker/
-      - name: Export CY2024 image
-        run: docker save ${{ env.CI_IMAGE_CY2024 }} -o /tmp/dailyboy-ci-cy2024.tar
+      - name: Load Ubuntu base image
+        run: docker load -i /tmp/dailyboy-ci-ubuntu24-base.tar
+      - name: Build Ubuntu CY2024 image
+        run: docker build -t ${{ env.CI_IMAGE_UBUNTU_CY2024 }} -f docker/ubuntu/Dockerfile.ubuntu24.cy2024 docker/ubuntu
+      - name: Export Ubuntu CY2024 image
+        run: docker save ${{ env.CI_IMAGE_UBUNTU_CY2024 }} -o /tmp/dailyboy-ci-ubuntu24-cy2024.tar
       - uses: actions/upload-artifact@v4
         with:
-          name: dailyboy-ci-cy2024
-          path: /tmp/dailyboy-ci-cy2024.tar
+          name: dailyboy-ci-ubuntu24-cy2024
+          path: /tmp/dailyboy-ci-ubuntu24-cy2024.tar
           retention-days: 1
 
   format:
     name: format
-    needs: image-cy2026
+    needs: image-ubuntu24-cy2026
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
-          name: dailyboy-ci-cy2026
+          name: dailyboy-ci-ubuntu24-cy2026
           path: /tmp
-      - name: Load CY2026 image
-        run: docker load -i /tmp/dailyboy-ci-cy2026.tar
+      - name: Load Ubuntu CY2026 image
+        run: docker load -i /tmp/dailyboy-ci-ubuntu24-cy2026.tar
       - name: Format check
-        run: DAILYBOY_CI_IMAGE=${{ env.CI_IMAGE_CY2026 }} ./ci/docker.sh ./ci/format.sh
+        run: DAILYBOY_CI_IMAGE=${{ env.CI_IMAGE_UBUNTU_CY2026 }} ./ci/docker.sh ./ci/format.sh
 
-  tests-cy2026:
-    name: run tests (CY2026)
-    needs: image-cy2026
+  tests-ubuntu24-cy2026:
+    name: run tests (Ubuntu CY2026)
+    needs: image-ubuntu24-cy2026
     runs-on: ubuntu-24.04
     timeout-minutes: 360
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
-          name: dailyboy-ci-cy2026
+          name: dailyboy-ci-ubuntu24-cy2026
           path: /tmp
-      - name: Load CY2026 image
-        run: docker load -i /tmp/dailyboy-ci-cy2026.tar
+      - name: Load Ubuntu CY2026 image
+        run: docker load -i /tmp/dailyboy-ci-ubuntu24-cy2026.tar
       - name: Cache ccache
         uses: actions/cache@v4
         with:
           path: .ccache
-          key: ccache-cy2026-debug-${{ hashFiles('cmake/Versions.cmake', 'cmake/versions/**', 'cmake/deps/**', 'CMakePresets.json') }}-${{ github.sha }}
+          key: ccache-ubuntu24-cy2026-debug-${{ hashFiles('cmake/Versions.cmake', 'cmake/versions/**', 'cmake/deps/**', 'CMakePresets.json') }}-${{ github.sha }}
           restore-keys: |
-            ccache-cy2026-debug-${{ hashFiles('cmake/Versions.cmake', 'cmake/versions/**', 'cmake/deps/**', 'CMakePresets.json') }}-
+            ccache-ubuntu24-cy2026-debug-${{ hashFiles('cmake/Versions.cmake', 'cmake/versions/**', 'cmake/deps/**', 'CMakePresets.json') }}-
+            ccache-ubuntu24-cy2026-debug-
             ccache-cy2026-debug-
       - name: Cache CMake deps
         uses: actions/cache@v4
         with:
-          path: build/docker/CY2026/debug/_deps
-          key: deps-cy2026-debug-${{ hashFiles('cmake/Versions.cmake', 'cmake/versions/**', 'cmake/deps/**') }}
+          path: build/docker/ubuntu24/CY2026/debug/_deps
+          key: deps-ubuntu24-cy2026-debug-${{ hashFiles('cmake/Versions.cmake', 'cmake/versions/**', 'cmake/deps/**') }}
           restore-keys: |
+            deps-ubuntu24-cy2026-debug-
             deps-cy2026-debug-
       - name: Build debug CY2026
-        run: DAILYBOY_CI_IMAGE=${{ env.CI_IMAGE_CY2026 }} ./ci/docker.sh ./ci/build.sh 2026 debug
+        run: DAILYBOY_CI_IMAGE=${{ env.CI_IMAGE_UBUNTU_CY2026 }} ./ci/docker.sh ./ci/build.sh 2026 debug
       - name: Run tests CY2026
-        run: DAILYBOY_CI_IMAGE=${{ env.CI_IMAGE_CY2026 }} ./ci/docker.sh ./ci/test.sh 2026 tests
+        run: DAILYBOY_CI_IMAGE=${{ env.CI_IMAGE_UBUNTU_CY2026 }} ./ci/docker.sh ./ci/test.sh 2026 tests
       - name: Coverage reports
-        run: DAILYBOY_CI_IMAGE=${{ env.CI_IMAGE_CY2026 }} ./ci/docker.sh ./ci/coverage_upload.sh 2026
+        run: DAILYBOY_CI_IMAGE=${{ env.CI_IMAGE_UBUNTU_CY2026 }} ./ci/docker.sh ./ci/coverage_upload.sh 2026
       - name: Upload coverage HTML
         uses: actions/upload-artifact@v4
         with:
           name: coverage-html-cy2026
-          path: build/docker/CY2026/debug/coverage/
+          path: build/docker/ubuntu24/CY2026/debug/coverage/
           if-no-files-found: warn
       - name: Upload to Codecov
         uses: codecov/codecov-action@v5
         with:
-          files: build/docker/CY2026/debug/coverage/coverage.info,build/docker/CY2026/debug/coverage/coverage.xml
+          files: build/docker/ubuntu24/CY2026/debug/coverage/coverage.info,build/docker/ubuntu24/CY2026/debug/coverage/coverage.xml
           flags: unittests-cy2026
           name: debug-cy2026
           fail_ci_if_error: false
           token: ${{ secrets.CODECOV_TOKEN }}
 
-  tests-cy2025:
-    name: run tests (CY2025)
-    needs: image-cy2025
+  tests-ubuntu24-cy2025:
+    name: run tests (Ubuntu CY2025)
+    needs: image-ubuntu24-cy2025
     runs-on: ubuntu-24.04
     timeout-minutes: 360
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
-          name: dailyboy-ci-cy2025
+          name: dailyboy-ci-ubuntu24-cy2025
           path: /tmp
-      - name: Load CY2025 image
-        run: docker load -i /tmp/dailyboy-ci-cy2025.tar
+      - name: Load Ubuntu CY2025 image
+        run: docker load -i /tmp/dailyboy-ci-ubuntu24-cy2025.tar
       - name: Cache ccache
         uses: actions/cache@v4
         with:
           path: .ccache
-          key: ccache-cy2025-debug-${{ hashFiles('cmake/Versions.cmake', 'cmake/versions/**', 'cmake/deps/**', 'CMakePresets.json') }}-${{ github.sha }}
+          key: ccache-ubuntu24-cy2025-debug-${{ hashFiles('cmake/Versions.cmake', 'cmake/versions/**', 'cmake/deps/**', 'CMakePresets.json') }}-${{ github.sha }}
           restore-keys: |
-            ccache-cy2025-debug-${{ hashFiles('cmake/Versions.cmake', 'cmake/versions/**', 'cmake/deps/**', 'CMakePresets.json') }}-
+            ccache-ubuntu24-cy2025-debug-${{ hashFiles('cmake/Versions.cmake', 'cmake/versions/**', 'cmake/deps/**', 'CMakePresets.json') }}-
+            ccache-ubuntu24-cy2025-debug-
             ccache-cy2025-debug-
       - name: Cache CMake deps
         uses: actions/cache@v4
         with:
-          path: build/docker/CY2025/debug/_deps
-          key: deps-cy2025-debug-${{ hashFiles('cmake/Versions.cmake', 'cmake/versions/**', 'cmake/deps/**') }}
+          path: build/docker/ubuntu24/CY2025/debug/_deps
+          key: deps-ubuntu24-cy2025-debug-${{ hashFiles('cmake/Versions.cmake', 'cmake/versions/**', 'cmake/deps/**') }}
           restore-keys: |
+            deps-ubuntu24-cy2025-debug-
             deps-cy2025-debug-
       - name: Build debug CY2025
-        run: DAILYBOY_CI_IMAGE=${{ env.CI_IMAGE_CY2025 }} ./ci/docker.sh ./ci/build.sh 2025 debug
+        run: DAILYBOY_CI_IMAGE=${{ env.CI_IMAGE_UBUNTU_CY2025 }} ./ci/docker.sh ./ci/build.sh 2025 debug
       - name: Run tests CY2025
-        run: DAILYBOY_CI_IMAGE=${{ env.CI_IMAGE_CY2025 }} ./ci/docker.sh ./ci/test.sh 2025 tests
+        run: DAILYBOY_CI_IMAGE=${{ env.CI_IMAGE_UBUNTU_CY2025 }} ./ci/docker.sh ./ci/test.sh 2025 tests
 
-  tests-cy2024:
-    name: run tests (CY2024)
-    needs: image-cy2024
+  tests-ubuntu24-cy2024:
+    name: run tests (Ubuntu CY2024)
+    needs: image-ubuntu24-cy2024
     runs-on: ubuntu-24.04
     timeout-minutes: 360
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
-          name: dailyboy-ci-cy2024
+          name: dailyboy-ci-ubuntu24-cy2024
           path: /tmp
-      - name: Load CY2024 image
-        run: docker load -i /tmp/dailyboy-ci-cy2024.tar
+      - name: Load Ubuntu CY2024 image
+        run: docker load -i /tmp/dailyboy-ci-ubuntu24-cy2024.tar
       - name: Cache ccache
         uses: actions/cache@v4
         with:
           path: .ccache
-          key: ccache-cy2024-debug-${{ hashFiles('cmake/Versions.cmake', 'cmake/versions/**', 'cmake/deps/**', 'CMakePresets.json') }}-${{ github.sha }}
+          key: ccache-ubuntu24-cy2024-debug-${{ hashFiles('cmake/Versions.cmake', 'cmake/versions/**', 'cmake/deps/**', 'CMakePresets.json') }}-${{ github.sha }}
           restore-keys: |
-            ccache-cy2024-debug-${{ hashFiles('cmake/Versions.cmake', 'cmake/versions/**', 'cmake/deps/**', 'CMakePresets.json') }}-
+            ccache-ubuntu24-cy2024-debug-${{ hashFiles('cmake/Versions.cmake', 'cmake/versions/**', 'cmake/deps/**', 'CMakePresets.json') }}-
+            ccache-ubuntu24-cy2024-debug-
             ccache-cy2024-debug-
       - name: Cache CMake deps
         uses: actions/cache@v4
         with:
-          path: build/docker/CY2024/debug/_deps
-          key: deps-cy2024-debug-${{ hashFiles('cmake/Versions.cmake', 'cmake/versions/**', 'cmake/deps/**') }}
+          path: build/docker/ubuntu24/CY2024/debug/_deps
+          key: deps-ubuntu24-cy2024-debug-${{ hashFiles('cmake/Versions.cmake', 'cmake/versions/**', 'cmake/deps/**') }}
           restore-keys: |
+            deps-ubuntu24-cy2024-debug-
             deps-cy2024-debug-
       - name: Build debug CY2024
-        run: DAILYBOY_CI_IMAGE=${{ env.CI_IMAGE_CY2024 }} ./ci/docker.sh ./ci/build.sh 2024 debug
+        run: DAILYBOY_CI_IMAGE=${{ env.CI_IMAGE_UBUNTU_CY2024 }} ./ci/docker.sh ./ci/build.sh 2024 debug
       - name: Run tests CY2024
-        run: DAILYBOY_CI_IMAGE=${{ env.CI_IMAGE_CY2024 }} ./ci/docker.sh ./ci/test.sh 2024 tests
+        run: DAILYBOY_CI_IMAGE=${{ env.CI_IMAGE_UBUNTU_CY2024 }} ./ci/docker.sh ./ci/test.sh 2024 tests
+
+  image-rocky9-base:
+    name: image-rocky9-base
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build Rocky base image
+        uses: docker/build-push-action@v6
+        with:
+          context: docker/rocky
+          file: docker/rocky/Dockerfile.rocky9.base
+          load: true
+          tags: ${{ env.CI_IMAGE_ROCKY_BASE }}
+          cache-from: type=gha,scope=dailyboy-ci-rocky9-base
+          cache-to: type=gha,mode=max,scope=dailyboy-ci-rocky9-base
+      - name: Export Rocky base image
+        run: docker save ${{ env.CI_IMAGE_ROCKY_BASE }} -o /tmp/dailyboy-ci-rocky9-base.tar
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dailyboy-ci-rocky9-base
+          path: /tmp/dailyboy-ci-rocky9-base.tar
+          retention-days: 1
+
+  image-rocky9-cy2026:
+    name: image-rocky9-cy2026
+    needs: image-rocky9-base
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: dailyboy-ci-rocky9-base
+          path: /tmp
+      - name: Load Rocky base image
+        run: docker load -i /tmp/dailyboy-ci-rocky9-base.tar
+      - name: Build Rocky CY2026 image
+        run: docker build -t ${{ env.CI_IMAGE_ROCKY_CY2026 }} -f docker/rocky/Dockerfile.rocky9.cy2026 docker/rocky
+      - name: Export Rocky CY2026 image
+        run: docker save ${{ env.CI_IMAGE_ROCKY_CY2026 }} -o /tmp/dailyboy-ci-rocky9-cy2026.tar
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dailyboy-ci-rocky9-cy2026
+          path: /tmp/dailyboy-ci-rocky9-cy2026.tar
+          retention-days: 1
+
+  image-rocky9-cy2025:
+    name: image-rocky9-cy2025
+    needs: image-rocky9-base
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: dailyboy-ci-rocky9-base
+          path: /tmp
+      - name: Load Rocky base image
+        run: docker load -i /tmp/dailyboy-ci-rocky9-base.tar
+      - name: Build Rocky CY2025 image
+        run: docker build -t ${{ env.CI_IMAGE_ROCKY_CY2025 }} -f docker/rocky/Dockerfile.rocky9.cy2025 docker/rocky
+      - name: Export Rocky CY2025 image
+        run: docker save ${{ env.CI_IMAGE_ROCKY_CY2025 }} -o /tmp/dailyboy-ci-rocky9-cy2025.tar
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dailyboy-ci-rocky9-cy2025
+          path: /tmp/dailyboy-ci-rocky9-cy2025.tar
+          retention-days: 1
+
+  image-rocky9-cy2024:
+    name: image-rocky9-cy2024
+    needs: image-rocky9-base
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: dailyboy-ci-rocky9-base
+          path: /tmp
+      - name: Load Rocky base image
+        run: docker load -i /tmp/dailyboy-ci-rocky9-base.tar
+      - name: Build Rocky CY2024 image
+        run: docker build -t ${{ env.CI_IMAGE_ROCKY_CY2024 }} -f docker/rocky/Dockerfile.rocky9.cy2024 docker/rocky
+      - name: Export Rocky CY2024 image
+        run: docker save ${{ env.CI_IMAGE_ROCKY_CY2024 }} -o /tmp/dailyboy-ci-rocky9-cy2024.tar
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dailyboy-ci-rocky9-cy2024
+          path: /tmp/dailyboy-ci-rocky9-cy2024.tar
+          retention-days: 1
+
+  tests-rocky9-cy2026:
+    name: run tests (Rocky CY2026)
+    needs: image-rocky9-cy2026
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    env:
+      DAILYBOY_BUILD_ROOT: docker/rocky9/
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: dailyboy-ci-rocky9-cy2026
+          path: /tmp
+      - name: Load Rocky CY2026 image
+        run: docker load -i /tmp/dailyboy-ci-rocky9-cy2026.tar
+      - name: Cache ccache
+        uses: actions/cache@v4
+        with:
+          path: .ccache
+          key: ccache-rocky9-cy2026-debug-${{ hashFiles('cmake/Versions.cmake', 'cmake/versions/**', 'cmake/deps/**', 'CMakePresets.json') }}-${{ github.sha }}
+          restore-keys: |
+            ccache-rocky9-cy2026-debug-${{ hashFiles('cmake/Versions.cmake', 'cmake/versions/**', 'cmake/deps/**', 'CMakePresets.json') }}-
+            ccache-rocky9-cy2026-debug-
+      - name: Cache CMake deps
+        uses: actions/cache@v4
+        with:
+          path: build/docker/rocky9/CY2026/debug/_deps
+          key: deps-rocky9-cy2026-debug-${{ hashFiles('cmake/Versions.cmake', 'cmake/versions/**', 'cmake/deps/**') }}
+          restore-keys: |
+            deps-rocky9-cy2026-debug-
+      - name: Build debug CY2026
+        run: DAILYBOY_CI_IMAGE=${{ env.CI_IMAGE_ROCKY_CY2026 }} ./ci/docker.sh ./ci/build.sh 2026 debug
+      - name: Run tests CY2026
+        run: DAILYBOY_CI_IMAGE=${{ env.CI_IMAGE_ROCKY_CY2026 }} ./ci/docker.sh ./ci/test.sh 2026 tests
+
+  tests-rocky9-cy2025:
+    name: run tests (Rocky CY2025)
+    needs: image-rocky9-cy2025
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    env:
+      DAILYBOY_BUILD_ROOT: docker/rocky9/
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: dailyboy-ci-rocky9-cy2025
+          path: /tmp
+      - name: Load Rocky CY2025 image
+        run: docker load -i /tmp/dailyboy-ci-rocky9-cy2025.tar
+      - name: Cache ccache
+        uses: actions/cache@v4
+        with:
+          path: .ccache
+          key: ccache-rocky9-cy2025-debug-${{ hashFiles('cmake/Versions.cmake', 'cmake/versions/**', 'cmake/deps/**', 'CMakePresets.json') }}-${{ github.sha }}
+          restore-keys: |
+            ccache-rocky9-cy2025-debug-${{ hashFiles('cmake/Versions.cmake', 'cmake/versions/**', 'cmake/deps/**', 'CMakePresets.json') }}-
+            ccache-rocky9-cy2025-debug-
+      - name: Cache CMake deps
+        uses: actions/cache@v4
+        with:
+          path: build/docker/rocky9/CY2025/debug/_deps
+          key: deps-rocky9-cy2025-debug-${{ hashFiles('cmake/Versions.cmake', 'cmake/versions/**', 'cmake/deps/**') }}
+          restore-keys: |
+            deps-rocky9-cy2025-debug-
+      - name: Build debug CY2025
+        run: DAILYBOY_CI_IMAGE=${{ env.CI_IMAGE_ROCKY_CY2025 }} ./ci/docker.sh ./ci/build.sh 2025 debug
+      - name: Run tests CY2025
+        run: DAILYBOY_CI_IMAGE=${{ env.CI_IMAGE_ROCKY_CY2025 }} ./ci/docker.sh ./ci/test.sh 2025 tests
+
+  tests-rocky9-cy2024:
+    name: run tests (Rocky CY2024)
+    needs: image-rocky9-cy2024
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    env:
+      DAILYBOY_BUILD_ROOT: docker/rocky9/
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: dailyboy-ci-rocky9-cy2024
+          path: /tmp
+      - name: Load Rocky CY2024 image
+        run: docker load -i /tmp/dailyboy-ci-rocky9-cy2024.tar
+      - name: Cache ccache
+        uses: actions/cache@v4
+        with:
+          path: .ccache
+          key: ccache-rocky9-cy2024-debug-${{ hashFiles('cmake/Versions.cmake', 'cmake/versions/**', 'cmake/deps/**', 'CMakePresets.json') }}-${{ github.sha }}
+          restore-keys: |
+            ccache-rocky9-cy2024-debug-${{ hashFiles('cmake/Versions.cmake', 'cmake/versions/**', 'cmake/deps/**', 'CMakePresets.json') }}-
+            ccache-rocky9-cy2024-debug-
+      - name: Cache CMake deps
+        uses: actions/cache@v4
+        with:
+          path: build/docker/rocky9/CY2024/debug/_deps
+          key: deps-rocky9-cy2024-debug-${{ hashFiles('cmake/Versions.cmake', 'cmake/versions/**', 'cmake/deps/**') }}
+          restore-keys: |
+            deps-rocky9-cy2024-debug-
+      - name: Build debug CY2024
+        run: DAILYBOY_CI_IMAGE=${{ env.CI_IMAGE_ROCKY_CY2024 }} ./ci/docker.sh ./ci/build.sh 2024 debug
+      - name: Run tests CY2024
+        run: DAILYBOY_CI_IMAGE=${{ env.CI_IMAGE_ROCKY_CY2024 }} ./ci/docker.sh ./ci/test.sh 2024 tests

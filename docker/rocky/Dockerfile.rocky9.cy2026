@@ -1,0 +1,43 @@
+# VFX Reference Platform CY2026 toolchain on top of dailyboy-ci:rocky9-base.
+# Build: docker build -t dailyboy-ci:rocky9-base -f docker/rocky/Dockerfile.rocky9.base docker/rocky
+#        docker build -t dailyboy-ci:rocky9-cy2026 -f docker/rocky/Dockerfile.rocky9.cy2026 docker/rocky
+
+# ---------------------------------------------------------------------------
+# Base image
+# ---------------------------------------------------------------------------
+FROM dailyboy-ci:rocky9-base
+
+# ---------------------------------------------------------------------------
+# Environment (toolset + Python)
+# ---------------------------------------------------------------------------
+ENV Python3_EXECUTABLE=/usr/bin/python3.13 \
+    PATH=/opt/rh/gcc-toolset-14/root/usr/bin:${PATH} \
+    LD_LIBRARY_PATH=/opt/rh/gcc-toolset-14/root/usr/lib64 \
+    CC=/opt/rh/gcc-toolset-14/root/usr/bin/gcc \
+    CXX=/opt/rh/gcc-toolset-14/root/usr/bin/g++ \
+    GCCOV=/opt/rh/gcc-toolset-14/root/usr/bin/gcov
+
+# ---------------------------------------------------------------------------
+# Compiler (GCC Toolset 14)
+# ---------------------------------------------------------------------------
+RUN dnf -y install \
+        gcc-toolset-14 \
+        gcc-toolset-14-gcc-c++ \
+    && dnf clean all \
+    && gcc --version | head -n1 | grep -E ' 14\.(2|[3-9]|[1-9][0-9])'
+
+# ---------------------------------------------------------------------------
+# Python 3.13 (EPEL)
+# ---------------------------------------------------------------------------
+RUN dnf -y install \
+        python3.13 \
+        python3.13-devel \
+    && ln -sf /usr/bin/python3.13 /usr/local/bin/python3 \
+    && ln -sf /usr/bin/python3.13 /usr/local/bin/python \
+    && dnf clean all \
+    && python3.13 --version | grep -E 'Python 3\.13'
+
+# ---------------------------------------------------------------------------
+# Workspace
+# ---------------------------------------------------------------------------
+WORKDIR /src

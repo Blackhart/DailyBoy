@@ -17,7 +17,7 @@ case "${year}" in
   *) echo "error: year must be 2024, 2025, or 2026" >&2; exit 1 ;;
 esac
 
-export DAILYBOY_BUILD_ROOT="${DAILYBOY_BUILD_ROOT:-docker/}"
+export DAILYBOY_BUILD_ROOT="${DAILYBOY_BUILD_ROOT:-docker/ubuntu24/}"
 export DAILYBOY_VFX_PLATFORM="${year}"
 
 case "${kind}" in

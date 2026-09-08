@@ -1,0 +1,39 @@
+# VFX Reference Platform CY2025 toolchain on top of dailyboy-ci:rocky9-base.
+# Rocky 9 system GCC is already 11.x (no gcc-toolset-11 — that stream is RHEL 8 only).
+# Build: docker build -t dailyboy-ci:rocky9-base -f docker/rocky/Dockerfile.rocky9.base docker/rocky
+#        docker build -t dailyboy-ci:rocky9-cy2025 -f docker/rocky/Dockerfile.rocky9.cy2025 docker/rocky
+
+# ---------------------------------------------------------------------------
+# Base image
+# ---------------------------------------------------------------------------
+FROM dailyboy-ci:rocky9-base
+
+# ---------------------------------------------------------------------------
+# Environment
+# ---------------------------------------------------------------------------
+ENV Python3_EXECUTABLE=/usr/bin/python3.11
+
+# ---------------------------------------------------------------------------
+# Compiler (system GCC 11 — VFX CY2025 pin ≥ 11.2)
+# ---------------------------------------------------------------------------
+RUN dnf -y install \
+        gcc \
+        gcc-c++ \
+    && dnf clean all \
+    && gcc --version | head -n1 | grep -E ' 11\.(2|[3-9]|[1-9][0-9])'
+
+# ---------------------------------------------------------------------------
+# Python 3.11
+# ---------------------------------------------------------------------------
+RUN dnf -y install \
+        python3.11 \
+        python3.11-devel \
+    && ln -sf /usr/bin/python3.11 /usr/local/bin/python3 \
+    && ln -sf /usr/bin/python3.11 /usr/local/bin/python \
+    && dnf clean all \
+    && python3.11 --version | grep -E 'Python 3\.11'
+
+# ---------------------------------------------------------------------------
+# Workspace
+# ---------------------------------------------------------------------------
+WORKDIR /src
