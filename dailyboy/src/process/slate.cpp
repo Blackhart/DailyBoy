@@ -5,9 +5,6 @@
 
 #include "process/slate.hpp"
 
-#include <OpenImageIO/imagebuf.h>
-#include <OpenImageIO/imageio.h>
-
 #include <dailyboy/log.hpp>
 #include <exception>
 #include <string>
@@ -16,6 +13,7 @@
 #include "error/process.hpp"
 #include "image/text.hpp"
 #include "log_internal.hpp"
+#include "process/compositing.hpp"
 #include "status.hpp"
 
 namespace dailyboy {

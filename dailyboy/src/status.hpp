@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+#include <cstdlib>
 #include <optional>
 #include <string>
 #include <utility>
@@ -18,7 +20,7 @@ class Status {
    * \brief Success (\c kOk), caller-fixable input (\c kUser), or engine bug
    *        (\c kInternal).
    */
-  enum class Code {
+  enum class Code : std::uint8_t {
     kOk = 0,
     kUser = 1,
     kInternal = 2,
@@ -77,9 +79,24 @@ class StatusOr {
    * \brief Returns the stored value.
    * \note Requires \c ok(); otherwise the behavior is undefined.
    */
-  const T& value() const& { return *value_; }
-  T& value() & { return *value_; }
-  T value() && { return std::move(*value_); }
+  const T& value() const& {
+    if (!value_.has_value()) {
+      std::abort();
+    }
+    return *value_;
+  }
+  T& value() & {
+    if (!value_.has_value()) {
+      std::abort();
+    }
+    return *value_;
+  }
+  T value() && {
+    if (!value_.has_value()) {
+      std::abort();
+    }
+    return std::move(*value_);
+  }
 
   const T& operator*() const { return value(); }
   T& operator*() { return value(); }
@@ -120,9 +137,13 @@ class StatusOr {
   DAILYBOY_ASSIGN_OR_RETURN_IMPL(DAILYBOY_STATUS_CONCAT(status_or_, __LINE__), \
                                  lhs, rexpr)
 
+// lhs may be a declaration (e.g. `std::string path`), so it cannot be wrapped
+// in parentheses; statusor is an identifier token from the concat helper.
+// NOLINTBEGIN(bugprone-macro-parentheses)
 #define DAILYBOY_ASSIGN_OR_RETURN_IMPL(statusor, lhs, rexpr) \
   auto statusor = (rexpr);                                   \
-  if (!statusor.ok()) {                                      \
-    return statusor.status();                                \
+  if (!(statusor).ok()) {                                    \
+    return (statusor).status();                              \
   }                                                          \
   lhs = std::move(statusor).value()
+// NOLINTEND(bugprone-macro-parentheses)

@@ -15,8 +15,6 @@ namespace dailyboy {
 class JobColorimetry {
  public:
   JobColorimetry() = default;
-  ~JobColorimetry() = default;
-
   const std::filesystem::path& ocio_config() const { return ocio_config_; }
   void set_ocio_config(std::filesystem::path ocio_config) {
     ocio_config_ = std::move(ocio_config);

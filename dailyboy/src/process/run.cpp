@@ -23,14 +23,14 @@ Status run_job(const Job& job) {
   DAILYBOY_ASSIGN_OR_RETURN(Outputs out, Outputs::open(job));
 
   log_debug("run_job: write_slates");
-  const Status slates = write_slates(job, out);
+  Status slates = write_slates(job, out);
   if (!slates.ok()) {
     out.close();
     return slates;
   }
 
   log_debug("run_job: write_burnins");
-  const Status plates = write_burnins(job, out, color_pipeline);
+  Status plates = write_burnins(job, out, color_pipeline);
   if (!plates.ok()) {
     out.close();
     return plates;

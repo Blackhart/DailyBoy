@@ -7,8 +7,6 @@
 #include "job/metadata.hpp"
 #include "job/output.hpp"
 #include "job/plans.hpp"
-#include "job/primitives.hpp"
-#include "job/text.hpp"
 
 namespace dailyboy {
 
@@ -21,8 +19,6 @@ namespace dailyboy {
 class Job {
  public:
   Job() = default;
-  ~Job() = default;
-
   int dailyboy_version() const { return dailyboy_version_; }
   void set_dailyboy_version(int dailyboy_version) {
     dailyboy_version_ = dailyboy_version;

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <optional>
 #include <string>
 #include <utility>
@@ -16,8 +17,6 @@ namespace dailyboy {
 class JobLayoutCanvas {
  public:
   JobLayoutCanvas() = default;
-  ~JobLayoutCanvas() = default;
-
   int width() const { return width_; }
   void set_width(int width) { width_ = width; }
 
@@ -35,8 +34,6 @@ class JobLayoutCanvas {
 class JobLayoutPixelAspect {
  public:
   JobLayoutPixelAspect() = default;
-  ~JobLayoutPixelAspect() = default;
-
   double aspect() const { return aspect_; }
   void set_aspect(double aspect) { aspect_ = aspect; }
 
@@ -52,7 +49,7 @@ class JobLayoutImage {
   /*!
    * \brief How the source image is scaled within the canvas.
    */
-  enum class JobLayoutImageFitValue : int {
+  enum class JobLayoutImageFitValue : std::uint8_t {
     Contain = 0,
     Cover = 1,
   };
@@ -60,14 +57,12 @@ class JobLayoutImage {
   /*!
    * \brief Resampling filter applied when scaling the source image.
    */
-  enum class JobLayoutImageFilterValue : int {
+  enum class JobLayoutImageFilterValue : std::uint8_t {
     Bilinear = 0,
     Lanczos3 = 1,
   };
 
   JobLayoutImage() = default;
-  ~JobLayoutImage() = default;
-
   JobLayoutImageFitValue fit() const { return fit_; }
   void set_fit(JobLayoutImageFitValue fit) { fit_ = fit; }
 
@@ -77,7 +72,7 @@ class JobLayoutImage {
   const Margin& min_margin_px() const { return min_margin_px_; }
   Margin& min_margin_px() { return min_margin_px_; }
   void set_min_margin_px(Margin min_margin_px) {
-    min_margin_px_ = std::move(min_margin_px);
+    min_margin_px_ = min_margin_px;
   }
 
  private:
@@ -107,29 +102,25 @@ class JobLayoutBurnInBox {
   /*!
    * \brief Box rendering mode (maps to \c box.mode in the job YAML).
    */
-  enum class JobLayoutBurnInBoxModeValue : int {
+  enum class JobLayoutBurnInBoxModeValue : std::uint8_t {
     Fill = 0,
     Outline = 1,
   };
 
   JobLayoutBurnInBox() = default;
-  ~JobLayoutBurnInBox() = default;
-
   JobLayoutBurnInBoxModeValue mode() const { return mode_; }
   void set_mode(JobLayoutBurnInBoxModeValue mode) { mode_ = mode; }
 
   const JobLayoutBurnInBoxColor& color() const { return color_; }
   JobLayoutBurnInBoxColor& color() { return color_; }
-  void set_color(JobLayoutBurnInBoxColor color) { color_ = std::move(color); }
+  void set_color(JobLayoutBurnInBoxColor color) { color_ = color; }
 
   double opacity() const { return opacity_; }
   void set_opacity(double opacity) { opacity_ = opacity; }
 
   const JobLayoutBurnInBoxMargin& margin() const { return margin_; }
   JobLayoutBurnInBoxMargin& margin() { return margin_; }
-  void set_margin(JobLayoutBurnInBoxMargin margin) {
-    margin_ = std::move(margin);
-  }
+  void set_margin(JobLayoutBurnInBoxMargin margin) { margin_ = margin; }
 
  private:
   JobLayoutBurnInBoxModeValue mode_ = JobLayoutBurnInBoxModeValue::Fill;
@@ -144,8 +135,6 @@ class JobLayoutBurnInBox {
 class JobLayoutBurnIn {
  public:
   JobLayoutBurnIn() = default;
-  ~JobLayoutBurnIn() = default;
-
   const std::string& template_text() const { return template_; }
   void set_template_text(std::string template_text) {
     template_ = std::move(template_text);
@@ -153,9 +142,7 @@ class JobLayoutBurnIn {
 
   const JobLayoutBurnInPosition& position() const { return position_; }
   JobLayoutBurnInPosition& position() { return position_; }
-  void set_position(JobLayoutBurnInPosition position) {
-    position_ = std::move(position);
-  }
+  void set_position(JobLayoutBurnInPosition position) { position_ = position; }
 
   const JobLayoutBurnInFont& font() const { return font_; }
   JobLayoutBurnInFont& font() { return font_; }
@@ -163,7 +150,7 @@ class JobLayoutBurnIn {
 
   const std::optional<JobLayoutBurnInBox>& box() const { return box_; }
   std::optional<JobLayoutBurnInBox>& box() { return box_; }
-  void set_box(std::optional<JobLayoutBurnInBox> box) { box_ = std::move(box); }
+  void set_box(std::optional<JobLayoutBurnInBox> box) { box_ = box; }
 
  private:
   std::string template_;
@@ -178,8 +165,6 @@ class JobLayoutBurnIn {
 class JobLayoutBurnIns {
  public:
   JobLayoutBurnIns() = default;
-  ~JobLayoutBurnIns() = default;
-
   const std::vector<JobLayoutBurnIn>& burn_ins() const { return burn_ins_; }
   std::vector<JobLayoutBurnIn>& burn_ins() { return burn_ins_; }
   void set_burn_ins(std::vector<JobLayoutBurnIn> burn_ins) {
@@ -196,16 +181,12 @@ class JobLayoutBurnIns {
 class JobLayoutSlateLine {
  public:
   JobLayoutSlateLine() = default;
-  ~JobLayoutSlateLine() = default;
-
   const std::string& text() const { return text_; }
   void set_text(std::string text) { text_ = std::move(text); }
 
   const JobLayoutBurnInPosition& position() const { return position_; }
   JobLayoutBurnInPosition& position() { return position_; }
-  void set_position(JobLayoutBurnInPosition position) {
-    position_ = std::move(position);
-  }
+  void set_position(JobLayoutBurnInPosition position) { position_ = position; }
 
   const JobLayoutBurnInFont& font() const { return font_; }
   JobLayoutBurnInFont& font() { return font_; }
@@ -224,8 +205,6 @@ class JobLayoutSlateLine {
 class JobLayoutSlate {
  public:
   JobLayoutSlate() = default;
-  ~JobLayoutSlate() = default;
-
   int duration_frames() const { return duration_frames_; }
   void set_duration_frames(int duration_frames) {
     duration_frames_ = duration_frames;
@@ -248,26 +227,24 @@ class JobLayoutSlate {
 class JobLayout {
  public:
   JobLayout() = default;
-  ~JobLayout() = default;
-
   const JobLayoutCanvas& canvas() const { return canvas_; }
   JobLayoutCanvas& canvas() { return canvas_; }
-  void set_canvas(JobLayoutCanvas canvas) { canvas_ = std::move(canvas); }
+  void set_canvas(JobLayoutCanvas canvas) { canvas_ = canvas; }
 
   const JobLayoutPixelAspect& pixel_aspect() const { return pixel_aspect_; }
   JobLayoutPixelAspect& pixel_aspect() { return pixel_aspect_; }
   void set_pixel_aspect(JobLayoutPixelAspect pixel_aspect) {
-    pixel_aspect_ = std::move(pixel_aspect);
+    pixel_aspect_ = pixel_aspect;
   }
 
   const JobLayoutImage& image() const { return image_; }
   JobLayoutImage& image() { return image_; }
-  void set_image(JobLayoutImage image) { image_ = std::move(image); }
+  void set_image(JobLayoutImage image) { image_ = image; }
 
   const JobLayoutBackground& background() const { return background_; }
   JobLayoutBackground& background() { return background_; }
   void set_background(JobLayoutBackground background) {
-    background_ = std::move(background);
+    background_ = background;
   }
 
   const JobLayoutBurnIns& burn_ins() const { return burn_ins_; }

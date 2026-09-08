@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <filesystem>
 #include <utility>
 #include <variant>
@@ -16,7 +17,7 @@ class TextPositionModeLayout {
   /*!
    * \brief Layout anchor (maps to \c layout.*.position.anchor in the job YAML).
    */
-  enum class Anchor : int {
+  enum class Anchor : std::uint8_t {
     TopLeft = 0,
     TopCenter = 1,
     TopRight = 2,
@@ -29,8 +30,6 @@ class TextPositionModeLayout {
   };
 
   TextPositionModeLayout() = default;
-  ~TextPositionModeLayout() = default;
-
   Anchor anchor() const { return anchor_; }
   void set_anchor(Anchor anchor) { anchor_ = anchor; }
 
@@ -44,8 +43,6 @@ class TextPositionModeLayout {
 class TextPositionModePixel {
  public:
   TextPositionModePixel() = default;
-  ~TextPositionModePixel() = default;
-
   int x() const { return x_; }
   void set_x(int x) { x_ = x; }
 
@@ -63,8 +60,6 @@ class TextPositionModePixel {
 class TextPositionModePercent {
  public:
   TextPositionModePercent() = default;
-  ~TextPositionModePercent() = default;
-
   double x() const { return x_; }
   void set_x(double x) { x_ = x; }
 
@@ -91,21 +86,19 @@ class TextPosition {
   /*!
    * \brief Position mode (maps to \c position.mode in the job YAML).
    */
-  enum class Mode : int {
+  enum class Mode : std::uint8_t {
     Layout = 0,
     Pixel = 1,
     Percent = 2,
   };
 
   TextPosition() = default;
-  ~TextPosition() = default;
-
   Mode mode() const { return mode_; }
   void set_mode(Mode mode) { mode_ = mode; }
 
   const TextPositionMode& value() const { return value_; }
   TextPositionMode& value() { return value_; }
-  void set_value(TextPositionMode value) { value_ = std::move(value); }
+  void set_value(TextPositionMode value) { value_ = value; }
 
  private:
   Mode mode_ = Mode::Layout;
@@ -118,8 +111,6 @@ class TextPosition {
 class TextFont {
  public:
   TextFont() = default;
-  ~TextFont() = default;
-
   const std::filesystem::path& path() const { return path_; }
   void set_path(std::filesystem::path path) { path_ = std::move(path); }
 
@@ -128,7 +119,7 @@ class TextFont {
 
   const RGBColor& color() const { return color_; }
   RGBColor& color() { return color_; }
-  void set_color(RGBColor color) { color_ = std::move(color); }
+  void set_color(RGBColor color) { color_ = color; }
 
  private:
   std::filesystem::path path_;

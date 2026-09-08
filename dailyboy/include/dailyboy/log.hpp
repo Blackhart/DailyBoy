@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <dailyboy/export.hpp>
 #include <string>
 #include <string_view>
@@ -9,7 +10,7 @@ namespace dailyboy {
 /*!
  * \brief Text log levels for the default stderr logger.
  */
-enum class LogLevel { Debug, Info, Warn, Error };
+enum class LogLevel : std::uint8_t { Debug, Info, Warn, Error };
 
 /*!
  * \brief Creates the default stderr color logger.

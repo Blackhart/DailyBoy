@@ -8,10 +8,10 @@
 #include <OpenImageIO/imagebufalgo.h>
 #include <OpenImageIO/imageio.h>
 
+#include <cstdint>
 #include <filesystem>
 #include <string>
 #include <system_error>
-#include <variant>
 
 #include "error/process.hpp"
 #include "status.hpp"
@@ -22,8 +22,8 @@ namespace {
 
 constexpr int kLayoutInsetPx = 10;
 
-enum class Horizontal { Left, Center, Right };
-enum class Vertical { Top, Center, Bottom };
+enum class Horizontal : std::uint8_t { Left, Center, Right };
+enum class Vertical : std::uint8_t { Top, Center, Bottom };
 
 Status oiio_user_error(const OIIO::ImageBuf& buf) {
   std::string detail = buf.geterror();

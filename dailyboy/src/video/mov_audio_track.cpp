@@ -10,10 +10,8 @@ extern "C" {
 #include <libavformat/avformat.h>
 #include <libavutil/channel_layout.h>
 #include <libavutil/frame.h>
-#include <libavutil/opt.h>
 }
 
-#include <algorithm>
 #include <cstring>
 
 #include "error/video.hpp"

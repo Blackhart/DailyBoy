@@ -64,9 +64,9 @@ bool is_tiff_bit_depth(const std::string& value) {
 
 std::string tiff_bit_depth_string(const YAML::Node& node) {
   if (node.IsScalar() && node.Tag() != "!" && !node.IsNull()) {
-    try {
-      return std::to_string(node.as<int>());
-    } catch (...) {
+    int as_int = 0;
+    if (try_yaml_as(node, as_int)) {
+      return std::to_string(as_int);
     }
   }
   return node.as<std::string>();
@@ -84,7 +84,10 @@ Status reject_unknown_keys(const YAML::Node& map, const std::string& field,
       }
     }
     if (!known) {
-      return Status::User(with_job_error(USER_ERROR_JOB_40, field + "." + key));
+      std::string detail = field;
+      detail += ".";
+      detail += key;
+      return Status::User(with_job_error(USER_ERROR_JOB_40, detail));
     }
   }
   return Status::Ok();

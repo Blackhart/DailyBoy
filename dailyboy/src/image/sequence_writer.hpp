@@ -22,6 +22,10 @@ namespace dailyboy {
 class SequenceWriter {
  public:
   SequenceWriter() = default;
+  SequenceWriter(const SequenceWriter&) = delete;
+  SequenceWriter& operator=(const SequenceWriter&) = delete;
+  SequenceWriter(SequenceWriter&&) noexcept = default;
+  SequenceWriter& operator=(SequenceWriter&&) noexcept = default;
 
   /*!
    * \brief Parses \a sequence.path as an output pattern.

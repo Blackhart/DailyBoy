@@ -24,8 +24,6 @@ using JobMetadataSubstitutionValue =
 class JobMetadata {
  public:
   JobMetadata() = default;
-  ~JobMetadata() = default;
-
   const std::map<std::string, JobMetadataSubstitutionValue>& substitutions()
       const {
     return substitutions_;

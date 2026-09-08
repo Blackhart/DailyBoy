@@ -16,7 +16,6 @@
 #include <vector>
 
 #include "error/job.hpp"
-#include "job/metadata.hpp"
 #include "status.hpp"
 
 namespace dailyboy {
@@ -46,13 +45,29 @@ inline bool parse_bool_scalar(const std::string& text, bool& out) {
 }
 
 /*!
+ * \brief Converts \a node with \c YAML::Node::as when the type matches.
+ * \param node YAML node to convert.
+ * \param out Receives the converted value on success.
+ * \return \c true if conversion succeeded.
+ */
+template <typename T>
+inline bool try_yaml_as(const YAML::Node& node, T& out) {
+  try {
+    out = node.as<T>();
+    return true;
+  } catch (const YAML::Exception&) {
+    return false;
+  }
+}
+
+/*!
  * \brief True when \a node is a quoted YAML string (\c "text" or \c 'text').
  */
 inline bool is_yaml_quoted_string(const YAML::Node& node) {
   if (!node || !node.IsScalar()) {
     return false;
   }
-  const std::string tag = node.Tag();
+  const std::string& tag = node.Tag();
   return tag == "!!str" || tag == "!";
 }
 
@@ -67,7 +82,7 @@ inline bool is_yaml_string_scalar(const YAML::Node& node) {
   if (is_yaml_quoted_string(node)) {
     return true;
   }
-  const std::string tag = node.Tag();
+  const std::string& tag = node.Tag();
   if (tag == "!!int" || tag == "!!float" || tag == "!!bool" ||
       tag == "!!null") {
     return false;
@@ -77,15 +92,13 @@ inline bool is_yaml_string_scalar(const YAML::Node& node) {
   if (parse_bool_scalar(scalar, unused)) {
     return false;
   }
-  try {
-    (void)node.as<long long>();
+  long long unused_int = 0;
+  if (try_yaml_as(node, unused_int)) {
     return false;
-  } catch (const YAML::Exception&) {
   }
-  try {
-    (void)node.as<double>();
+  double unused_double = 0.0;
+  if (try_yaml_as(node, unused_double)) {
     return false;
-  } catch (const YAML::Exception&) {
   }
   return true;
 }
@@ -113,14 +126,13 @@ inline std::string describe_yaml_value(const YAML::Node& node) {
   if (parse_bool_scalar(node.as<std::string>(), unused)) {
     return "a boolean";
   }
-  try {
-    return "integer " + std::to_string(node.as<long long>());
-  } catch (const YAML::Exception&) {
+  long long as_int = 0;
+  if (try_yaml_as(node, as_int)) {
+    return "integer " + std::to_string(as_int);
   }
-  try {
-    (void)node.as<double>();
+  double as_double = 0.0;
+  if (try_yaml_as(node, as_double)) {
     return "a number";
-  } catch (const YAML::Exception&) {
   }
   return "unquoted string \"" + node.as<std::string>() + "\"";
 }
@@ -350,7 +362,7 @@ inline std::string substitution_value_key_from_yaml_path(
     const std::string& yaml_path) {
   const std::string dotted = "metadata.substitutions.";
   if (yaml_path.compare(0, dotted.size(), dotted) == 0) {
-    const std::string rest = yaml_path.substr(dotted.size());
+    std::string rest = yaml_path.substr(dotted.size());
     if (!rest.empty() && rest.find('.') == std::string::npos &&
         rest.find('[') == std::string::npos) {
       return rest;
@@ -671,23 +683,23 @@ inline nlohmann::json yaml_to_json(const YAML::Node& node) {
     return nullptr;
   }
   if (node.IsScalar()) {
-    const std::string tag = node.Tag();
+    const std::string& tag = node.Tag();
     if (tag == "!!str" || tag == "!") {
       return node.as<std::string>();
     }
 
-    const std::string scalar = node.as<std::string>();
+    std::string scalar = node.as<std::string>();
     bool bool_value = false;
     if (parse_bool_scalar(scalar, bool_value)) {
       return bool_value;
     }
-    try {
-      return node.as<long long>();
-    } catch (const YAML::Exception&) {
+    long long as_int = 0;
+    if (try_yaml_as(node, as_int)) {
+      return as_int;
     }
-    try {
-      return node.as<double>();
-    } catch (const YAML::Exception&) {
+    double as_double = 0.0;
+    if (try_yaml_as(node, as_double)) {
+      return as_double;
     }
     return scalar;
   }

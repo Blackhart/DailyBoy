@@ -360,7 +360,7 @@ if(CLANG_TIDY AND DAILYBOY_CLANG_TIDY_SOURCES)
             --config-file=${CMAKE_SOURCE_DIR}/.clang-tidy
             ${DAILYBOY_CLANG_TIDY_SOURCES}
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-        COMMENT "Running clang-tidy on DailyBoy sources (excluding tests)"
+        COMMENT "Running clang-tidy on DailyBoy sources"
         VERBATIM
     )
     message(STATUS "clang-tidy: target clang-tidy-check (${CLANG_TIDY})")

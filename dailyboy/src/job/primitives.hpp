@@ -10,8 +10,6 @@ namespace dailyboy {
 class Margin {
  public:
   Margin() = default;
-  ~Margin() = default;
-
   int top() const { return top_; }
   void set_top(int top) { top_ = top; }
 
@@ -39,8 +37,6 @@ class RGBColor {
   RGBColor() = default;
   /*! \brief Constructs a color from \a r, \a g, \a b in the 0–1 range. */
   RGBColor(double r, double g, double b) : r_(r), g_(g), b_(b) {}
-  ~RGBColor() = default;
-
   double r() const { return r_; }
   void set_r(double r) { r_ = r; }
 

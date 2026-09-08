@@ -7,7 +7,6 @@
 #include "process/colorimetry.hpp"
 #include "process/compositing.hpp"
 #include "process/output.hpp"
-#include "process/tokens.hpp"
 #include "status.hpp"
 
 namespace dailyboy {

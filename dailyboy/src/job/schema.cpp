@@ -74,6 +74,7 @@ Status validate_output_contract(const YAML::Node& job_root) {
           return true;
         }
       } catch (const YAML::Exception&) {
+        continue;
       }
     }
     return false;
@@ -103,9 +104,13 @@ Status validate_output_contract(const YAML::Node& job_root) {
           std::string(prefix) + "[" + std::to_string(i) + "].id";
       const auto it = seen.find(id);
       if (it != seen.end()) {
-        return Status::User(with_job_error(
-            USER_ERROR_JOB_35,
-            field + " '" + id + "' (already used by " + it->second + ")."));
+        std::string detail = field;
+        detail += " '";
+        detail += id;
+        detail += "' (already used by ";
+        detail += it->second;
+        detail += ").";
+        return Status::User(with_job_error(USER_ERROR_JOB_35, detail));
       }
       seen.emplace(id, field);
     }

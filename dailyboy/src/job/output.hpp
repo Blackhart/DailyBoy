@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <optional>
 #include <string>
 #include <utility>
@@ -14,8 +15,6 @@ namespace dailyboy {
 class JobOutputDisplayView {
  public:
   JobOutputDisplayView() = default;
-  ~JobOutputDisplayView() = default;
-
   const std::string& display() const { return display_; }
   void set_display(std::string display) { display_ = std::move(display); }
 
@@ -35,7 +34,7 @@ class JobOutputVideoSignal {
   /*!
    * \brief Limited vs full range (maps to \c signal.range).
    */
-  enum class RangeValue : int {
+  enum class RangeValue : std::uint8_t {
     Tv = 0,
     Pc = 1,
   };
@@ -43,27 +42,25 @@ class JobOutputVideoSignal {
   /*!
    * \brief YCbCr matrix / \c AVCOL_SPC (maps to \c signal.matrix).
    */
-  enum class MatrixValue : int {
+  enum class MatrixValue : std::uint8_t {
     Bt709 = 0,
   };
 
   /*!
    * \brief Color primaries (maps to \c signal.primaries).
    */
-  enum class PrimariesValue : int {
+  enum class PrimariesValue : std::uint8_t {
     Bt709 = 0,
   };
 
   /*!
    * \brief Transfer characteristic (maps to \c signal.transfer).
    */
-  enum class TransferValue : int {
+  enum class TransferValue : std::uint8_t {
     Bt709 = 0,
   };
 
   JobOutputVideoSignal() = default;
-  ~JobOutputVideoSignal() = default;
-
   RangeValue range() const { return range_; }
   void set_range(RangeValue range) { range_ = range; }
 
@@ -91,7 +88,7 @@ class JobOutputVideoH264 {
   /*!
    * \brief x264 preset (maps to \c codec_options.preset in the job YAML).
    */
-  enum class JobOutputVideoH264PresetValue : int {
+  enum class JobOutputVideoH264PresetValue : std::uint8_t {
     Ultrafast = 0,
     Superfast = 1,
     Veryfast = 2,
@@ -104,7 +101,7 @@ class JobOutputVideoH264 {
   /*!
    * \brief H.264 pixel format (maps to \c codec_options.pix_fmt).
    */
-  enum class JobOutputVideoH264PixFmtValue : int {
+  enum class JobOutputVideoH264PixFmtValue : std::uint8_t {
     Yuv420p = 0,
     Yuv422p = 1,
   };
@@ -113,7 +110,7 @@ class JobOutputVideoH264 {
    * \brief x264 tune (maps to \c codec_options.tune). \c Unspecified means omit
    *        the option.
    */
-  enum class JobOutputVideoH264TuneValue : int {
+  enum class JobOutputVideoH264TuneValue : std::uint8_t {
     Unspecified = 0,
     Film = 1,
     Animation = 2,
@@ -127,7 +124,7 @@ class JobOutputVideoH264 {
    * \brief H.264 profile (maps to \c codec_options.profile). \c Unspecified
    *        selects \c high or \c high422 from \c pix_fmt.
    */
-  enum class JobOutputVideoH264ProfileValue : int {
+  enum class JobOutputVideoH264ProfileValue : std::uint8_t {
     Unspecified = 0,
     Baseline = 1,
     Main = 2,
@@ -138,8 +135,6 @@ class JobOutputVideoH264 {
   static constexpr int kDefaultCrf = 23;
 
   JobOutputVideoH264() = default;
-  ~JobOutputVideoH264() = default;
-
   JobOutputVideoH264PresetValue preset() const { return preset_; }
   void set_preset(JobOutputVideoH264PresetValue preset) { preset_ = preset; }
 
@@ -193,7 +188,7 @@ class JobOutputVideoMjpeg {
   /*!
    * \brief MJPEG pixel format (maps to \c codec_options.pix_fmt).
    */
-  enum class JobOutputVideoMjpegPixFmtValue : int {
+  enum class JobOutputVideoMjpegPixFmtValue : std::uint8_t {
     Yuv420p = 0,
     Yuv422p = 1,
     Yuv444p = 2,
@@ -202,7 +197,7 @@ class JobOutputVideoMjpeg {
   /*!
    * \brief Huffman table strategy (maps to \c codec_options.huffman).
    */
-  enum class JobOutputVideoMjpegHuffmanValue : int {
+  enum class JobOutputVideoMjpegHuffmanValue : std::uint8_t {
     Default = 0,
     Optimal = 1,
   };
@@ -210,8 +205,6 @@ class JobOutputVideoMjpeg {
   static constexpr int kDefaultQscale = 3;
 
   JobOutputVideoMjpeg() = default;
-  ~JobOutputVideoMjpeg() = default;
-
   int qscale() const { return qscale_; }
   void set_qscale(int qscale) { qscale_ = qscale; }
 
@@ -246,7 +239,7 @@ class JobOutputVideoDnxhd {
   /*!
    * \brief FFmpeg \c dnxhd profile (maps to \c codec_options.profile).
    */
-  enum class JobOutputVideoDnxhdProfileValue : int {
+  enum class JobOutputVideoDnxhdProfileValue : std::uint8_t {
     Dnxhd = 0,
     DnxhrLb = 1,
     DnxhrSq = 2,
@@ -258,15 +251,13 @@ class JobOutputVideoDnxhd {
   /*!
    * \brief Encoder pixel format (maps to \c codec_options.pix_fmt).
    */
-  enum class JobOutputVideoDnxhdPixFmtValue : int {
+  enum class JobOutputVideoDnxhdPixFmtValue : std::uint8_t {
     Yuv422p = 0,
     Yuv422p10 = 1,
     Yuv444p10 = 2,
   };
 
   JobOutputVideoDnxhd() = default;
-  ~JobOutputVideoDnxhd() = default;
-
   JobOutputVideoDnxhdProfileValue profile() const { return profile_; }
   void set_profile(JobOutputVideoDnxhdProfileValue profile) {
     profile_ = profile;
@@ -314,15 +305,13 @@ class JobOutputVideo {
   /*!
    * \brief Encoder selected by \c codec in the job YAML.
    */
-  enum class JobOutputVideoCodecValue : int {
+  enum class JobOutputVideoCodecValue : std::uint8_t {
     H264 = 0,
     Mjpeg = 1,
     Dnxhd = 2,
   };
 
   JobOutputVideo() = default;
-  ~JobOutputVideo() = default;
-
   const std::string& id() const { return id_; }
   void set_id(std::string id) { id_ = std::move(id); }
 
@@ -337,7 +326,7 @@ class JobOutputVideo {
 
   const JobOutputVideoSignal& signal() const { return signal_; }
   JobOutputVideoSignal& signal() { return signal_; }
-  void set_signal(JobOutputVideoSignal signal) { signal_ = std::move(signal); }
+  void set_signal(JobOutputVideoSignal signal) { signal_ = signal; }
 
   const std::string& path() const { return path_; }
   void set_path(std::string path) { path_ = std::move(path); }
@@ -373,8 +362,6 @@ class JobOutputVideo {
 class JobOutputVideos {
  public:
   JobOutputVideos() = default;
-  ~JobOutputVideos() = default;
-
   const std::vector<JobOutputVideo>& videos() const { return videos_; }
   std::vector<JobOutputVideo>& videos() { return videos_; }
   void set_videos(std::vector<JobOutputVideo> videos) {
@@ -395,8 +382,6 @@ class JobOutputImageSequencePng {
   static constexpr int kDefaultFilter = 0;
 
   JobOutputImageSequencePng() = default;
-  ~JobOutputImageSequencePng() = default;
-
   int bit_depth() const { return bit_depth_; }
   void set_bit_depth(int bit_depth) { bit_depth_ = bit_depth; }
 
@@ -429,8 +414,6 @@ class JobOutputImageSequenceJpeg {
   static constexpr int kDefaultCompressionLevel = 98;
 
   JobOutputImageSequenceJpeg() = default;
-  ~JobOutputImageSequenceJpeg() = default;
-
   int bit_depth() const { return bit_depth_; }
   void set_bit_depth(int bit_depth) { bit_depth_ = bit_depth; }
 
@@ -462,8 +445,6 @@ class JobOutputImageSequenceTiff {
   static constexpr int kDefaultCompressionLevel = 6;
 
   JobOutputImageSequenceTiff() = default;
-  ~JobOutputImageSequenceTiff() = default;
-
   const std::string& bit_depth() const { return bit_depth_; }
   void set_bit_depth(std::string bit_depth) {
     bit_depth_ = std::move(bit_depth);
@@ -497,8 +478,6 @@ class JobOutputImageSequenceExr {
   static constexpr int kDefaultZipLevel = 4;
 
   JobOutputImageSequenceExr() = default;
-  ~JobOutputImageSequenceExr() = default;
-
   const std::string& bit_depth() const { return bit_depth_; }
   void set_bit_depth(std::string bit_depth) {
     bit_depth_ = std::move(bit_depth);
@@ -532,8 +511,6 @@ class JobOutputImageSequenceHeif {
   static constexpr int kDefaultCompressionLevel = 75;
 
   JobOutputImageSequenceHeif() = default;
-  ~JobOutputImageSequenceHeif() = default;
-
   int bit_depth() const { return bit_depth_; }
   void set_bit_depth(int bit_depth) { bit_depth_ = bit_depth; }
 
@@ -567,8 +544,6 @@ using JobOutputImageSequenceFormatOptions =
 class JobOutputImageSequence {
  public:
   JobOutputImageSequence() = default;
-  ~JobOutputImageSequence() = default;
-
   const std::string& id() const { return id_; }
   void set_id(std::string id) { id_ = std::move(id); }
 
@@ -612,8 +587,6 @@ class JobOutputImageSequence {
 class JobOutputImageSequences {
  public:
   JobOutputImageSequences() = default;
-  ~JobOutputImageSequences() = default;
-
   const std::vector<JobOutputImageSequence>& image_sequences() const {
     return image_sequences_;
   }
@@ -635,8 +608,6 @@ class JobOutputImageSequences {
 class JobOutput {
  public:
   JobOutput() = default;
-  ~JobOutput() = default;
-
   const JobOutputVideos& videos() const { return videos_; }
   JobOutputVideos& videos() { return videos_; }
   void set_videos(JobOutputVideos videos) { videos_ = std::move(videos); }

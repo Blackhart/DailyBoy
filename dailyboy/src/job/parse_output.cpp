@@ -483,28 +483,31 @@ StatusOr<JobOutput> parse_output(const YAML::Node& node) {
           JobOutputVideoSignal signal,
           parse_video_signal(video_map["signal"], base + ".signal",
                              dnxhd_codec));
-      video.set_signal(std::move(signal));
+      video.set_signal(signal);
       if (codec == "h264") {
         video.set_codec(JobOutputVideo::JobOutputVideoCodecValue::H264);
         DAILYBOY_ASSIGN_OR_RETURN(
             JobOutputVideoH264 options,
             parse_h264(video_map["codec_options"], base + ".codec_options"));
-        video.set_codec_options(std::move(options));
+        video.set_codec_options(options);
       } else if (codec == "mjpeg") {
         video.set_codec(JobOutputVideo::JobOutputVideoCodecValue::Mjpeg);
         DAILYBOY_ASSIGN_OR_RETURN(
             JobOutputVideoMjpeg options,
             parse_mjpeg(video_map["codec_options"], base + ".codec_options"));
-        video.set_codec_options(std::move(options));
+        video.set_codec_options(options);
       } else if (codec == "dnxhd") {
         video.set_codec(JobOutputVideo::JobOutputVideoCodecValue::Dnxhd);
         DAILYBOY_ASSIGN_OR_RETURN(
             JobOutputVideoDnxhd options,
             parse_dnxhd(video_map["codec_options"], base + ".codec_options"));
-        video.set_codec_options(std::move(options));
+        video.set_codec_options(options);
       } else {
-        return Status::User(with_job_error(USER_ERROR_JOB_25,
-                                           base + ".codec '" + codec + "'."));
+        std::string detail = base;
+        detail += ".codec '";
+        detail += codec;
+        detail += "'.";
+        return Status::User(with_job_error(USER_ERROR_JOB_25, detail));
       }
       values.push_back(std::move(video));
     }

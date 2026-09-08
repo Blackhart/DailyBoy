@@ -10,7 +10,6 @@ extern "C" {
 #include <libavformat/avformat.h>
 #include <libavutil/channel_layout.h>
 #include <libavutil/frame.h>
-#include <libavutil/opt.h>
 #include <libswresample/swresample.h>
 }
 
@@ -19,6 +18,7 @@ extern "C" {
 #include <cstdlib>
 #include <dailyboy/log.hpp>
 #include <map>
+#include <optional>
 #include <string>
 
 #include "error/video.hpp"
@@ -325,9 +325,14 @@ StatusOr<std::vector<int16_t>> load_audio_file_as_pcm(const std::string& path) {
 StatusOr<std::vector<int16_t>> load_and_fit_plan_audio(
     const JobPlan& plan, int want, int fps, int start_sample,
     const std::map<std::string, JobMetadataSubstitutionValue>& subs) {
+  const std::optional<JobPlanAudio>& audio_opt = plan.audio();
+  if (!audio_opt.has_value()) {
+    return Status::Internal("Internal error: plan audio is required.");
+  }
+  const JobPlanAudio& audio = *audio_opt;
   DAILYBOY_ASSIGN_OR_RETURN(
       std::string path,
-      expand_path_tokens(plan.audio()->path(), subs, USER_ERROR_ENCODE_5));
+      expand_path_tokens(audio.path(), subs, USER_ERROR_ENCODE_5));
   DAILYBOY_ASSIGN_OR_RETURN(std::vector<int16_t> pcm,
                             load_audio_file_as_pcm(path));
   const int plate_frames =

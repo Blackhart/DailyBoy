@@ -188,7 +188,7 @@ Status open_movies(std::vector<ActiveVideo>& movies, bool& movies_open,
 
 Status write_one_movie(ActiveVideo& active, const Frame& frame) {
   log_debug("render: write_movie " + active.video->id());
-  const Status write_status = active.writer->write(frame);
+  Status write_status = active.writer->write(frame);
   if (!write_status.ok() &&
       write_status.message() == std::string(USER_ERROR_ENCODE_3)) {
     return Status::User(std::string(USER_ERROR_RENDER_2));

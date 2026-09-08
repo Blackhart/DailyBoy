@@ -58,8 +58,11 @@ StatusOr<TextPosition> parse_text_position(const YAML::Node& node,
   for (const auto& kv : map) {
     const std::string key = kv.first.as<std::string>();
     if (key != "mode" && key != "anchor" && key != "x" && key != "y") {
-      return Status::User(
-          with_job_error(USER_ERROR_JOB_40, field + "." + key + "."));
+      std::string detail = field;
+      detail += ".";
+      detail += key;
+      detail += ".";
+      return Status::User(with_job_error(USER_ERROR_JOB_40, detail));
     }
   }
   if (mode != "layout" && mode != "pixel" && mode != "percent") {
@@ -205,8 +208,11 @@ StatusOr<RGBColor> parse_font_color(const YAML::Node& node,
   for (const auto& kv : node) {
     const std::string key = kv.first.as<std::string>();
     if (key != "r" && key != "g" && key != "b") {
-      return Status::User(
-          with_job_error(USER_ERROR_JOB_40, field + "." + key + "."));
+      std::string detail = field;
+      detail += ".";
+      detail += key;
+      detail += ".";
+      return Status::User(with_job_error(USER_ERROR_JOB_40, detail));
     }
   }
   if (node["r"]) {
@@ -257,7 +263,7 @@ StatusOr<TextFont> parse_text_font(const YAML::Node& node,
   out.set_size_px(size_px);
   DAILYBOY_ASSIGN_OR_RETURN(RGBColor color,
                             parse_font_color(map["color"], field + ".color"));
-  out.set_color(std::move(color));
+  out.set_color(color);
   return out;
 }
 
@@ -326,8 +332,11 @@ StatusOr<Margin> parse_side_insets_px(const YAML::Node& node,
   for (const auto& kv : node) {
     const std::string key = kv.first.as<std::string>();
     if (key != "top" && key != "right" && key != "bottom" && key != "left") {
-      return Status::User(
-          with_job_error(USER_ERROR_JOB_40, field + "." + key + "."));
+      std::string detail = field;
+      detail += ".";
+      detail += key;
+      detail += ".";
+      return Status::User(with_job_error(USER_ERROR_JOB_40, detail));
     }
   }
   if (node["top"]) {
@@ -418,13 +427,13 @@ StatusOr<JobLayoutBurnInBox> parse_burnin_box(const YAML::Node& node,
   JobLayoutBurnInBoxColor color;
   DAILYBOY_ASSIGN_OR_RETURN(
       color, parse_rgb_color(map["color"], field + ".color", 0.0));
-  out.set_color(std::move(color));
+  out.set_color(color);
   DAILYBOY_ASSIGN_OR_RETURN(double opacity,
                             as_optional<double>(map, "opacity", 1.0, field));
   out.set_opacity(opacity);
   DAILYBOY_ASSIGN_OR_RETURN(JobLayoutBurnInBoxMargin margin,
                             parse_box_margin(map["margin"], field + ".margin"));
-  out.set_margin(std::move(margin));
+  out.set_margin(margin);
   return out;
 }
 
@@ -453,12 +462,12 @@ StatusOr<JobLayoutBurnIn> parse_burnin(const YAML::Node& node,
   DAILYBOY_ASSIGN_OR_RETURN(TextFont font,
                             parse_text_font(map["font"], field + ".font"));
   out.set_template_text(std::move(template_text));
-  out.set_position(std::move(position));
+  out.set_position(position);
   out.set_font(std::move(font));
   if (map["box"] && !map["box"].IsNull()) {
     DAILYBOY_ASSIGN_OR_RETURN(JobLayoutBurnInBox box,
                               parse_burnin_box(map["box"], field + ".box"));
-    out.set_box(std::move(box));
+    out.set_box(box);
   }
   return out;
 }
@@ -478,7 +487,7 @@ StatusOr<JobLayoutSlateLine> parse_slate_line(const YAML::Node& node,
   DAILYBOY_ASSIGN_OR_RETURN(TextFont font,
                             parse_text_font(map["font"], field + ".font"));
   out.set_text(std::move(text));
-  out.set_position(std::move(position));
+  out.set_position(position);
   out.set_font(std::move(font));
   return out;
 }
@@ -524,7 +533,7 @@ StatusOr<JobLayout> parse_layout(const YAML::Node& node) {
     }
     canvas.set_width(width);
     canvas.set_height(height);
-    out.set_canvas(std::move(canvas));
+    out.set_canvas(canvas);
   }
 
   {
@@ -538,7 +547,7 @@ StatusOr<JobLayout> parse_layout(const YAML::Node& node) {
     } else {
       pixel_aspect.set_aspect(1.0);
     }
-    out.set_pixel_aspect(std::move(pixel_aspect));
+    out.set_pixel_aspect(pixel_aspect);
   }
 
   {
@@ -583,14 +592,14 @@ StatusOr<JobLayout> parse_layout(const YAML::Node& node) {
     DAILYBOY_ASSIGN_OR_RETURN(
         Margin min_margin, parse_side_insets_px(image_map["min_margin_px"],
                                                 "layout.image.min_margin_px"));
-    image.set_min_margin_px(std::move(min_margin));
-    out.set_image(std::move(image));
+    image.set_min_margin_px(min_margin);
+    out.set_image(image);
   }
 
   {
     DAILYBOY_ASSIGN_OR_RETURN(JobLayoutBackground bg,
                               parse_layout_background(map["background"]));
-    out.set_background(std::move(bg));
+    out.set_background(bg);
   }
 
   {

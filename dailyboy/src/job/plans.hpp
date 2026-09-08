@@ -13,7 +13,6 @@ namespace dailyboy {
 class JobSequence {
  public:
   JobSequence() = default;
-  ~JobSequence() = default;
 
   const std::string& path() const { return path_; }
   void set_path(std::string path) { path_ = std::move(path); }
@@ -36,7 +35,6 @@ class JobSequence {
 class JobPlanAudio {
  public:
   JobPlanAudio() = default;
-  ~JobPlanAudio() = default;
 
   const std::string& path() const { return path_; }
   void set_path(std::string path) { path_ = std::move(path); }
@@ -51,7 +49,6 @@ class JobPlanAudio {
 class JobPlan {
  public:
   JobPlan() = default;
-  ~JobPlan() = default;
 
   const std::string& id() const { return id_; }
   void set_id(std::string id) { id_ = std::move(id); }
@@ -84,8 +81,6 @@ class JobPlan {
 class JobPlans {
  public:
   JobPlans() = default;
-  ~JobPlans() = default;
-
   const std::vector<JobPlan>& plans() const { return plans_; }
   std::vector<JobPlan>& plans() { return plans_; }
   void set_plans(std::vector<JobPlan> plans) { plans_ = std::move(plans); }

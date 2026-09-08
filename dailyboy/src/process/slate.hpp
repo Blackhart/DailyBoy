@@ -2,8 +2,6 @@
 
 #include "image/frame.hpp"
 #include "job/job.hpp"
-#include "job/layout.hpp"
-#include "process/compositing.hpp"
 #include "process/output.hpp"
 #include "process/tokens.hpp"
 #include "status.hpp"

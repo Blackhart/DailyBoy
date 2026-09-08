@@ -25,7 +25,6 @@
 #include "image/text.hpp"
 #include "job/layout.hpp"
 #include "job/primitives.hpp"
-#include "job/text.hpp"
 #include "status.hpp"
 
 namespace dailyboy {
@@ -164,10 +163,11 @@ Status oiio_user_error(const OIIO::ImageBuf& buf) {
 }
 
 Margin box_margin(const JobLayoutBurnIn& burn_in) {
-  if (!burn_in.box()) {
+  const std::optional<JobLayoutBurnInBox>& box = burn_in.box();
+  if (!box) {
     return {};
   }
-  return burn_in.box()->margin();
+  return box->margin();
 }
 
 Size compute_box_size(const Size& text, const Margin& margin) {
