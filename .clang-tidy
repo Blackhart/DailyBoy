@@ -14,5 +14,5 @@ Checks: >
   -performance-avoid-endl,
   -performance-unnecessary-value-param
 WarningsAsErrors: 'bugprone-*,clang-analyzer-*'
-HeaderFilterRegex: '.*/(dailyboy|api)/.*'
+HeaderFilterRegex: '.*/(dailyboy/(src|include)|api)/.*'
 FormatStyle: file

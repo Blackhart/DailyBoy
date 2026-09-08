@@ -341,16 +341,26 @@ unset(_sources)
 # ---------------------------------------------------------------------------
 # Static analysis (clang-tidy)
 # ---------------------------------------------------------------------------
+# Production code only (skip unit / perf / load tests under /tests/).
+set(DAILYBOY_CLANG_TIDY_SOURCES "")
+foreach(_src IN LISTS DAILYBOY_CLANG_FORMAT_SOURCES)
+    if(_src MATCHES "/tests/")
+        continue()
+    endif()
+    list(APPEND DAILYBOY_CLANG_TIDY_SOURCES "${_src}")
+endforeach()
+unset(_src)
+
 find_program(CLANG_TIDY NAMES clang-tidy clang-tidy-18 clang-tidy-17)
-if(CLANG_TIDY AND DAILYBOY_CLANG_FORMAT_SOURCES)
+if(CLANG_TIDY AND DAILYBOY_CLANG_TIDY_SOURCES)
     add_custom_target(
         clang-tidy-check
         COMMAND
             ${CLANG_TIDY} -p ${CMAKE_BINARY_DIR}
             --config-file=${CMAKE_SOURCE_DIR}/.clang-tidy
-            ${DAILYBOY_CLANG_FORMAT_SOURCES}
+            ${DAILYBOY_CLANG_TIDY_SOURCES}
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-        COMMENT "Running clang-tidy on DailyBoy sources"
+        COMMENT "Running clang-tidy on DailyBoy sources (excluding tests)"
         VERBATIM
     )
     message(STATUS "clang-tidy: target clang-tidy-check (${CLANG_TIDY})")
