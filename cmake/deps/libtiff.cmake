@@ -1,5 +1,7 @@
 # libtiff — TIFF for OpenImageIO
 # https://gitlab.com/libtiff/libtiff
+# Prefer CMAKE_PREFIX_PATH / JPEG_ROOT / ZLIB_ROOT over PKG_CONFIG_PATH: on
+# Windows, cmake -E env cannot safely carry a semicolon-separated path list.
 
 if(TARGET TIFF::TIFF)
     return()
@@ -19,9 +21,6 @@ dailyboy_bundled_shared_lib_path(
     "${DAILYBOY_LIBTIFF_PREFIX}/lib" "${_dailyboy_tiff_basename}" _dailyboy_tiff_lib
 )
 
-dailyboy_ep_pkg_config_path_env(
-    _dailyboy_tiff_pc_env "${DAILYBOY_ZLIB_PREFIX}" "${DAILYBOY_JPEG_TURBO_PREFIX}"
-)
 dailyboy_ep_cmake_args(_dailyboy_tiff_args "${DAILYBOY_LIBTIFF_PREFIX}")
 list(APPEND _dailyboy_tiff_args
     -Dtiff-tools=OFF
@@ -52,11 +51,8 @@ ExternalProject_Add(
     GIT_SHALLOW FALSE
     UPDATE_DISCONNECTED TRUE
     LIST_SEPARATOR |
-    CONFIGURE_COMMAND
-        ${CMAKE_COMMAND} -E env "${_dailyboy_tiff_pc_env}"
-        ${CMAKE_COMMAND} -S <SOURCE_DIR> -B <BINARY_DIR> ${_dailyboy_tiff_args}
-    BUILD_COMMAND
-        ${CMAKE_COMMAND} --build <BINARY_DIR> --parallel ${DAILYBOY_EP_JOBS}
+    CMAKE_ARGS ${_dailyboy_tiff_args}
+    BUILD_COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR> --parallel ${DAILYBOY_EP_JOBS}
     INSTALL_COMMAND ${CMAKE_COMMAND} --install <BINARY_DIR>
     BUILD_BYPRODUCTS ${_dailyboy_ep_byproducts}
     USES_TERMINAL_BUILD TRUE
@@ -70,6 +66,5 @@ dailyboy_install_bundled_libs("${DAILYBOY_LIBTIFF_PREFIX}" "${CMAKE_SHARED_LIBRA
 message(STATUS "deps: libtiff ${DAILYBOY_LIBTIFF_GIT_TAG}")
 unset(_dailyboy_tiff_lib)
 unset(_dailyboy_tiff_args)
-unset(_dailyboy_tiff_pc_env)
 unset(_dailyboy_tiff_basename)
 unset(_dailyboy_ep_byproducts)

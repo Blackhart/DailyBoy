@@ -1,5 +1,6 @@
 # libheif — HEIF/AVIF for OpenImageIO (libde265 + x265 + libaom)
 # https://github.com/strukturag/libheif
+# Prefer CMAKE_PREFIX_PATH over PKG_CONFIG_PATH (Windows-safe).
 
 if(TARGET heif::heif)
     return()
@@ -14,14 +15,6 @@ if(WIN32)
 endif()
 dailyboy_bundled_shared_lib_path("${DAILYBOY_LIBHEIF_PREFIX}/lib" heif _dailyboy_heif_lib)
 
-dailyboy_ep_pkg_config_path_env(
-    _dailyboy_heif_pc_env
-    "${DAILYBOY_ZLIB_PREFIX}"
-    "${DAILYBOY_JPEG_TURBO_PREFIX}"
-    "${DAILYBOY_LIBDE265_PREFIX}"
-    "${DAILYBOY_X265_PREFIX}"
-    "${DAILYBOY_AOM_PREFIX}"
-)
 dailyboy_ep_cmake_args(_dailyboy_heif_args "${DAILYBOY_LIBHEIF_PREFIX}")
 list(APPEND _dailyboy_heif_args
     -DWITH_LIBDE265=ON
@@ -51,11 +44,8 @@ ExternalProject_Add(
     GIT_SHALLOW FALSE
     UPDATE_DISCONNECTED TRUE
     LIST_SEPARATOR |
-    CONFIGURE_COMMAND
-        ${CMAKE_COMMAND} -E env "${_dailyboy_heif_pc_env}"
-        ${CMAKE_COMMAND} -S <SOURCE_DIR> -B <BINARY_DIR> ${_dailyboy_heif_args}
-    BUILD_COMMAND
-        ${CMAKE_COMMAND} --build <BINARY_DIR> --parallel ${DAILYBOY_EP_JOBS}
+    CMAKE_ARGS ${_dailyboy_heif_args}
+    BUILD_COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR> --parallel ${DAILYBOY_EP_JOBS}
     INSTALL_COMMAND ${CMAKE_COMMAND} --install <BINARY_DIR>
     BUILD_BYPRODUCTS ${_dailyboy_ep_byproducts}
     USES_TERMINAL_BUILD TRUE
@@ -69,5 +59,4 @@ dailyboy_install_bundled_libs("${DAILYBOY_LIBHEIF_PREFIX}" "${CMAKE_SHARED_LIBRA
 message(STATUS "deps: libheif ${DAILYBOY_LIBHEIF_GIT_TAG}")
 unset(_dailyboy_heif_lib)
 unset(_dailyboy_heif_args)
-unset(_dailyboy_heif_pc_env)
 unset(_dailyboy_ep_byproducts)

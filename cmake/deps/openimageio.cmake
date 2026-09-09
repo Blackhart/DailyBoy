@@ -38,22 +38,7 @@ dailyboy_ep_imported_byproducts(
     "${_dailyboy_oiio_util_lib}" "${_dailyboy_oiio_lib}"
 )
 
-dailyboy_ep_pkg_config_path_env(
-    _dailyboy_oiio_pc_env
-    "${DAILYBOY_ZLIB_PREFIX}"
-    "${DAILYBOY_JPEG_TURBO_PREFIX}"
-    "${DAILYBOY_LIBPNG_PREFIX}"
-    "${DAILYBOY_LIBTIFF_PREFIX}"
-    "${DAILYBOY_LIBRAW_PREFIX}"
-    "${DAILYBOY_LIBDE265_PREFIX}"
-    "${DAILYBOY_LIBHEIF_PREFIX}"
-    "${DAILYBOY_X264_PREFIX}"
-    "${DAILYBOY_X265_PREFIX}"
-    "${DAILYBOY_FFMPEG_PREFIX}"
-    "${DAILYBOY_TBB_PREFIX}"
-    "${DAILYBOY_OCIO_PREFIX}"
-)
-
+# Prefer *_ROOT / CMAKE_PREFIX_PATH over PKG_CONFIG_PATH (Windows-safe).
 set(_dailyboy_oiio_prefix_path
     "${DAILYBOY_ZLIB_PREFIX}|${DAILYBOY_JPEG_TURBO_PREFIX}|${DAILYBOY_LIBPNG_PREFIX}|${DAILYBOY_LIBTIFF_PREFIX}|${DAILYBOY_LIBDE265_PREFIX}|${DAILYBOY_LIBHEIF_PREFIX}|${DAILYBOY_X264_PREFIX}|${DAILYBOY_X265_PREFIX}|${DAILYBOY_FFMPEG_PREFIX}|${DAILYBOY_TBB_PREFIX}|${DAILYBOY_OCIO_PREFIX}"
 )
@@ -138,9 +123,7 @@ ExternalProject_Add(
     GIT_SHALLOW FALSE
     UPDATE_DISCONNECTED TRUE
     LIST_SEPARATOR |
-    CONFIGURE_COMMAND
-        ${CMAKE_COMMAND} -E env "${_dailyboy_oiio_pc_env}"
-        ${CMAKE_COMMAND} -S <SOURCE_DIR> -B <BINARY_DIR> ${_dailyboy_oiio_args}
+    CMAKE_ARGS ${_dailyboy_oiio_args}
     BUILD_COMMAND
         ${CMAKE_COMMAND} --build <BINARY_DIR> --parallel ${DAILYBOY_EP_JOBS}
     INSTALL_COMMAND ${CMAKE_COMMAND} --install <BINARY_DIR>
@@ -192,7 +175,6 @@ unset(_dailyboy_oiio_lib_basename)
 unset(_dailyboy_oiio_util_basename)
 unset(_dailyboy_oiio_util_lib)
 unset(_dailyboy_oiio_lib)
-unset(_dailyboy_oiio_pc_env)
 unset(_dailyboy_oiio_prefix_path)
 unset(_dailyboy_oiio_args)
 unset(_dailyboy_oiio_byproducts)
