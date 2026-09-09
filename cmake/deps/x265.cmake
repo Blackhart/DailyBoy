@@ -13,7 +13,15 @@ file(MAKE_DIRECTORY "${DAILYBOY_X265_PREFIX}/lib")
 if(WIN32)
     file(MAKE_DIRECTORY "${DAILYBOY_X265_PREFIX}/bin")
 endif()
-dailyboy_bundled_shared_lib_path("${DAILYBOY_X265_PREFIX}/lib" x265 _dailyboy_x265_lib)
+# Windows shared build installs libx265.dll (+ matching libx265.lib).
+if(WIN32)
+    set(_dailyboy_x265_basename libx265)
+else()
+    set(_dailyboy_x265_basename x265)
+endif()
+dailyboy_bundled_shared_lib_path(
+    "${DAILYBOY_X265_PREFIX}/lib" "${_dailyboy_x265_basename}" _dailyboy_x265_lib
+)
 
 dailyboy_ep_cmake_args(_dailyboy_x265_args "${DAILYBOY_X265_PREFIX}")
 list(APPEND _dailyboy_x265_args
@@ -50,9 +58,10 @@ ExternalProject_Add(
 dailyboy_add_imported_shared(
     FFmpeg::x265 dailyboy_x265 "${_dailyboy_x265_lib}" "${DAILYBOY_X265_PREFIX}/include"
 )
-dailyboy_install_bundled_libs("${DAILYBOY_X265_PREFIX}" "${CMAKE_SHARED_LIBRARY_PREFIX}x265*")
+dailyboy_install_bundled_libs("${DAILYBOY_X265_PREFIX}" "*x265*")
 
 message(STATUS "deps: x265 ${DAILYBOY_X265_GIT_TAG} (8-bit)")
 unset(_dailyboy_x265_lib)
 unset(_dailyboy_x265_args)
+unset(_dailyboy_x265_basename)
 unset(_dailyboy_ep_byproducts)
