@@ -12,7 +12,9 @@ target_compile_definitions(
 )
 target_link_libraries(generate_bouncing_circle PRIVATE OpenImageIO::OpenImageIO)
 # DT_RPATH (not RUNPATH) is searched for libheif's NEEDED (x265, libde265).
-target_link_options(generate_bouncing_circle PRIVATE "-Wl,--disable-new-dtags")
+if(NOT APPLE)
+    target_link_options(generate_bouncing_circle PRIVATE "-Wl,--disable-new-dtags")
+endif()
 set_target_properties(
     generate_bouncing_circle
     PROPERTIES BUILD_RPATH "${_dailyboy_example_rpath}"

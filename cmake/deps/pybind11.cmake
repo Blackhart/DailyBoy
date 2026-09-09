@@ -13,11 +13,19 @@ if(NOT Python3_FOUND)
     set(Python3_FIND_IMPLEMENTATIONS CPython)
     # Prefer the VFX-year binary when the user did not pass -DPython3_EXECUTABLE=…
     if(NOT Python3_EXECUTABLE)
-        set(_dailyboy_python_hint "/usr/bin/python${DAILYBOY_PYTHON_VERSION}")
-        if(EXISTS "${_dailyboy_python_hint}")
-            set(Python3_EXECUTABLE "${_dailyboy_python_hint}")
-        endif()
-        unset(_dailyboy_python_hint)
+        set(_dailyboy_python_hints
+            "/usr/bin/python${DAILYBOY_PYTHON_VERSION}"
+            "/usr/local/bin/python${DAILYBOY_PYTHON_VERSION}"
+            "/opt/homebrew/bin/python${DAILYBOY_PYTHON_VERSION}"
+        )
+        foreach(_hint IN LISTS _dailyboy_python_hints)
+            if(EXISTS "${_hint}")
+                set(Python3_EXECUTABLE "${_hint}")
+                break()
+            endif()
+        endforeach()
+        unset(_dailyboy_python_hints)
+        unset(_hint)
     endif()
     find_package(
         Python3
@@ -33,6 +41,7 @@ if(NOT Python3_FOUND)
             "  Host (Ubuntu): sudo add-apt-repository ppa:deadsnakes/ppa && "
             "sudo apt install python${DAILYBOY_PYTHON_VERSION} "
             "python${DAILYBOY_PYTHON_VERSION}-dev python${DAILYBOY_PYTHON_VERSION}-venv\n"
+            "  Host (macOS):  brew install python@${DAILYBOY_PYTHON_VERSION}\n"
             "  Or point CMake: -DPython3_EXECUTABLE=/path/to/python${DAILYBOY_PYTHON_VERSION}\n"
             "  Or C++ only:    cmake --preset debug -DDAILYBOY_BUILD_PYTHON=OFF"
         )

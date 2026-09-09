@@ -9,13 +9,7 @@
 #include "error/process.hpp"
 #include "job/primitives.hpp"
 #include "job/text.hpp"
-
-namespace {
-
-constexpr const char* kDejaVu =
-    "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf";
-
-}  // namespace
+#include "support/test_fonts.hpp"
 
 /*!
  * \brief Pixel position is used as the box origin.
@@ -44,7 +38,7 @@ TEST(Text, ComputeBoxPosition_PixelMode_ReturnsOrigin) {
 TEST(Text, ComputeTextSize_DejaVuFont_ReturnsPositiveSize) {
   // Prepare
   dailyboy::TextFont font;
-  font.set_path(kDejaVu);
+  font.set_path(dailyboy::test::kDejaVuSans);
   font.set_size_px(16);
 
   // Test
@@ -86,7 +80,7 @@ TEST(Text, DrawText_WhiteOnBlack_PaintsGlyphs) {
   OIIO::ImageBuf canvas(spec);
   EXPECT_TRUE(OIIO::ImageBufAlgo::zero(canvas));
   dailyboy::TextFont font;
-  font.set_path(kDejaVu);
+  font.set_path(dailyboy::test::kDejaVuSans);
   font.set_size_px(16);
   font.set_color(dailyboy::RGBColor(1.0, 1.0, 1.0));
 

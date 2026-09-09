@@ -51,7 +51,7 @@ layout:
         mode: "layout"
         anchor: "bottom_left"
       font:
-        path: "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+        path: "dailyboy/tests/data/fonts/DejaVuSans.ttf"
         size_px: 22
       box:
         mode: fill
@@ -66,7 +66,7 @@ layout:
         mode: "layout"
         anchor: "bottom_right"
       font:
-        path: "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+        path: "dailyboy/tests/data/fonts/DejaVuSans.ttf"
         size_px: 18
       box:
         mode: outline
@@ -85,7 +85,7 @@ layout:
         mode: "layout"
         anchor: "center_center"
       font:
-        path: "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+        path: "dailyboy/tests/data/fonts/DejaVuSans-Bold.ttf"
         size_px: 24
       box:
         mode: fill
@@ -101,7 +101,7 @@ layout:
         x: 64
         y: 48
       font:
-        path: "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf"
+        path: "dailyboy/tests/data/fonts/DejaVuSansMono.ttf"
         size_px: 16
       box:
         mode: outline
@@ -117,7 +117,7 @@ layout:
         x: 5
         y: 92
       font:
-        path: "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+        path: "dailyboy/tests/data/fonts/DejaVuSans.ttf"
         size_px: 20
       box:
         mode: fill
@@ -136,7 +136,7 @@ layout:
         mode: "layout"
         anchor: "top_left"
       font:
-        path: "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+        path: "dailyboy/tests/data/fonts/DejaVuSans.ttf"
         size_px: 14
       box:
         mode: fill
@@ -151,7 +151,7 @@ layout:
         mode: "layout"
         anchor: "top_right"
       font:
-        path: "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+        path: "dailyboy/tests/data/fonts/DejaVuSans.ttf"
         size_px: 14
       box:
         mode: outline
@@ -169,35 +169,35 @@ layout:
           mode: "layout"
           anchor: "top_left"
         font:
-          path: "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+          path: "dailyboy/tests/data/fonts/DejaVuSans.ttf"
           size_px: 36
       - text: "SHOT — {shot}"
         position:
           mode: "layout"
           anchor: "top_right"
         font:
-          path: "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+          path: "dailyboy/tests/data/fonts/DejaVuSans-Bold.ttf"
           size_px: 32
       - text: "CENTER — {artist}"
         position:
           mode: "layout"
           anchor: "center_center"
         font:
-          path: "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+          path: "dailyboy/tests/data/fonts/DejaVuSans.ttf"
           size_px: 28
       - text: "NOTE — {note_prod}"
         position:
           mode: "layout"
           anchor: "bottom_left"
         font:
-          path: "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+          path: "dailyboy/tests/data/fonts/DejaVuSans.ttf"
           size_px: 22
       - text: "FRAME NOTE — {note_frame}"
         position:
           mode: "layout"
           anchor: "bottom_right"
         font:
-          path: "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+          path: "dailyboy/tests/data/fonts/DejaVuSans.ttf"
           size_px: 20
       - text: "SLATE PIXEL"
         position:
@@ -205,7 +205,7 @@ layout:
           x: 120
           y: 900
         font:
-          path: "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf"
+          path: "dailyboy/tests/data/fonts/DejaVuSansMono.ttf"
           size_px: 18
       - text: "SLATE %"
         position:
@@ -213,7 +213,7 @@ layout:
           x: 50
           y: 50
         font:
-          path: "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+          path: "dailyboy/tests/data/fonts/DejaVuSans.ttf"
           size_px: 18
 
 output:

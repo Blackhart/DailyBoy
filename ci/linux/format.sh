@@ -2,11 +2,11 @@
 # clang-format on DailyBoy C++ sources (no CMake / build tree).
 #
 # Usage:
-#   ci/format.sh          # dry-run --Werror (CI)
-#   ci/format.sh --fix   # rewrite in place
+#   ci/linux/format.sh          # dry-run --Werror (CI)
+#   ci/linux/format.sh --fix   # rewrite in place
 set -euo pipefail
 
-root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$root"
 
 fix=0
@@ -14,7 +14,7 @@ case "${1:-}" in
   "") ;;
   --fix) fix=1 ;;
   *)
-    echo "usage: ci/format.sh [--fix]" >&2
+    echo "usage: ci/linux/format.sh [--fix]" >&2
     exit 2
     ;;
 esac

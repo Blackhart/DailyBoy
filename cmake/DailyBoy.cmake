@@ -66,14 +66,20 @@ message(
     "(C++${CMAKE_CXX_STANDARD}, Python ${DAILYBOY_PYTHON_VERSION}.x)"
 )
 
-# Apply the selected C++ standard to a target (PUBLIC / PRIVATE / INTERFACE).
-function(dailyboy_target_cxx_std target visibility)
-    target_compile_features(
-        ${target}
-        ${visibility}
-        cxx_std_${CMAKE_CXX_STANDARD}
-    )
-endfunction()
+# ---------------------------------------------------------------------------
+# macOS
+# ---------------------------------------------------------------------------
+if(APPLE)
+    set(CMAKE_MACOSX_RPATH ON)
+    set(CMAKE_INSTALL_RPATH "@loader_path/../lib")
+endif()
+
+# ---------------------------------------------------------------------------
+# Linux
+# ---------------------------------------------------------------------------
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    set(CMAKE_INSTALL_RPATH "$ORIGIN/../lib")
+endif()
 
 # ---------------------------------------------------------------------------
 # Options
@@ -134,7 +140,7 @@ if(CMAKE_BUILD_TYPE MATCHES "^(Debug|RelWithDebInfo)$")
 endif()
 
 # ---------------------------------------------------------------------------
-# Helpers — ExternalProject layout under build/_deps/<component>/<debug|release>/
+# Helpers — ExternalProject layout, C++ std, and build-tree runtime paths
 # ---------------------------------------------------------------------------
 ProcessorCount(DAILYBOY_EP_JOBS)
 if(DAILYBOY_EP_JOBS LESS_EQUAL 0)
@@ -240,15 +246,39 @@ function(dailyboy_bundled_runtime_lib_dirs out_var)
     set(${out_var} "${_dirs}" PARENT_SCOPE)
 endfunction()
 
-# Colon-joined LD_LIBRARY_PATH for running build-tree binaries and CTest.
+# Apply the selected C++ standard to a target (PUBLIC / PRIVATE / INTERFACE).
+function(dailyboy_target_cxx_std target visibility)
+    target_compile_features(
+        ${target}
+        ${visibility}
+        cxx_std_${CMAKE_CXX_STANDARD}
+    )
+endfunction()
+
+# Colon-joined runtime library search path for build-tree binaries and CTest.
 # libavcodec NEEDs libx264; GNU ld.so ignores the exe DT_RUNPATH for that.
+# On Apple, DYLD_LIBRARY_PATH is used (SIP may strip it from some binaries).
 function(dailyboy_bundled_ld_library_path out_var)
     dailyboy_bundled_runtime_lib_dirs(_dirs)
     string(JOIN ":" _path ${_dirs})
-    if(DEFINED ENV{LD_LIBRARY_PATH} AND NOT "$ENV{LD_LIBRARY_PATH}" STREQUAL "")
+    if(APPLE)
+        if(DEFINED ENV{DYLD_LIBRARY_PATH} AND NOT "$ENV{DYLD_LIBRARY_PATH}" STREQUAL "")
+            string(APPEND _path ":$ENV{DYLD_LIBRARY_PATH}")
+        endif()
+    elseif(DEFINED ENV{LD_LIBRARY_PATH} AND NOT "$ENV{LD_LIBRARY_PATH}" STREQUAL "")
         string(APPEND _path ":$ENV{LD_LIBRARY_PATH}")
     endif()
     set(${out_var} "${_path}" PARENT_SCOPE)
+endfunction()
+
+# ENVIRONMENT property value: DYLD_LIBRARY_PATH=… on Apple, else LD_LIBRARY_PATH=…
+function(dailyboy_bundled_runtime_path_env out_var)
+    dailyboy_bundled_ld_library_path(_path)
+    if(APPLE)
+        set(${out_var} "DYLD_LIBRARY_PATH=${_path}" PARENT_SCOPE)
+    else()
+        set(${out_var} "LD_LIBRARY_PATH=${_path}" PARENT_SCOPE)
+    endif()
 endfunction()
 
 # ---------------------------------------------------------------------------
@@ -456,8 +486,7 @@ if(BUILD_TESTING)
     # gtest PRE_TEST discovery runs the binary; CROSSCOMPILING_EMULATOR is
     # cmake -E env (not a cross compiler) so libx264 is visible.
     function(dailyboy_gtest_discover name)
-        dailyboy_bundled_ld_library_path(_ld)
-        set(_env "LD_LIBRARY_PATH=${_ld}")
+        dailyboy_bundled_runtime_path_env(_env)
         set_property(
             TARGET ${name}
             PROPERTY CROSSCOMPILING_EMULATOR
@@ -502,8 +531,14 @@ function(_dailyboy_finalize)
         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     )
 
+    if(APPLE)
+        set(_dailyboy_env_sh "${CMAKE_SOURCE_DIR}/cmake/dailyboy-env.macos.sh.in")
+    else()
+        set(_dailyboy_env_sh "${CMAKE_SOURCE_DIR}/cmake/dailyboy-env.linux.sh.in")
+    endif()
+    
     install(
-        FILES "${CMAKE_SOURCE_DIR}/cmake/dailyboy-env.sh.in"
+        FILES "${_dailyboy_env_sh}"
         DESTINATION ${CMAKE_INSTALL_DATADIR}/dailyboy
         RENAME env.sh
     )
@@ -545,10 +580,10 @@ function(_dailyboy_finalize)
 
     if(BUILD_TESTING)
         add_test(NAME makeDaily_help COMMAND makeDaily --help)
-        dailyboy_bundled_ld_library_path(_dailyboy_help_ld)
+        dailyboy_bundled_runtime_path_env(_dailyboy_help_env)
         set_tests_properties(
             makeDaily_help
-            PROPERTIES ENVIRONMENT "LD_LIBRARY_PATH=${_dailyboy_help_ld}"
+            PROPERTIES ENVIRONMENT "${_dailyboy_help_env}"
         )
         if(TARGET clang-format-check)
             add_test(

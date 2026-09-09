@@ -88,7 +88,7 @@ exit_code = makeDaily("path/to/job.yaml")
 - `DAILYBOY_PYTHON_BUILD_IN_SOURCE` (default: `ON`) — build native module in source tree (`OFF` if the tree is read-only).
 - `DAILYBOY_EXPORT_COMPILE_COMMANDS` (default: `ON`) — generate `compile_commands.json`.
 - `DAILYBOY_COMPILE_COMMANDS_SYMLINK` (default: `ON`) — root symlink to build `compile_commands.json`.
-- `DAILYBOY_ENABLE_COVERAGE` (default: `OFF`, requires `BUILD_TESTING`) — instrument the `dailyboy` library with gcov. After `ctest -L unit`, run `cmake --build --preset coverage-report` for HTML / LCOV / Cobertura under `build/CY2026/debug/coverage/` (CI: `ci/coverage_upload.sh`).
+- `DAILYBOY_ENABLE_COVERAGE` (default: `OFF`, requires `BUILD_TESTING`) — instrument the `dailyboy` library with gcov. After `ctest -L unit`, run `cmake --build --preset coverage-report` for HTML / LCOV / Cobertura under `build/CY2026/debug/coverage/` (CI: `ci/linux/coverage_upload.sh`).
 - `DAILYBOY_GCOVR_HTML_THEME` (default: `green`) — gcovr HTML theme.
 - `DAILYBOY_ENABLE_SANITIZERS` (default: `OFF`) — ASan/UBSan on DailyBoy targets (`sanitize` preset).
 
@@ -237,18 +237,16 @@ ctest --preset cy2024-tests
 
 ## Continuous integration
 
-The CI system is built around a **base Ubuntu 24.04 image** ([`docker/Dockerfile.base`](docker/Dockerfile.base)) and a **base Rocky Linux 9 image** ([`docker/rocky/Dockerfile.rocky9.base`](docker/rocky/Dockerfile.rocky9.base)), and there is a separate Docker image for each VFX platform year ([`Dockerfile.cy2026`](docker/Dockerfile.cy2026), [`Dockerfile.cy2025`](docker/Dockerfile.cy2025), and [`Dockerfile.cy2024`](docker/Dockerfile.cy2024) for Ubuntu; [`Dockerfile.rocky9.cy2026`](docker/rocky/Dockerfile.rocky9.cy2026), [`Dockerfile.rocky9.cy2025`](docker/rocky/Dockerfile.rocky9.cy2025), and [`Dockerfile.rocky9.cy2024`](docker/rocky/Dockerfile.rocky9.cy2024) for Rocky). The workflow definitions are in [`.github/workflows/`](.github/workflows/), and supporting shell scripts are found in [`ci/`](ci/).
-
-Here is how CI is organized:
+The CI system uses Docker images under [`docker/ubuntu/`](docker/ubuntu/) and [`docker/rocky/`](docker/rocky/) for Linux, plus a **native macOS** job. Workflows live in [`.github/workflows/`](.github/workflows/); helpers are in [`ci/linux/`](ci/linux/) and [`ci/macos/`](ci/macos/).
 
 | Workflow | What triggers it? | What does it run? |
 | --- | --- | --- |
-| [`ci.yml`](.github/workflows/ci.yml) | On PRs or pushes to `develop` or `main` | **Ubuntu:** format + CY2024/25/26 debug + tests (coverage on CY2026). **Rocky 9:** CY2024/25/26 debug + tests (no sanitize/tidy/coverage) |
+| [`ci.yml`](.github/workflows/ci.yml) | On PRs or pushes to `develop` or `main` | **Ubuntu:** format + CY2024/25/26 debug + tests (coverage on CY2026). **Rocky 9:** CY2024/25/26 debug + tests. **macOS:** CY2026 debug + tests (native, no Docker) |
 | [`nightly.yml`](.github/workflows/nightly.yml) | On scheduled cron or manual trigger | **Ubuntu CY2026 only** on branch `develop`: debug (+ Codecov) ∥ sanitize ∥ **clang-tidy** |
 
 **Code coverage** is collected only for **Ubuntu CY2026** builds. In CY2024/CY2025 debug builds, coverage is disabled (`DAILYBOY_ENABLE_COVERAGE=OFF`).
 
-You can manually build and run CI jobs in Docker with the following commands:
+### Linux (Docker)
 
 ```bash
 # Ubuntu 24.04
@@ -257,14 +255,14 @@ docker build -t dailyboy-ci:ubuntu24-cy2026 -f docker/ubuntu/Dockerfile.ubuntu24
 docker build -t dailyboy-ci:ubuntu24-cy2025 -f docker/ubuntu/Dockerfile.ubuntu24.cy2025 docker/ubuntu
 docker build -t dailyboy-ci:ubuntu24-cy2024 -f docker/ubuntu/Dockerfile.ubuntu24.cy2024 docker/ubuntu
 
-DAILYBOY_CI_IMAGE=dailyboy-ci:ubuntu24-cy2026 ./ci/docker.sh ./ci/format.sh
-DAILYBOY_CI_IMAGE=dailyboy-ci:ubuntu24-cy2026 ./ci/docker.sh ./ci/build.sh 2026 debug
-DAILYBOY_CI_IMAGE=dailyboy-ci:ubuntu24-cy2025 ./ci/docker.sh ./ci/build.sh 2025 debug
-DAILYBOY_CI_IMAGE=dailyboy-ci:ubuntu24-cy2024 ./ci/docker.sh ./ci/build.sh 2024 debug
-DAILYBOY_CI_IMAGE=dailyboy-ci:ubuntu24-cy2026 ./ci/docker.sh ./ci/test.sh 2026 tests
-DAILYBOY_CI_IMAGE=dailyboy-ci:ubuntu24-cy2025 ./ci/docker.sh ./ci/test.sh 2025 tests
-DAILYBOY_CI_IMAGE=dailyboy-ci:ubuntu24-cy2024 ./ci/docker.sh ./ci/test.sh 2024 tests
-DAILYBOY_CI_IMAGE=dailyboy-ci:ubuntu24-cy2026 ./ci/docker.sh ./ci/tidy.sh
+DAILYBOY_CI_IMAGE=dailyboy-ci:ubuntu24-cy2026 ./ci/linux/docker.sh ./ci/linux/format.sh
+DAILYBOY_CI_IMAGE=dailyboy-ci:ubuntu24-cy2026 ./ci/linux/docker.sh ./ci/linux/build.sh 2026 debug
+DAILYBOY_CI_IMAGE=dailyboy-ci:ubuntu24-cy2025 ./ci/linux/docker.sh ./ci/linux/build.sh 2025 debug
+DAILYBOY_CI_IMAGE=dailyboy-ci:ubuntu24-cy2024 ./ci/linux/docker.sh ./ci/linux/build.sh 2024 debug
+DAILYBOY_CI_IMAGE=dailyboy-ci:ubuntu24-cy2026 ./ci/linux/docker.sh ./ci/linux/test.sh 2026 tests
+DAILYBOY_CI_IMAGE=dailyboy-ci:ubuntu24-cy2025 ./ci/linux/docker.sh ./ci/linux/test.sh 2025 tests
+DAILYBOY_CI_IMAGE=dailyboy-ci:ubuntu24-cy2024 ./ci/linux/docker.sh ./ci/linux/test.sh 2024 tests
+DAILYBOY_CI_IMAGE=dailyboy-ci:ubuntu24-cy2026 ./ci/linux/docker.sh ./ci/linux/tidy.sh
 
 # Rocky Linux 9
 docker build -t dailyboy-ci:rocky9-base -f docker/rocky/Dockerfile.rocky9.base docker/rocky
@@ -273,18 +271,31 @@ docker build -t dailyboy-ci:rocky9-cy2025 -f docker/rocky/Dockerfile.rocky9.cy20
 docker build -t dailyboy-ci:rocky9-cy2024 -f docker/rocky/Dockerfile.rocky9.cy2024 docker/rocky
 
 # Rocky uses DAILYBOY_BUILD_ROOT=docker/rocky9/ (Ubuntu default: docker/ubuntu24/)
-DAILYBOY_BUILD_ROOT=docker/rocky9/ DAILYBOY_CI_IMAGE=dailyboy-ci:rocky9-cy2026 ./ci/docker.sh ./ci/build.sh 2026 debug
-DAILYBOY_BUILD_ROOT=docker/rocky9/ DAILYBOY_CI_IMAGE=dailyboy-ci:rocky9-cy2025 ./ci/docker.sh ./ci/build.sh 2025 debug
-DAILYBOY_BUILD_ROOT=docker/rocky9/ DAILYBOY_CI_IMAGE=dailyboy-ci:rocky9-cy2024 ./ci/docker.sh ./ci/build.sh 2024 debug
-DAILYBOY_BUILD_ROOT=docker/rocky9/ DAILYBOY_CI_IMAGE=dailyboy-ci:rocky9-cy2026 ./ci/docker.sh ./ci/test.sh 2026 tests
-DAILYBOY_BUILD_ROOT=docker/rocky9/ DAILYBOY_CI_IMAGE=dailyboy-ci:rocky9-cy2025 ./ci/docker.sh ./ci/test.sh 2025 tests
-DAILYBOY_BUILD_ROOT=docker/rocky9/ DAILYBOY_CI_IMAGE=dailyboy-ci:rocky9-cy2024 ./ci/docker.sh ./ci/test.sh 2024 tests
+DAILYBOY_BUILD_ROOT=docker/rocky9/ DAILYBOY_CI_IMAGE=dailyboy-ci:rocky9-cy2026 ./ci/linux/docker.sh ./ci/linux/build.sh 2026 debug
+DAILYBOY_BUILD_ROOT=docker/rocky9/ DAILYBOY_CI_IMAGE=dailyboy-ci:rocky9-cy2025 ./ci/linux/docker.sh ./ci/linux/build.sh 2025 debug
+DAILYBOY_BUILD_ROOT=docker/rocky9/ DAILYBOY_CI_IMAGE=dailyboy-ci:rocky9-cy2024 ./ci/linux/docker.sh ./ci/linux/build.sh 2024 debug
+DAILYBOY_BUILD_ROOT=docker/rocky9/ DAILYBOY_CI_IMAGE=dailyboy-ci:rocky9-cy2026 ./ci/linux/docker.sh ./ci/linux/test.sh 2026 tests
+DAILYBOY_BUILD_ROOT=docker/rocky9/ DAILYBOY_CI_IMAGE=dailyboy-ci:rocky9-cy2025 ./ci/linux/docker.sh ./ci/linux/test.sh 2025 tests
+DAILYBOY_BUILD_ROOT=docker/rocky9/ DAILYBOY_CI_IMAGE=dailyboy-ci:rocky9-cy2024 ./ci/linux/docker.sh ./ci/linux/test.sh 2024 tests
 ```
 
-**Build caching:** GitHub Actions caches **ccache** and deps under `build/docker/ubuntu24/CY*/…/_deps` or `build/docker/rocky9/CY*/…/_deps`.
- 
+### macOS (native, CY2026)
 
-If you want to run tests with `ctest` directly (not using the helper scripts), remember to set `LD_LIBRARY_PATH` as shown above, so the build can find its dependencies.
+Requires Xcode Command Line Tools and Homebrew:
+
+```bash
+brew install cmake ninja ccache pkg-config autoconf automake libtool \
+  nasm freetype openssl@3 python@3.13
+
+./ci/macos/build.sh 2026 debug
+./ci/macos/test.sh 2026 tests
+```
+
+Build tree: `build/macos/CY2026/…` (`DAILYBOY_BUILD_ROOT=macos/` by default in the macOS scripts).
+
+**Build caching:** GitHub Actions caches **ccache** and deps under `build/docker/ubuntu24/…`, `build/docker/rocky9/…`, or `build/macos/…`.
+
+If you want to run tests with `ctest` directly (not using the helper scripts), set `LD_LIBRARY_PATH` (Linux) or `DYLD_LIBRARY_PATH` (macOS) as in the scripts above so the build can find its dependencies.
 
 ## License
 

@@ -5,14 +5,14 @@
 # Rocky CI: DAILYBOY_BUILD_ROOT=docker/rocky9/
 # Host (empty DAILYBOY_BUILD_ROOT): build/CY<year>/<config>
 #
-# Usage: ci/build.sh <2024|2025|2026> <debug|release|sanitize>
+# Usage: ci/linux/build.sh <2024|2025|2026> <debug|release|sanitize>
 set -euo pipefail
 
-root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$root"
 
-year="${1:?usage: ci/build.sh <2024|2025|2026> <debug|release|sanitize>}"
-config="${2:?usage: ci/build.sh <2024|2025|2026> <debug|release|sanitize>}"
+year="${1:?usage: ci/linux/build.sh <2024|2025|2026> <debug|release|sanitize>}"
+config="${2:?usage: ci/linux/build.sh <2024|2025|2026> <debug|release|sanitize>}"
 case "${year}" in
   2024|2025|2026) ;;
   *) echo "error: year must be 2024, 2025, or 2026" >&2; exit 1 ;;

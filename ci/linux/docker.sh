@@ -5,15 +5,15 @@
 # Docker would create the bind mount as root and break `--user`.
 #
 # Usage:
-#   DAILYBOY_CI_IMAGE=dailyboy-ci:ubuntu24-cy2026 ./ci/docker.sh ./ci/build.sh 2026 debug
-#   ./ci/docker.sh -e ASAN_OPTIONS=detect_leaks=0 -- ./ci/test.sh 2026 sanitize
+#   DAILYBOY_CI_IMAGE=dailyboy-ci:ubuntu24-cy2026 ./ci/linux/docker.sh ./ci/linux/build.sh 2026 debug
+#   ./ci/linux/docker.sh -e ASAN_OPTIONS=detect_leaks=0 -- ./ci/linux/test.sh 2026 sanitize
 set -euo pipefail
 
-root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$root"
 
 image="${DAILYBOY_CI_IMAGE:-dailyboy-ci:ubuntu24-cy2026}"
-usage="usage: ci/docker.sh [docker-run-args...] [--] <command> [args...]"
+usage="usage: ci/linux/docker.sh [docker-run-args...] [--] <command> [args...]"
 
 [[ $# -gt 0 ]] || { echo "$usage" >&2; exit 1; }
 

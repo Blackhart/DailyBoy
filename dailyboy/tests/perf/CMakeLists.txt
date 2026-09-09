@@ -29,6 +29,7 @@ function(dailyboy_add_perf_benchmark name)
         PRIVATE
             "DAILYBOY_TEST_BINARY_DIR=\"${CMAKE_CURRENT_BINARY_DIR}\""
             "DAILYBOY_PERF_DATA_DIR=\"${CMAKE_SOURCE_DIR}/dailyboy/tests/perf/data\""
+            "DAILYBOY_TEST_FONTS_DIR=\"${CMAKE_SOURCE_DIR}/dailyboy/tests/data/fonts\""
     )
     set_target_properties(
         ${name}
@@ -47,11 +48,12 @@ function(dailyboy_add_perf_benchmark name)
         list(APPEND _cmd "--benchmark_filter=${ARG_FILTER}")
     endif()
     add_test(NAME ${name} COMMAND ${_cmd})
+    dailyboy_bundled_runtime_path_env(_dailyboy_perf_env)
     set_tests_properties(
         ${name}
         PROPERTIES
             LABELS "perf;dailyboy"
-            ENVIRONMENT "LD_LIBRARY_PATH=${_dailyboy_test_rpath}"
+            ENVIRONMENT "${_dailyboy_perf_env}"
             TIMEOUT ${_timeout}
     )
 endfunction()
@@ -72,6 +74,8 @@ dailyboy_add_perf_benchmark(
     "/10/"
 )
 
+dailyboy_bundled_runtime_path_env(_dailyboy_perf_env)
+
 add_test(
     NAME format_load
     COMMAND
@@ -83,7 +87,7 @@ set_tests_properties(
     format_load
     PROPERTIES
         LABELS "load;dailyboy"
-        ENVIRONMENT "LD_LIBRARY_PATH=${_dailyboy_test_rpath}"
+        ENVIRONMENT "${_dailyboy_perf_env}"
         TIMEOUT 900
 )
 
@@ -98,7 +102,7 @@ set_tests_properties(
     run_load
     PROPERTIES
         LABELS "load;dailyboy"
-        ENVIRONMENT "LD_LIBRARY_PATH=${_dailyboy_test_rpath}"
+        ENVIRONMENT "${_dailyboy_perf_env}"
         TIMEOUT 600
 )
 
@@ -113,7 +117,9 @@ target_link_libraries(
     generate_reformat_perf_data
     PRIVATE OpenImageIO::OpenImageIO
 )
-target_link_options(generate_reformat_perf_data PRIVATE "-Wl,--disable-new-dtags")
+if(NOT APPLE)
+    target_link_options(generate_reformat_perf_data PRIVATE "-Wl,--disable-new-dtags")
+endif()
 set_target_properties(
     generate_reformat_perf_data
     PROPERTIES
