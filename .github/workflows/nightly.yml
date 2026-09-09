@@ -20,6 +20,8 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: develop
       - uses: docker/setup-buildx-action@v3
       - name: Build Ubuntu base image
         uses: docker/build-push-action@v6
@@ -45,6 +47,8 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: develop
       - uses: actions/download-artifact@v4
         with:
           name: dailyboy-ci-ubuntu24-base-nightly
@@ -70,6 +74,8 @@ jobs:
     timeout-minutes: 360
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: develop
       - uses: actions/download-artifact@v4
         with:
           name: dailyboy-ci-ubuntu24-cy2026-nightly
@@ -120,6 +126,8 @@ jobs:
     timeout-minutes: 360
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: develop
       - uses: actions/download-artifact@v4
         with:
           name: dailyboy-ci-ubuntu24-cy2026-nightly
@@ -159,6 +167,8 @@ jobs:
     timeout-minutes: 360
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: develop
       - uses: actions/download-artifact@v4
         with:
           name: dailyboy-ci-ubuntu24-cy2026-nightly
