@@ -1,0 +1,18 @@
+# Relocatable: prefix = parent of share/ (this file lives at share/dailyboy/env.ps1).
+#   . /path/to/install/share/dailyboy/env.ps1
+#   makeDaily --help
+
+$ErrorActionPreference = "Stop"
+$envDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$prefix = (Resolve-Path (Join-Path $envDir "..\..")).Path
+$binDir = Join-Path $prefix "bin"
+$libDir = Join-Path $prefix "lib"
+
+if (-not (Test-Path -LiteralPath $binDir) -and -not (Test-Path -LiteralPath $libDir)) {
+    Write-Error "dailyboy env.ps1: no bin/lib directory under $prefix"
+}
+
+$parts = @()
+if (Test-Path -LiteralPath $binDir) { $parts += $binDir }
+if (Test-Path -LiteralPath $libDir) { $parts += $libDir }
+$env:Path = ($parts -join ";") + $(if ($env:Path) { ";" + $env:Path } else { "" })

@@ -67,6 +67,40 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
     endif()
 endif()
 
+if(WIN32 AND MSVC)
+    if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS "${DAILYBOY_WINDOWS_MSVC_VERSION}")
+        message(
+            WARNING
+            "DailyBoy ${DAILYBOY_VFX_PLATFORM_LABEL}: Visual Studio 2022 "
+            "v${DAILYBOY_WINDOWS_VS_VERSION}+ (MSVC ${DAILYBOY_WINDOWS_MSVC_VERSION}+) "
+            "recommended (current compiler: ${CMAKE_CXX_COMPILER_VERSION})"
+        )
+    endif()
+    set(_dailyboy_windows_sdk "")
+    if(CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION)
+        set(_dailyboy_windows_sdk "${CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION}")
+    elseif(DEFINED ENV{WindowsSDKVersion})
+        string(REGEX REPLACE "[\\/]+$" "" _dailyboy_windows_sdk "$ENV{WindowsSDKVersion}")
+    endif()
+    if(_dailyboy_windows_sdk)
+        if(_dailyboy_windows_sdk VERSION_LESS "${DAILYBOY_WINDOWS_SDK_VERSION}")
+            message(
+                WARNING
+                "DailyBoy ${DAILYBOY_VFX_PLATFORM_LABEL}: Windows SDK "
+                "${DAILYBOY_WINDOWS_SDK_VERSION}+ recommended "
+                "(current: ${_dailyboy_windows_sdk})"
+            )
+        endif()
+    else()
+        message(
+            STATUS
+            "DailyBoy ${DAILYBOY_VFX_PLATFORM_LABEL}: Windows SDK version not detected; "
+            "VFX requires ${DAILYBOY_WINDOWS_SDK_VERSION}+"
+        )
+    endif()
+    unset(_dailyboy_windows_sdk)
+endif()
+
 message(
     STATUS
     "DailyBoy targets VFX Reference Platform ${DAILYBOY_VFX_PLATFORM_LABEL} "
@@ -86,6 +120,17 @@ endif()
 # ---------------------------------------------------------------------------
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     set(CMAKE_INSTALL_RPATH "$ORIGIN/../lib")
+endif()
+
+# ---------------------------------------------------------------------------
+# Windows
+# ---------------------------------------------------------------------------
+if(WIN32)
+    # Shared deps install DLLs under bin/; import libs under lib/.
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+    if(MSVC AND NOT DEFINED CMAKE_MSVC_RUNTIME_LIBRARY)
+        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+    endif()
 endif()
 
 # ---------------------------------------------------------------------------
@@ -154,8 +199,20 @@ if(DAILYBOY_EP_JOBS LESS_EQUAL 0)
     set(DAILYBOY_EP_JOBS 1)
 endif()
 
-find_program(DAILYBOY_MAKE_EXECUTABLE NAMES gmake make)
+find_program(DAILYBOY_MAKE_EXECUTABLE NAMES mingw32-make gmake make)
 find_program(DAILYBOY_NASM_EXECUTABLE NAMES nasm)
+if(WIN32)
+    find_program(
+        DAILYBOY_MSYS2_BASH
+        NAMES bash.exe bash
+        PATHS
+            ENV MSYS2_BASH
+            "C:/msys64/usr/bin"
+            "C:/tools/msys64/usr/bin"
+            "$ENV{MSYS2_PATH}/usr/bin"
+        DOC "MSYS2 bash for x264/FFmpeg configure on Windows"
+    )
+endif()
 
 function(dailyboy_bundled_build_type out_var)
     if(CMAKE_BUILD_TYPE)
@@ -176,16 +233,64 @@ function(dailyboy_bundled_install_prefix component out_var)
     set(${out_var} "${CMAKE_BINARY_DIR}/_deps/${component}/${_slug}" PARENT_SCOPE)
 endfunction()
 
+# Shared library location in a bundled prefix (DLL under bin/ on Windows).
 function(dailyboy_bundled_shared_lib_path libdir basename out_var)
-    set(
-        ${out_var}
-        "${libdir}/${CMAKE_SHARED_LIBRARY_PREFIX}${basename}${CMAKE_SHARED_LIBRARY_SUFFIX}"
-        PARENT_SCOPE
-    )
+    if(WIN32)
+        get_filename_component(_prefix "${libdir}" DIRECTORY)
+        set(
+            ${out_var}
+            "${_prefix}/bin/${basename}${CMAKE_SHARED_LIBRARY_SUFFIX}"
+            PARENT_SCOPE
+        )
+    else()
+        set(
+            ${out_var}
+            "${libdir}/${CMAKE_SHARED_LIBRARY_PREFIX}${basename}${CMAKE_SHARED_LIBRARY_SUFFIX}"
+            PARENT_SCOPE
+        )
+    endif()
+endfunction()
+
+# MSVC import library next to a bundled shared install.
+function(dailyboy_bundled_implib_path libdir basename out_var)
+    set(${out_var} "${libdir}/${basename}.lib" PARENT_SCOPE)
+endfunction()
+
+# ExternalProject BUILD_BYPRODUCTS for a shared install (DLL + import .lib on Win).
+# Optional IMPLIB= overrides the default lib/<dll-stem>.lib path.
+function(dailyboy_ep_imported_byproducts out_var)
+    cmake_parse_arguments(ARG "" "IMPLIB" "" ${ARGN})
+    set(_bps ${ARG_UNPARSED_ARGUMENTS})
+    if(WIN32)
+        if(ARG_IMPLIB)
+            list(APPEND _bps "${ARG_IMPLIB}")
+        else()
+            foreach(_loc IN LISTS ARG_UNPARSED_ARGUMENTS)
+                get_filename_component(_stem "${_loc}" NAME_WE)
+                get_filename_component(_dir "${_loc}" DIRECTORY)
+                get_filename_component(_prefix "${_dir}" DIRECTORY)
+                list(APPEND _bps "${_prefix}/lib/${_stem}.lib")
+            endforeach()
+        endif()
+    endif()
+    set(${out_var} "${_bps}" PARENT_SCOPE)
+endfunction()
+
+# Debug postfix for WIN32 shared basenames when CMAKE_BUILD_TYPE is Debug.
+function(dailyboy_win_shared_basename basename out_var)
+    if(WIN32 AND CMAKE_BUILD_TYPE STREQUAL "Debug")
+        set(${out_var} "${basename}d" PARENT_SCOPE)
+    else()
+        set(${out_var} "${basename}" PARENT_SCOPE)
+    endif()
 endfunction()
 
 function(dailyboy_bundled_static_lib_path libdir basename out_var)
-    set(${out_var} "${libdir}/lib${basename}.a" PARENT_SCOPE)
+    if(WIN32)
+        set(${out_var} "${libdir}/${basename}.lib" PARENT_SCOPE)
+    else()
+        set(${out_var} "${libdir}/lib${basename}.a" PARENT_SCOPE)
+    endif()
 endfunction()
 
 # Standard CMAKE_ARGS for a CMake ExternalProject (shared, PIC, same compilers).
@@ -202,6 +307,13 @@ function(dailyboy_ep_cmake_args out_var install_prefix)
     if(CMAKE_VERSION VERSION_GREATER_EQUAL "4.0")
         list(APPEND _args -DCMAKE_POLICY_VERSION_MINIMUM=3.5)
     endif()
+    if(MSVC)
+        if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+            list(APPEND _args -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreadedDebugDLL)
+        else()
+            list(APPEND _args -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreadedDLL)
+        endif()
+    endif()
     if(CMAKE_CXX_COMPILER)
         list(APPEND _args "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}")
     endif()
@@ -217,7 +329,9 @@ function(dailyboy_ep_cmake_args out_var install_prefix)
     set(${out_var} "${_args}" PARENT_SCOPE)
 endfunction()
 
+# Optional IMPLIB= when the MSVC .lib stem differs from the DLL (e.g. OpenColorIO).
 function(dailyboy_add_imported_shared name ep_target location include_dir)
+    cmake_parse_arguments(ARG "" "IMPLIB" "" ${ARGN})
     add_library(${name} SHARED IMPORTED GLOBAL)
     add_dependencies(${name} ${ep_target})
     set_target_properties(
@@ -226,6 +340,17 @@ function(dailyboy_add_imported_shared name ep_target location include_dir)
             IMPORTED_LOCATION "${location}"
             INTERFACE_INCLUDE_DIRECTORIES "${include_dir}"
     )
+    if(WIN32)
+        if(ARG_IMPLIB)
+            set(_implib "${ARG_IMPLIB}")
+        else()
+            get_filename_component(_dll_we "${location}" NAME_WE)
+            get_filename_component(_dll_dir "${location}" DIRECTORY)
+            get_filename_component(_prefix "${_dll_dir}" DIRECTORY)
+            set(_implib "${_prefix}/lib/${_dll_we}.lib")
+        endif()
+        set_target_properties(${name} PROPERTIES IMPORTED_IMPLIB "${_implib}")
+    endif()
 endfunction()
 
 function(dailyboy_install_bundled_libs prefix glob)
@@ -234,6 +359,13 @@ function(dailyboy_install_bundled_libs prefix glob)
         DESTINATION ${CMAKE_INSTALL_LIBDIR}
         FILES_MATCHING PATTERN "${glob}"
     )
+    if(WIN32 AND IS_DIRECTORY "${prefix}/bin")
+        install(
+            DIRECTORY "${prefix}/bin/"
+            DESTINATION ${CMAKE_INSTALL_BINDIR}
+            FILES_MATCHING PATTERN "${glob}"
+        )
+    endif()
 endfunction()
 
 function(dailyboy_join_pkg_config_path out_var)
@@ -246,14 +378,29 @@ function(dailyboy_join_pkg_config_path out_var)
             list(APPEND _pcs "${_p}/lib/pkgconfig")
         endif()
     endforeach()
-    string(REPLACE ";" ":" _joined "${_pcs}")
+    if(WIN32)
+        string(JOIN ";" _joined ${_pcs})
+    else()
+        string(JOIN ":" _joined ${_pcs})
+    endif()
     set(${out_var} "${_joined}" PARENT_SCOPE)
 endfunction()
 
-# Absolute bundled lib dirs in the build tree (FFmpeg, x264, OIIO, engine, API).
+# Absolute bundled runtime dirs in the build tree (FFmpeg, x264, OIIO, engine, API).
 function(dailyboy_bundled_runtime_lib_dirs out_var)
     file(GLOB _dirs "${CMAKE_BINARY_DIR}/_deps/*/*/lib")
-    list(APPEND _dirs "${CMAKE_BINARY_DIR}/dailyboy" "${CMAKE_BINARY_DIR}/api/cpp")
+    if(WIN32)
+        file(GLOB _bins "${CMAKE_BINARY_DIR}/_deps/*/*/bin")
+        list(APPEND _dirs ${_bins})
+        list(
+            APPEND _dirs
+            "${CMAKE_BINARY_DIR}/bin"
+            "${CMAKE_BINARY_DIR}/dailyboy"
+            "${CMAKE_BINARY_DIR}/api/cpp"
+        )
+    else()
+        list(APPEND _dirs "${CMAKE_BINARY_DIR}/dailyboy" "${CMAKE_BINARY_DIR}/api/cpp")
+    endif()
     set(${out_var} "${_dirs}" PARENT_SCOPE)
 endfunction()
 
@@ -266,26 +413,35 @@ function(dailyboy_target_cxx_std target visibility)
     )
 endfunction()
 
-# Colon-joined runtime library search path for build-tree binaries and CTest.
+# Joined runtime library search path for build-tree binaries and CTest.
 # libavcodec NEEDs libx264; GNU ld.so ignores the exe DT_RUNPATH for that.
-# On Apple, DYLD_LIBRARY_PATH is used (SIP may strip it from some binaries).
+# Apple: DYLD_LIBRARY_PATH; Windows: PATH; else LD_LIBRARY_PATH.
 function(dailyboy_bundled_ld_library_path out_var)
     dailyboy_bundled_runtime_lib_dirs(_dirs)
-    string(JOIN ":" _path ${_dirs})
-    if(APPLE)
-        if(DEFINED ENV{DYLD_LIBRARY_PATH} AND NOT "$ENV{DYLD_LIBRARY_PATH}" STREQUAL "")
-            string(APPEND _path ":$ENV{DYLD_LIBRARY_PATH}")
+    if(WIN32)
+        string(JOIN ";" _path ${_dirs})
+        if(DEFINED ENV{PATH} AND NOT "$ENV{PATH}" STREQUAL "")
+            string(APPEND _path ";$ENV{PATH}")
         endif()
-    elseif(DEFINED ENV{LD_LIBRARY_PATH} AND NOT "$ENV{LD_LIBRARY_PATH}" STREQUAL "")
-        string(APPEND _path ":$ENV{LD_LIBRARY_PATH}")
+    else()
+        string(JOIN ":" _path ${_dirs})
+        if(APPLE)
+            if(DEFINED ENV{DYLD_LIBRARY_PATH} AND NOT "$ENV{DYLD_LIBRARY_PATH}" STREQUAL "")
+                string(APPEND _path ":$ENV{DYLD_LIBRARY_PATH}")
+            endif()
+        elseif(DEFINED ENV{LD_LIBRARY_PATH} AND NOT "$ENV{LD_LIBRARY_PATH}" STREQUAL "")
+            string(APPEND _path ":$ENV{LD_LIBRARY_PATH}")
+        endif()
     endif()
     set(${out_var} "${_path}" PARENT_SCOPE)
 endfunction()
 
-# ENVIRONMENT property value: DYLD_LIBRARY_PATH=… on Apple, else LD_LIBRARY_PATH=…
+# ENVIRONMENT property value for CTest (PATH=… / DYLD_… / LD_…).
 function(dailyboy_bundled_runtime_path_env out_var)
     dailyboy_bundled_ld_library_path(_path)
-    if(APPLE)
+    if(WIN32)
+        set(${out_var} "PATH=${_path}" PARENT_SCOPE)
+    elseif(APPLE)
         set(${out_var} "DYLD_LIBRARY_PATH=${_path}" PARENT_SCOPE)
     else()
         set(${out_var} "LD_LIBRARY_PATH=${_path}" PARENT_SCOPE)
@@ -542,17 +698,24 @@ function(_dailyboy_finalize)
         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     )
 
-    if(APPLE)
-        set(_dailyboy_env_sh "${CMAKE_SOURCE_DIR}/cmake/dailyboy-env.macos.sh.in")
+    if(WIN32)
+        install(
+            FILES "${CMAKE_SOURCE_DIR}/cmake/dailyboy-env.windows.ps1.in"
+            DESTINATION ${CMAKE_INSTALL_DATADIR}/dailyboy
+            RENAME env.ps1
+        )
     else()
-        set(_dailyboy_env_sh "${CMAKE_SOURCE_DIR}/cmake/dailyboy-env.linux.sh.in")
+        if(APPLE)
+            set(_dailyboy_env_sh "${CMAKE_SOURCE_DIR}/cmake/dailyboy-env.macos.sh.in")
+        else()
+            set(_dailyboy_env_sh "${CMAKE_SOURCE_DIR}/cmake/dailyboy-env.linux.sh.in")
+        endif()
+        install(
+            FILES "${_dailyboy_env_sh}"
+            DESTINATION ${CMAKE_INSTALL_DATADIR}/dailyboy
+            RENAME env.sh
+        )
     endif()
-
-    install(
-        FILES "${_dailyboy_env_sh}"
-        DESTINATION ${CMAKE_INSTALL_DATADIR}/dailyboy
-        RENAME env.sh
-    )
 
     install(
         DIRECTORY "${CMAKE_SOURCE_DIR}/dailyboy/include/"

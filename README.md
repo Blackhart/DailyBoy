@@ -237,11 +237,11 @@ ctest --preset cy2024-tests
 
 ## Continuous integration
 
-The CI system uses Docker images under [`docker/ubuntu/`](docker/ubuntu/) and [`docker/rocky/`](docker/rocky/) for Linux, plus a **native macOS** job. Workflows live in [`.github/workflows/`](.github/workflows/); helpers are in [`ci/linux/`](ci/linux/) and [`ci/macos/`](ci/macos/).
+The CI system uses Docker images under [`docker/ubuntu/`](docker/ubuntu/) and [`docker/rocky/`](docker/rocky/) for Linux, plus **native macOS** and **native Windows** jobs. Workflows live in [`.github/workflows/`](.github/workflows/); helpers are in [`ci/linux/`](ci/linux/), [`ci/macos/`](ci/macos/), and [`ci/windows/`](ci/windows/).
 
 | Workflow | What triggers it? | What does it run? |
 | --- | --- | --- |
-| [`ci.yml`](.github/workflows/ci.yml) | On PRs or pushes to `develop` or `main` | **Ubuntu:** format + CY2024/25/26 debug + tests (coverage on CY2026). **Rocky 9:** CY2024/25/26 debug + tests. **macOS:** CY2024/25/26 debug + tests (native, no Docker) |
+| [`ci.yml`](.github/workflows/ci.yml) | On PRs or pushes to `develop` or `main` | **Ubuntu:** format + CY2024/25/26 debug + tests (coverage on CY2026). **Rocky 9:** CY2024/25/26 debug + tests. **macOS:** CY2024/25/26 debug + tests. **Windows:** CY2024/25/26 debug + tests (MSVC + Ninja, native) |
 | [`nightly.yml`](.github/workflows/nightly.yml) | On scheduled cron or manual trigger | **Ubuntu CY2026 only** on branch `develop`: debug (+ Codecov) ∥ sanitize ∥ **clang-tidy** |
 
 **Code coverage** is collected only for **Ubuntu CY2026** builds. In CY2024/CY2025 debug builds, coverage is disabled (`DAILYBOY_ENABLE_COVERAGE=OFF`).
@@ -301,9 +301,42 @@ brew install cmake ninja ccache pkg-config autoconf automake libtool \
 
 Build tree: `build/macos/CY<year>/…` (`DAILYBOY_BUILD_ROOT=macos/` by default in the macOS scripts).
 
-**Build caching:** GitHub Actions caches **ccache** and deps under `build/docker/ubuntu24/…`, `build/docker/rocky9/…`, or `build/macos/…`.
+### Windows (native, CY2024 / CY2025 / CY2026)
 
-If you want to run tests with `ctest` directly (not using the helper scripts), set `LD_LIBRARY_PATH` (Linux) or `DYLD_LIBRARY_PATH` (macOS) as in the scripts above so the build can find its dependencies.
+VFX Windows baselines:
+
+| Year | VS / MSVC | Windows SDK | Python |
+| ---- | --------- | ----------- | ------ |
+| CY2026 | VS 2022 **v17.6+** / 19.36+ | 10.0.22621+ | 3.13 |
+| CY2025 | VS 2022 **v17.6+** / 19.36+ | 10.0.20348+ | 3.11 |
+| CY2024 | VS 2022 **v17.4+** / 19.34+ | 10.0.20348+ | 3.11 |
+
+Also needs [Ninja](https://ninja-build.org/), CMake ≥ 3.28, [MSYS2](https://www.msys2.org/) (x264/FFmpeg), FreeType, and OpenSSL:
+
+```powershell
+# From a "x64 Native Tools Command Prompt for VS 2022" (or after ilammy/msvc-dev-cmd)
+# MSYS2 MINGW64: pacman -S make mingw-w64-x86_64-nasm mingw-w64-x86_64-pkgconf
+# FreeType/OpenSSL via vcpkg or system install, then set CMAKE_PREFIX_PATH.
+
+$env:DAILYBOY_BUILD_ROOT = "windows/"
+$env:MSYS2_BASH = "C:\msys64\usr\bin\bash.exe"
+
+# CY2026 (Python 3.13)
+.\ci\windows\build.ps1 2026 debug
+.\ci\windows\test.ps1 2026 tests
+
+# CY2025 / CY2024 (Python 3.11)
+.\ci\windows\build.ps1 2025 debug
+.\ci\windows\test.ps1 2025 tests
+.\ci\windows\build.ps1 2024 debug
+.\ci\windows\test.ps1 2024 tests
+```
+
+Build tree: `build/windows/CY<year>/…`. LibRaw/RAW is disabled on Windows (no official CMake). After install, run `share/dailyboy/env.ps1` to prepend `bin` to `PATH`.
+
+**Build caching:** GitHub Actions caches **ccache** and deps under `build/docker/ubuntu24/…`, `build/docker/rocky9/…`, `build/macos/…`, or `build/windows/…`.
+
+If you want to run tests with `ctest` directly (not using the helper scripts), set `LD_LIBRARY_PATH` (Linux), `DYLD_LIBRARY_PATH` (macOS), or `PATH` (Windows) as in the scripts above so the build can find its dependencies.
 
 ## License
 
