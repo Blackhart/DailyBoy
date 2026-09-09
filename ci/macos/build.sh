@@ -3,19 +3,19 @@
 #
 # Default tree: build/macos/CY<year>/<config>
 #
-# Usage: ci/macos/build.sh <2025|2026> <debug|release|sanitize>
+# Usage: ci/macos/build.sh <2024|2025|2026> <debug|release|sanitize>
 set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$root"
 
-year="${1:?usage: ci/macos/build.sh <2025|2026> <debug|release|sanitize>}"
-config="${2:?usage: ci/macos/build.sh <2025|2026> <debug|release|sanitize>}"
+year="${1:?usage: ci/macos/build.sh <2024|2025|2026> <debug|release|sanitize>}"
+config="${2:?usage: ci/macos/build.sh <2024|2025|2026> <debug|release|sanitize>}"
 case "${year}" in
-  2025) python_version="3.11" ;;
+  2024|2025) python_version="3.11" ;;
   2026) python_version="3.13" ;;
   *)
-    echo "error: macOS CI supports year 2025 or 2026 (got '${year}')" >&2
+    echo "error: macOS CI supports year 2024, 2025, or 2026 (got '${year}')" >&2
     exit 1
     ;;
 esac
