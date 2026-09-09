@@ -18,7 +18,7 @@ Integration: `target_link_libraries(my_app PRIVATE dailyboy_api)` (transitive li
 
 ```bash
 cmake --build build --target makeDaily
-./build/bin/makeDaily examples/job.mvp.example.yaml
+./build/bin/makeDaily examples/job.mvp.example.cy2026.yaml
 ./build/bin/makeDaily -h
 ```
 

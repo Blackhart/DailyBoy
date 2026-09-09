@@ -769,7 +769,7 @@ output:
 - To add a slate page, present `layout.slate` with `duration_frames` greater than 0 and the desired `lines`.
 - To output image sequences (in addition to or instead of a movie), add `image_sequences` similarly to the example in §7.3, ensuring that at least one output is `enabled: true`.
 
-A more complete example is available at [job.mvp.example.yaml](../../examples/job.mvp.example.yaml).
+A more complete example is available per year: [cy2026](../../examples/job.mvp.example.cy2026.yaml), [cy2025](../../examples/job.mvp.example.cy2025.yaml), [cy2024](../../examples/job.mvp.example.cy2024.yaml).
 
 ---
 

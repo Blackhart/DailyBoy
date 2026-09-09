@@ -13,7 +13,7 @@ int run_with_job_path(const std::string& job_yaml_path) {
 
 void print_help(const cxxopts::Options& options) {
   std::cout << options.help() << '\n';
-  std::cout << "Example:\n  makeDaily examples/job.mvp.example.yaml\n";
+  std::cout << "Example:\n  makeDaily examples/job.mvp.example.cy2026.yaml\n";
 }
 
 }  // namespace

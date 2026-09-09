@@ -13,7 +13,7 @@ def build_parser() -> argparse.ArgumentParser:
         prog="makeDaily",
         description="DailyBoy — generate VFX dailies from a YAML job.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="Example:\n  makeDaily examples/job.mvp.example.yaml",
+        epilog="Example:\n  makeDaily examples/job.mvp.example.cy2026.yaml",
     )
     parser.add_argument(
         "job_yaml",

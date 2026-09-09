@@ -27,7 +27,13 @@ The **job YAML** is a YAML configuration file that defines a dailies render. It 
 
 See the [reference documentation](docs/reference/reference-job-yaml.md) for a full explanation of the fields, allowed values, and their effect on each deliverable.
 
-An example job file is provided at [`examples/job.mvp.example.yaml`](examples/job.mvp.example.yaml).
+An example job file is provided per VFX platform year:
+
+| Platform | Example | OCIO built-in |
+| --- | --- | --- |
+| CY2026 | [`job.mvp.example.cy2026.yaml`](examples/job.mvp.example.cy2026.yaml) | `ocio://studio-config-v4.0.0_aces-v2.0_ocio-v2.5` |
+| CY2025 | [`job.mvp.example.cy2025.yaml`](examples/job.mvp.example.cy2025.yaml) | `ocio://studio-config-v2.2.0_aces-v1.3_ocio-v2.4` |
+| CY2024 | [`job.mvp.example.cy2024.yaml`](examples/job.mvp.example.cy2024.yaml) | `ocio://studio-config-v2.1.0_aces-v1.3_ocio-v2.3` |
 
 ### CLI
 
