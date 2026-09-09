@@ -480,3 +480,36 @@ jobs:
         run: ./ci/macos/build.sh 2026 debug
       - name: Run tests CY2026
         run: ./ci/macos/test.sh 2026 tests
+
+  tests-macos-cy2025:
+    name: run tests (macOS CY2025)
+    runs-on: macos-14
+    timeout-minutes: 360
+    env:
+      DAILYBOY_BUILD_ROOT: macos/
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Homebrew dependencies
+        run: |
+          brew update
+          brew install cmake ninja ccache pkg-config autoconf automake libtool \
+            nasm freetype openssl@3 python@3.11
+      - name: Cache ccache
+        uses: actions/cache@v4
+        with:
+          path: .ccache
+          key: ccache-macos-cy2025-debug-${{ hashFiles('cmake/Versions.cmake', 'cmake/versions/**', 'cmake/deps/**', 'CMakePresets.json') }}-${{ github.sha }}
+          restore-keys: |
+            ccache-macos-cy2025-debug-${{ hashFiles('cmake/Versions.cmake', 'cmake/versions/**', 'cmake/deps/**', 'CMakePresets.json') }}-
+            ccache-macos-cy2025-debug-
+      - name: Cache CMake deps
+        uses: actions/cache@v4
+        with:
+          path: build/macos/CY2025/debug/_deps
+          key: deps-macos-cy2025-debug-${{ hashFiles('cmake/Versions.cmake', 'cmake/versions/**', 'cmake/deps/**') }}
+          restore-keys: |
+            deps-macos-cy2025-debug-
+      - name: Build debug CY2025
+        run: ./ci/macos/build.sh 2025 debug
+      - name: Run tests CY2025
+        run: ./ci/macos/test.sh 2025 tests

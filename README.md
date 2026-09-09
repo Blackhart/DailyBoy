@@ -241,7 +241,7 @@ The CI system uses Docker images under [`docker/ubuntu/`](docker/ubuntu/) and [`
 
 | Workflow | What triggers it? | What does it run? |
 | --- | --- | --- |
-| [`ci.yml`](.github/workflows/ci.yml) | On PRs or pushes to `develop` or `main` | **Ubuntu:** format + CY2024/25/26 debug + tests (coverage on CY2026). **Rocky 9:** CY2024/25/26 debug + tests. **macOS:** CY2026 debug + tests (native, no Docker) |
+| [`ci.yml`](.github/workflows/ci.yml) | On PRs or pushes to `develop` or `main` | **Ubuntu:** format + CY2024/25/26 debug + tests (coverage on CY2026). **Rocky 9:** CY2024/25/26 debug + tests. **macOS:** CY2025/26 debug + tests (native, no Docker) |
 | [`nightly.yml`](.github/workflows/nightly.yml) | On scheduled cron or manual trigger | **Ubuntu CY2026 only** on branch `develop`: debug (+ Codecov) ∥ sanitize ∥ **clang-tidy** |
 
 **Code coverage** is collected only for **Ubuntu CY2026** builds. In CY2024/CY2025 debug builds, coverage is disabled (`DAILYBOY_ENABLE_COVERAGE=OFF`).
@@ -279,19 +279,25 @@ DAILYBOY_BUILD_ROOT=docker/rocky9/ DAILYBOY_CI_IMAGE=dailyboy-ci:rocky9-cy2025 .
 DAILYBOY_BUILD_ROOT=docker/rocky9/ DAILYBOY_CI_IMAGE=dailyboy-ci:rocky9-cy2024 ./ci/linux/docker.sh ./ci/linux/test.sh 2024 tests
 ```
 
-### macOS (native, CY2026)
+### macOS (native, CY2025 / CY2026)
 
 Requires Xcode Command Line Tools and Homebrew:
 
 ```bash
+# CY2026 (Python 3.13)
 brew install cmake ninja ccache pkg-config autoconf automake libtool \
   nasm freetype openssl@3 python@3.13
-
 ./ci/macos/build.sh 2026 debug
 ./ci/macos/test.sh 2026 tests
+
+# CY2025 (Python 3.11)
+brew install cmake ninja ccache pkg-config autoconf automake libtool \
+  nasm freetype openssl@3 python@3.11
+./ci/macos/build.sh 2025 debug
+./ci/macos/test.sh 2025 tests
 ```
 
-Build tree: `build/macos/CY2026/…` (`DAILYBOY_BUILD_ROOT=macos/` by default in the macOS scripts).
+Build tree: `build/macos/CY<year>/…` (`DAILYBOY_BUILD_ROOT=macos/` by default in the macOS scripts). CY2024 is not supported on macOS (oneTBB 2020).
 
 **Build caching:** GitHub Actions caches **ccache** and deps under `build/docker/ubuntu24/…`, `build/docker/rocky9/…`, or `build/macos/…`.
 

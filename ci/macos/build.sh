@@ -3,17 +3,21 @@
 #
 # Default tree: build/macos/CY<year>/<config>
 #
-# Usage: ci/macos/build.sh <2026> <debug|release|sanitize>
+# Usage: ci/macos/build.sh <2025|2026> <debug|release|sanitize>
 set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$root"
 
-year="${1:?usage: ci/macos/build.sh <2026> <debug|release|sanitize>}"
-config="${2:?usage: ci/macos/build.sh <2026> <debug|release|sanitize>}"
+year="${1:?usage: ci/macos/build.sh <2025|2026> <debug|release|sanitize>}"
+config="${2:?usage: ci/macos/build.sh <2025|2026> <debug|release|sanitize>}"
 case "${year}" in
-  2026) ;;
-  *) echo "error: macOS CI currently supports year 2026 only" >&2; exit 1 ;;
+  2025) python_version="3.11" ;;
+  2026) python_version="3.13" ;;
+  *)
+    echo "error: macOS CI supports year 2025 or 2026 (got '${year}')" >&2
+    exit 1
+    ;;
 esac
 case "${config}" in
   debug|release|sanitize) ;;
@@ -55,8 +59,8 @@ fi
 
 extra=()
 for py in \
-  "${brew_prefix:+${brew_prefix}/bin/python3.13}" \
-  "/usr/bin/python3.13"; do
+  "${brew_prefix:+${brew_prefix}/bin/python${python_version}}" \
+  "/usr/bin/python${python_version}"; do
   [[ -z "${py}" ]] && continue
   if [[ -x "${py}" ]]; then
     extra+=(-DPython3_EXECUTABLE="${py}")
