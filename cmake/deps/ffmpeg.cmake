@@ -23,6 +23,7 @@ foreach(_lib IN LISTS _dailyboy_ffmpeg_libs)
     dailyboy_bundled_shared_lib_path("${_dailyboy_ffmpeg_libdir}" "${_lib}" _lib_path)
     list(APPEND _dailyboy_ffmpeg_byproducts "${_lib_path}")
 endforeach()
+dailyboy_ep_imported_byproducts(_dailyboy_ffmpeg_ep_byproducts ${_dailyboy_ffmpeg_byproducts})
 
 set(_dailyboy_ffmpeg_asm_flag "--disable-asm")
 if(DAILYBOY_NASM_EXECUTABLE)
@@ -126,7 +127,7 @@ done"
         BUILD_COMMAND ${DAILYBOY_MSYS2_BASH} -lc "${_dailyboy_ffmpeg_win_sh}"
         INSTALL_COMMAND ""
         BUILD_IN_SOURCE 1
-        BUILD_BYPRODUCTS ${_dailyboy_ffmpeg_byproducts}
+        BUILD_BYPRODUCTS ${_dailyboy_ffmpeg_ep_byproducts}
         USES_TERMINAL_BUILD TRUE
     )
     unset(_dailyboy_ffmpeg_prefix_unix)
@@ -156,7 +157,7 @@ else()
             ${DAILYBOY_MAKE_EXECUTABLE} -C <SOURCE_DIR> -j${DAILYBOY_EP_JOBS}
         INSTALL_COMMAND ${DAILYBOY_MAKE_EXECUTABLE} -C <SOURCE_DIR> install
         BUILD_IN_SOURCE 1
-        BUILD_BYPRODUCTS ${_dailyboy_ffmpeg_byproducts}
+        BUILD_BYPRODUCTS ${_dailyboy_ffmpeg_ep_byproducts}
         USES_TERMINAL_BUILD TRUE
     )
 endif()
@@ -220,3 +221,4 @@ unset(_dailyboy_ffmpeg_common_args)
 unset(_dailyboy_ffmpeg_common_args_str)
 unset(_dailyboy_ffmpeg_cflags)
 unset(_dailyboy_ffmpeg_ldflags)
+unset(_dailyboy_ffmpeg_ep_byproducts)

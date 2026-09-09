@@ -25,6 +25,8 @@ if(MSVC)
     list(APPEND _dailyboy_zlib_args -DCMAKE_DEBUG_POSTFIX=d)
 endif()
 
+dailyboy_ep_imported_byproducts(_dailyboy_ep_byproducts "${_dailyboy_zlib_lib}")
+
 ExternalProject_Add(
     dailyboy_zlib
     GIT_REPOSITORY https://github.com/madler/zlib.git
@@ -34,7 +36,7 @@ ExternalProject_Add(
     CMAKE_ARGS ${_dailyboy_zlib_args}
     BUILD_COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR> --parallel ${DAILYBOY_EP_JOBS}
     INSTALL_COMMAND ${CMAKE_COMMAND} --install <BINARY_DIR>
-    BUILD_BYPRODUCTS "${_dailyboy_zlib_lib}"
+    BUILD_BYPRODUCTS ${_dailyboy_ep_byproducts}
     USES_TERMINAL_BUILD TRUE
 )
 
@@ -51,3 +53,4 @@ message(STATUS "deps: zlib ${DAILYBOY_ZLIB_GIT_TAG}")
 unset(_dailyboy_zlib_lib)
 unset(_dailyboy_zlib_args)
 unset(_dailyboy_zlib_basename)
+unset(_dailyboy_ep_byproducts)

@@ -41,6 +41,8 @@ list(APPEND _dailyboy_heif_args
     -DCMAKE_PREFIX_PATH=${DAILYBOY_ZLIB_PREFIX}|${DAILYBOY_JPEG_TURBO_PREFIX}|${DAILYBOY_LIBDE265_PREFIX}|${DAILYBOY_X265_PREFIX}|${DAILYBOY_AOM_PREFIX}
 )
 
+dailyboy_ep_imported_byproducts(_dailyboy_ep_byproducts "${_dailyboy_heif_lib}")
+
 ExternalProject_Add(
     dailyboy_libheif
     DEPENDS dailyboy_zlib dailyboy_jpeg_turbo dailyboy_libde265 dailyboy_x265 dailyboy_aom
@@ -55,7 +57,7 @@ ExternalProject_Add(
     BUILD_COMMAND
         ${CMAKE_COMMAND} --build <BINARY_DIR> --parallel ${DAILYBOY_EP_JOBS}
     INSTALL_COMMAND ${CMAKE_COMMAND} --install <BINARY_DIR>
-    BUILD_BYPRODUCTS "${_dailyboy_heif_lib}"
+    BUILD_BYPRODUCTS ${_dailyboy_ep_byproducts}
     USES_TERMINAL_BUILD TRUE
 )
 
@@ -68,3 +70,4 @@ message(STATUS "deps: libheif ${DAILYBOY_LIBHEIF_GIT_TAG}")
 unset(_dailyboy_heif_lib)
 unset(_dailyboy_heif_args)
 unset(_dailyboy_heif_pc)
+unset(_dailyboy_ep_byproducts)

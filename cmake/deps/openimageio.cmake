@@ -33,6 +33,10 @@ dailyboy_bundled_shared_lib_path(
 dailyboy_bundled_shared_lib_path(
     "${DAILYBOY_OIIO_PREFIX}/lib" "${_dailyboy_oiio_lib_basename}" _dailyboy_oiio_lib
 )
+dailyboy_ep_imported_byproducts(
+    _dailyboy_oiio_byproducts
+    "${_dailyboy_oiio_util_lib}" "${_dailyboy_oiio_lib}"
+)
 
 dailyboy_join_pkg_config_path(
     _dailyboy_oiio_pc
@@ -140,7 +144,7 @@ ExternalProject_Add(
     BUILD_COMMAND
         ${CMAKE_COMMAND} --build <BINARY_DIR> --parallel ${DAILYBOY_EP_JOBS}
     INSTALL_COMMAND ${CMAKE_COMMAND} --install <BINARY_DIR>
-    BUILD_BYPRODUCTS "${_dailyboy_oiio_util_lib}" "${_dailyboy_oiio_lib}"
+    BUILD_BYPRODUCTS ${_dailyboy_oiio_byproducts}
     USES_TERMINAL_BUILD TRUE
 )
 
@@ -191,3 +195,4 @@ unset(_dailyboy_oiio_lib)
 unset(_dailyboy_oiio_pc)
 unset(_dailyboy_oiio_prefix_path)
 unset(_dailyboy_oiio_args)
+unset(_dailyboy_oiio_byproducts)

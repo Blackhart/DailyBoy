@@ -14,6 +14,7 @@ if(WIN32)
     file(MAKE_DIRECTORY "${DAILYBOY_X264_PREFIX}/bin")
 endif()
 dailyboy_bundled_shared_lib_path("${DAILYBOY_X264_PREFIX}/lib" x264 _dailyboy_x264_lib)
+dailyboy_ep_imported_byproducts(_dailyboy_x264_byproducts "${_dailyboy_x264_lib}")
 
 set(_dailyboy_x264_asm_flag "--disable-asm")
 if(DAILYBOY_NASM_EXECUTABLE)
@@ -71,7 +72,7 @@ fi"
         BUILD_COMMAND ${DAILYBOY_MSYS2_BASH} -lc "${_dailyboy_x264_win_sh}"
         INSTALL_COMMAND ""
         BUILD_IN_SOURCE 1
-        BUILD_BYPRODUCTS "${_dailyboy_x264_lib}"
+        BUILD_BYPRODUCTS ${_dailyboy_x264_byproducts}
         USES_TERMINAL_BUILD TRUE
     )
     unset(_dailyboy_x264_prefix_unix)
@@ -98,7 +99,7 @@ else()
             ${DAILYBOY_MAKE_EXECUTABLE} -C <SOURCE_DIR> -j${DAILYBOY_EP_JOBS}
         INSTALL_COMMAND ${DAILYBOY_MAKE_EXECUTABLE} -C <SOURCE_DIR> install
         BUILD_IN_SOURCE 1
-        BUILD_BYPRODUCTS "${_dailyboy_x264_lib}"
+        BUILD_BYPRODUCTS ${_dailyboy_x264_byproducts}
         USES_TERMINAL_BUILD TRUE
     )
 endif()
@@ -111,3 +112,4 @@ dailyboy_install_bundled_libs("${DAILYBOY_X264_PREFIX}" "*x264*")
 message(STATUS "deps: x264 ${DAILYBOY_X264_GIT_TAG}")
 unset(_dailyboy_x264_lib)
 unset(_dailyboy_x264_asm_flag)
+unset(_dailyboy_x264_byproducts)

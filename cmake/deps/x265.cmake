@@ -31,6 +31,8 @@ else()
     list(APPEND _dailyboy_x265_args -DENABLE_ASSEMBLY=OFF)
 endif()
 
+dailyboy_ep_imported_byproducts(_dailyboy_ep_byproducts "${_dailyboy_x265_lib}")
+
 ExternalProject_Add(
     dailyboy_x265
     GIT_REPOSITORY https://github.com/Multicorewareinc/x265.git
@@ -41,7 +43,7 @@ ExternalProject_Add(
     CMAKE_ARGS ${_dailyboy_x265_args}
     BUILD_COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR> --parallel ${DAILYBOY_EP_JOBS}
     INSTALL_COMMAND ${CMAKE_COMMAND} --install <BINARY_DIR>
-    BUILD_BYPRODUCTS "${_dailyboy_x265_lib}"
+    BUILD_BYPRODUCTS ${_dailyboy_ep_byproducts}
     USES_TERMINAL_BUILD TRUE
 )
 
@@ -53,3 +55,4 @@ dailyboy_install_bundled_libs("${DAILYBOY_X265_PREFIX}" "${CMAKE_SHARED_LIBRARY_
 message(STATUS "deps: x265 ${DAILYBOY_X265_GIT_TAG} (8-bit)")
 unset(_dailyboy_x265_lib)
 unset(_dailyboy_x265_args)
+unset(_dailyboy_ep_byproducts)

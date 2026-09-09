@@ -42,6 +42,8 @@ if(MSVC)
     list(APPEND _dailyboy_tiff_args -DCMAKE_DEBUG_POSTFIX=d)
 endif()
 
+dailyboy_ep_imported_byproducts(_dailyboy_ep_byproducts "${_dailyboy_tiff_lib}")
+
 ExternalProject_Add(
     dailyboy_libtiff
     DEPENDS dailyboy_zlib dailyboy_jpeg_turbo
@@ -56,7 +58,7 @@ ExternalProject_Add(
     BUILD_COMMAND
         ${CMAKE_COMMAND} --build <BINARY_DIR> --parallel ${DAILYBOY_EP_JOBS}
     INSTALL_COMMAND ${CMAKE_COMMAND} --install <BINARY_DIR>
-    BUILD_BYPRODUCTS "${_dailyboy_tiff_lib}"
+    BUILD_BYPRODUCTS ${_dailyboy_ep_byproducts}
     USES_TERMINAL_BUILD TRUE
 )
 
@@ -70,3 +72,4 @@ unset(_dailyboy_tiff_lib)
 unset(_dailyboy_tiff_args)
 unset(_dailyboy_tiff_pc)
 unset(_dailyboy_tiff_basename)
+unset(_dailyboy_ep_byproducts)
