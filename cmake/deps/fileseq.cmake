@@ -4,10 +4,33 @@
 # ExternalProject (not FetchContent): gofileseq's CMakeLists uses CMAKE_SOURCE_DIR,
 # enable_testing(), and find_package(GTest), which would pollute the DailyBoy tree.
 #
-# Also used as install script: cmake -P fileseq.cmake (ExternalProject INSTALL_COMMAND).
+# Also used as script mode (cmake -P):
+#   - PATCH: -DFILESEQ_CMAKELISTS=... (WIN32 static OUTPUT_NAME)
+#   - INSTALL: -DINSTALL_PREFIX=... -DBINARY_DIR=... -DSOURCE_DIR=...
 
 if(CMAKE_SCRIPT_MODE_FILE)
     cmake_minimum_required(VERSION 3.28)
+
+    # WIN32 patch: static+shared both use OUTPUT_NAME fileseq → duplicate fileseq.lib.
+    if(FILESEQ_CMAKELISTS)
+        if(NOT EXISTS "${FILESEQ_CMAKELISTS}")
+            message(FATAL_ERROR "Missing ${FILESEQ_CMAKELISTS}")
+        endif()
+        file(READ "${FILESEQ_CMAKELISTS}" _content)
+        if(_content MATCHES "OUTPUT_NAME fileseq_static")
+            return()
+        endif()
+        set(_needle "set_target_properties(fileseq_static PROPERTIES OUTPUT_NAME fileseq)")
+        set(_replacement
+            "set_target_properties(fileseq_static PROPERTIES OUTPUT_NAME fileseq_static)"
+        )
+        string(REPLACE "${_needle}" "${_replacement}" _patched "${_content}")
+        if(_patched STREQUAL _content)
+            message(FATAL_ERROR "fileseq: could not patch static OUTPUT_NAME")
+        endif()
+        file(WRITE "${FILESEQ_CMAKELISTS}" "${_patched}")
+        return()
+    endif()
 
     if(NOT INSTALL_PREFIX OR NOT BINARY_DIR OR NOT SOURCE_DIR)
         message(FATAL_ERROR "fileseq install requires INSTALL_PREFIX, BINARY_DIR, SOURCE_DIR")
@@ -74,6 +97,19 @@ file(MAKE_DIRECTORY "${_dailyboy_fileseq_install}/lib")
 dailyboy_bundled_static_lib_path("${_dailyboy_fileseq_install}/lib" fileseq _dailyboy_fileseq_lib)
 
 dailyboy_ep_cmake_args(_dailyboy_fileseq_ep_cmake_args "${_dailyboy_fileseq_install}")
+# DailyBoy only consumes the static archive; shared is unused.
+list(APPEND _dailyboy_fileseq_ep_cmake_args -DBUILD_SHARED_LIBS=OFF)
+
+if(WIN32)
+    set(_dailyboy_fileseq_patch
+        PATCH_COMMAND
+            ${CMAKE_COMMAND}
+            -DFILESEQ_CMAKELISTS=<SOURCE_DIR>/cpp/CMakeLists.txt
+            -P ${CMAKE_CURRENT_LIST_FILE}
+    )
+else()
+    set(_dailyboy_fileseq_patch "")
+endif()
 
 ExternalProject_Add(
     dailyboy_fileseq
@@ -82,6 +118,7 @@ ExternalProject_Add(
     GIT_SHALLOW TRUE
     UPDATE_DISCONNECTED TRUE
     SOURCE_SUBDIR cpp
+    ${_dailyboy_fileseq_patch}
     CMAKE_ARGS ${_dailyboy_fileseq_ep_cmake_args}
     BUILD_COMMAND
         ${CMAKE_COMMAND} --build <BINARY_DIR> --target fileseq_static --parallel ${DAILYBOY_EP_JOBS}
@@ -110,3 +147,4 @@ message(STATUS "deps: libfileseq ${DAILYBOY_FILESEQ_GIT_TAG} (ExternalProject)")
 unset(_dailyboy_fileseq_install)
 unset(_dailyboy_fileseq_lib)
 unset(_dailyboy_fileseq_ep_cmake_args)
+unset(_dailyboy_fileseq_patch)
