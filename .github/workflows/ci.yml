@@ -555,7 +555,10 @@ jobs:
       DAILYBOY_BUILD_ROOT: windows/
     steps:
       - uses: actions/checkout@v4
+      # VFX CY2026: VS 2022 ≥ 17.6, Windows SDK ≥ 10.0.22621 (windows-2022 image).
       - uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
       - uses: msys2/setup-msys2@v2
         id: msys2
         with:

@@ -303,10 +303,10 @@ Build tree: `build/macos/CY<year>/…` (`DAILYBOY_BUILD_ROOT=macos/` by default 
 
 ### Windows (native, CY2026)
 
-Requires Visual Studio 2022 (MSVC), [Ninja](https://ninja-build.org/), CMake ≥ 3.28, [MSYS2](https://www.msys2.org/) (for x264/FFmpeg configure), Python 3.13, FreeType, and OpenSSL:
+VFX CY2026 Windows baseline: **Visual Studio 2022 v17.6+** (MSVC 19.36+) and **Windows SDK 10.0.22621+**. Also needs [Ninja](https://ninja-build.org/), CMake ≥ 3.28, [MSYS2](https://www.msys2.org/) (x264/FFmpeg), Python 3.13, FreeType, and OpenSSL:
 
 ```powershell
-# From a "x64 Native Tools Command Prompt for VS 2022" (or after ilammy/msvc-dev-cmd)
+# From a "x64 Native Tools Command Prompt for VS 2022" ≥ 17.6 (or after ilammy/msvc-dev-cmd)
 # MSYS2 MINGW64: pacman -S make mingw-w64-x86_64-nasm mingw-w64-x86_64-pkgconf
 # FreeType/OpenSSL via vcpkg or system install, then set CMAKE_PREFIX_PATH.
 

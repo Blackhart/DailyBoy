@@ -67,6 +67,40 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
     endif()
 endif()
 
+if(WIN32 AND MSVC)
+    if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS "${DAILYBOY_WINDOWS_MSVC_VERSION}")
+        message(
+            WARNING
+            "DailyBoy ${DAILYBOY_VFX_PLATFORM_LABEL}: Visual Studio 2022 "
+            "v${DAILYBOY_WINDOWS_VS_VERSION}+ (MSVC ${DAILYBOY_WINDOWS_MSVC_VERSION}+) "
+            "recommended (current compiler: ${CMAKE_CXX_COMPILER_VERSION})"
+        )
+    endif()
+    set(_dailyboy_windows_sdk "")
+    if(CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION)
+        set(_dailyboy_windows_sdk "${CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION}")
+    elseif(DEFINED ENV{WindowsSDKVersion})
+        string(REGEX REPLACE "[\\/]+$" "" _dailyboy_windows_sdk "$ENV{WindowsSDKVersion}")
+    endif()
+    if(_dailyboy_windows_sdk)
+        if(_dailyboy_windows_sdk VERSION_LESS "${DAILYBOY_WINDOWS_SDK_VERSION}")
+            message(
+                WARNING
+                "DailyBoy ${DAILYBOY_VFX_PLATFORM_LABEL}: Windows SDK "
+                "${DAILYBOY_WINDOWS_SDK_VERSION}+ recommended "
+                "(current: ${_dailyboy_windows_sdk})"
+            )
+        endif()
+    else()
+        message(
+            STATUS
+            "DailyBoy ${DAILYBOY_VFX_PLATFORM_LABEL}: Windows SDK version not detected; "
+            "VFX requires ${DAILYBOY_WINDOWS_SDK_VERSION}+"
+        )
+    endif()
+    unset(_dailyboy_windows_sdk)
+endif()
+
 message(
     STATUS
     "DailyBoy targets VFX Reference Platform ${DAILYBOY_VFX_PLATFORM_LABEL} "
