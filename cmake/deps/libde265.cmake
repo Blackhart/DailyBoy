@@ -20,6 +20,8 @@ list(APPEND _dailyboy_de265_args
     -DENABLE_DECODER=ON
 )
 
+dailyboy_ep_imported_byproducts(_dailyboy_ep_byproducts "${_dailyboy_de265_lib}")
+
 ExternalProject_Add(
     dailyboy_libde265
     GIT_REPOSITORY https://github.com/strukturag/libde265.git
@@ -29,7 +31,7 @@ ExternalProject_Add(
     CMAKE_ARGS ${_dailyboy_de265_args}
     BUILD_COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR> --parallel ${DAILYBOY_EP_JOBS}
     INSTALL_COMMAND ${CMAKE_COMMAND} --install <BINARY_DIR>
-    BUILD_BYPRODUCTS "${_dailyboy_de265_lib}"
+    BUILD_BYPRODUCTS ${_dailyboy_ep_byproducts}
     USES_TERMINAL_BUILD TRUE
 )
 
@@ -41,3 +43,4 @@ dailyboy_install_bundled_libs("${DAILYBOY_LIBDE265_PREFIX}" "${CMAKE_SHARED_LIBR
 message(STATUS "deps: libde265 ${DAILYBOY_LIBDE265_GIT_TAG}")
 unset(_dailyboy_de265_lib)
 unset(_dailyboy_de265_args)
+unset(_dailyboy_ep_byproducts)

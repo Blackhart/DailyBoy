@@ -22,9 +22,31 @@ else()
     set(_dailyboy_tbb_lib_basename tbb)
     set(_dailyboy_tbb_cfg release)
 endif()
+# Windows oneTBB OUTPUT_NAME is tbb${TBB_BINARY_VERSION} (12); MSVC also installs
+# legacy tbb[_debug].lib copies we use as IMPORTED_IMPLIB.
+set(_dailyboy_tbb_dll_basename "${_dailyboy_tbb_lib_basename}")
+set(_dailyboy_tbb_implib "")
+if(WIN32 AND NOT DAILYBOY_ONETBB_VERSION STREQUAL "2020")
+    set(_dailyboy_tbb_binary_version "12")
+    if(_dailyboy_tbb_build_type STREQUAL "Debug")
+        set(_dailyboy_tbb_dll_basename "tbb${_dailyboy_tbb_binary_version}_debug")
+    else()
+        set(_dailyboy_tbb_dll_basename "tbb${_dailyboy_tbb_binary_version}")
+    endif()
+    dailyboy_bundled_implib_path(
+        "${DAILYBOY_TBB_PREFIX}/lib" "${_dailyboy_tbb_lib_basename}" _dailyboy_tbb_implib
+    )
+endif()
 dailyboy_bundled_shared_lib_path(
-    "${DAILYBOY_TBB_PREFIX}/lib" "${_dailyboy_tbb_lib_basename}" _dailyboy_tbb_lib
+    "${DAILYBOY_TBB_PREFIX}/lib" "${_dailyboy_tbb_dll_basename}" _dailyboy_tbb_lib
 )
+if(_dailyboy_tbb_implib)
+    dailyboy_ep_imported_byproducts(
+        _dailyboy_tbb_byproducts "${_dailyboy_tbb_lib}" IMPLIB "${_dailyboy_tbb_implib}"
+    )
+else()
+    dailyboy_ep_imported_byproducts(_dailyboy_tbb_byproducts "${_dailyboy_tbb_lib}")
+endif()
 
 # Classic TBB 2020 arch token for Darwin make (auto-detect is broken on Apple Silicon).
 function(dailyboy_tbb2020_apple_arch out_arch)
@@ -111,7 +133,7 @@ if(DAILYBOY_ONETBB_VERSION STREQUAL "2020")
             ${_dailyboy_tbb_make_extras}
             -j${DAILYBOY_EP_JOBS}
         INSTALL_COMMAND ${_dailyboy_tbb_install_cmds}
-        BUILD_BYPRODUCTS "${_dailyboy_tbb_lib}"
+        BUILD_BYPRODUCTS ${_dailyboy_tbb_byproducts}
         USES_TERMINAL_BUILD TRUE
     )
 else()
@@ -132,14 +154,24 @@ else()
         CMAKE_ARGS ${_dailyboy_tbb_args}
         BUILD_COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR> --parallel ${DAILYBOY_EP_JOBS}
         INSTALL_COMMAND ${CMAKE_COMMAND} --install <BINARY_DIR>
-        BUILD_BYPRODUCTS "${_dailyboy_tbb_lib}"
+        BUILD_BYPRODUCTS ${_dailyboy_tbb_byproducts}
         USES_TERMINAL_BUILD TRUE
     )
 endif()
 
-dailyboy_add_imported_shared(
-    TBB::tbb dailyboy_onetbb "${_dailyboy_tbb_lib}" "${DAILYBOY_TBB_PREFIX}/include"
-)
+if(_dailyboy_tbb_implib)
+    dailyboy_add_imported_shared(
+        TBB::tbb
+        dailyboy_onetbb
+        "${_dailyboy_tbb_lib}"
+        "${DAILYBOY_TBB_PREFIX}/include"
+        IMPLIB "${_dailyboy_tbb_implib}"
+    )
+else()
+    dailyboy_add_imported_shared(
+        TBB::tbb dailyboy_onetbb "${_dailyboy_tbb_lib}" "${DAILYBOY_TBB_PREFIX}/include"
+    )
+endif()
 set_target_properties(TBB::tbb PROPERTIES INTERFACE_COMPILE_FEATURES cxx_std_17)
 
 dailyboy_install_bundled_libs("${DAILYBOY_TBB_PREFIX}" "${CMAKE_SHARED_LIBRARY_PREFIX}tbb*")
@@ -147,6 +179,8 @@ dailyboy_install_bundled_libs("${DAILYBOY_TBB_PREFIX}" "${CMAKE_SHARED_LIBRARY_P
 message(STATUS "deps: oneTBB ${DAILYBOY_ONETBB_GIT_TAG}")
 unset(_dailyboy_tbb_build_type)
 unset(_dailyboy_tbb_lib_basename)
+unset(_dailyboy_tbb_dll_basename)
+unset(_dailyboy_tbb_implib)
 unset(_dailyboy_tbb_lib)
 unset(_dailyboy_tbb_args)
 unset(_dailyboy_tbb_cfg)
@@ -155,3 +189,4 @@ unset(_dailyboy_tbb_make_extras)
 unset(_dailyboy_tbb_built_lib)
 unset(_dailyboy_tbb_build_subdir)
 unset(_dailyboy_tbb_install_cmds)
+unset(_dailyboy_tbb_byproducts)

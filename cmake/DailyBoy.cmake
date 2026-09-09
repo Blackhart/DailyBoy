@@ -256,6 +256,26 @@ function(dailyboy_bundled_implib_path libdir basename out_var)
     set(${out_var} "${libdir}/${basename}.lib" PARENT_SCOPE)
 endfunction()
 
+# ExternalProject BUILD_BYPRODUCTS for a shared install (DLL + import .lib on Win).
+# Optional IMPLIB= overrides the default lib/<dll-stem>.lib path.
+function(dailyboy_ep_imported_byproducts out_var)
+    cmake_parse_arguments(ARG "" "IMPLIB" "" ${ARGN})
+    set(_bps ${ARG_UNPARSED_ARGUMENTS})
+    if(WIN32)
+        if(ARG_IMPLIB)
+            list(APPEND _bps "${ARG_IMPLIB}")
+        else()
+            foreach(_loc IN LISTS ARG_UNPARSED_ARGUMENTS)
+                get_filename_component(_stem "${_loc}" NAME_WE)
+                get_filename_component(_dir "${_loc}" DIRECTORY)
+                get_filename_component(_prefix "${_dir}" DIRECTORY)
+                list(APPEND _bps "${_prefix}/lib/${_stem}.lib")
+            endforeach()
+        endif()
+    endif()
+    set(${out_var} "${_bps}" PARENT_SCOPE)
+endfunction()
+
 # Debug postfix for WIN32 shared basenames when CMAKE_BUILD_TYPE is Debug.
 function(dailyboy_win_shared_basename basename out_var)
     if(WIN32 AND CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -309,7 +329,9 @@ function(dailyboy_ep_cmake_args out_var install_prefix)
     set(${out_var} "${_args}" PARENT_SCOPE)
 endfunction()
 
+# Optional IMPLIB= when the MSVC .lib stem differs from the DLL (e.g. OpenColorIO).
 function(dailyboy_add_imported_shared name ep_target location include_dir)
+    cmake_parse_arguments(ARG "" "IMPLIB" "" ${ARGN})
     add_library(${name} SHARED IMPORTED GLOBAL)
     add_dependencies(${name} ${ep_target})
     set_target_properties(
@@ -319,13 +341,15 @@ function(dailyboy_add_imported_shared name ep_target location include_dir)
             INTERFACE_INCLUDE_DIRECTORIES "${include_dir}"
     )
     if(WIN32)
-        get_filename_component(_dll_we "${location}" NAME_WE)
-        get_filename_component(_dll_dir "${location}" DIRECTORY)
-        get_filename_component(_prefix "${_dll_dir}" DIRECTORY)
-        set_target_properties(
-            ${name}
-            PROPERTIES IMPORTED_IMPLIB "${_prefix}/lib/${_dll_we}.lib"
-        )
+        if(ARG_IMPLIB)
+            set(_implib "${ARG_IMPLIB}")
+        else()
+            get_filename_component(_dll_we "${location}" NAME_WE)
+            get_filename_component(_dll_dir "${location}" DIRECTORY)
+            get_filename_component(_prefix "${_dll_dir}" DIRECTORY)
+            set(_implib "${_prefix}/lib/${_dll_we}.lib")
+        endif()
+        set_target_properties(${name} PROPERTIES IMPORTED_IMPLIB "${_implib}")
     endif()
 endfunction()
 

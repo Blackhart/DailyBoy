@@ -30,6 +30,8 @@ if(MSVC)
     list(APPEND _dailyboy_jpeg_args -DCMAKE_DEBUG_POSTFIX=d)
 endif()
 
+dailyboy_ep_imported_byproducts(_dailyboy_ep_byproducts "${_dailyboy_jpeg_lib}")
+
 ExternalProject_Add(
     dailyboy_jpeg_turbo
     GIT_REPOSITORY https://github.com/libjpeg-turbo/libjpeg-turbo.git
@@ -39,7 +41,7 @@ ExternalProject_Add(
     CMAKE_ARGS ${_dailyboy_jpeg_args}
     BUILD_COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR> --parallel ${DAILYBOY_EP_JOBS}
     INSTALL_COMMAND ${CMAKE_COMMAND} --install <BINARY_DIR>
-    BUILD_BYPRODUCTS "${_dailyboy_jpeg_lib}"
+    BUILD_BYPRODUCTS ${_dailyboy_ep_byproducts}
     USES_TERMINAL_BUILD TRUE
 )
 
@@ -52,3 +54,4 @@ message(STATUS "deps: libjpeg-turbo ${DAILYBOY_JPEG_TURBO_GIT_TAG}")
 unset(_dailyboy_jpeg_lib)
 unset(_dailyboy_jpeg_args)
 unset(_dailyboy_jpeg_basename)
+unset(_dailyboy_ep_byproducts)

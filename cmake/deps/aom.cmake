@@ -23,6 +23,8 @@ list(APPEND _dailyboy_aom_args
     -DENABLE_TOOLS=OFF
 )
 
+dailyboy_ep_imported_byproducts(_dailyboy_ep_byproducts "${_dailyboy_aom_lib}")
+
 ExternalProject_Add(
     dailyboy_aom
     GIT_REPOSITORY https://aomedia.googlesource.com/aom
@@ -32,7 +34,7 @@ ExternalProject_Add(
     CMAKE_ARGS ${_dailyboy_aom_args}
     BUILD_COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR> --parallel ${DAILYBOY_EP_JOBS}
     INSTALL_COMMAND ${CMAKE_COMMAND} --install <BINARY_DIR>
-    BUILD_BYPRODUCTS "${_dailyboy_aom_lib}"
+    BUILD_BYPRODUCTS ${_dailyboy_ep_byproducts}
     USES_TERMINAL_BUILD TRUE
 )
 
@@ -44,3 +46,4 @@ dailyboy_install_bundled_libs("${DAILYBOY_AOM_PREFIX}" "${CMAKE_SHARED_LIBRARY_P
 message(STATUS "deps: libaom ${DAILYBOY_AOM_GIT_TAG}")
 unset(_dailyboy_aom_lib)
 unset(_dailyboy_aom_args)
+unset(_dailyboy_ep_byproducts)
