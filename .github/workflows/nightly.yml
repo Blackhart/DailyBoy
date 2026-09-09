@@ -196,3 +196,42 @@ jobs:
         run: DAILYBOY_CI_IMAGE=${{ env.CI_IMAGE_UBUNTU_CY2026 }} ./ci/linux/docker.sh ./ci/linux/build.sh 2026 debug
       - name: Clang-tidy
         run: DAILYBOY_CI_IMAGE=${{ env.CI_IMAGE_UBUNTU_CY2026 }} ./ci/linux/docker.sh ./ci/linux/tidy.sh
+
+  perf-load:
+    name: perf-load-ubuntu24-cy2026
+    needs: image-ubuntu24-cy2026
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: develop
+      - uses: actions/download-artifact@v4
+        with:
+          name: dailyboy-ci-ubuntu24-cy2026-nightly
+          path: /tmp
+      - name: Load Ubuntu CY2026 image
+        run: docker load -i /tmp/dailyboy-ci-ubuntu24-cy2026.tar
+      - name: Cache ccache
+        uses: actions/cache@v4
+        with:
+          path: .ccache
+          key: ccache-ubuntu24-cy2026-release-${{ hashFiles('cmake/Versions.cmake', 'cmake/versions/**', 'cmake/deps/**', 'CMakePresets.json') }}-${{ github.sha }}
+          restore-keys: |
+            ccache-ubuntu24-cy2026-release-${{ hashFiles('cmake/Versions.cmake', 'cmake/versions/**', 'cmake/deps/**', 'CMakePresets.json') }}-
+            ccache-ubuntu24-cy2026-release-
+            ccache-cy2026-release-
+      - name: Cache CMake deps
+        uses: actions/cache@v4
+        with:
+          path: build/docker/ubuntu24/CY2026/release/_deps
+          key: deps-ubuntu24-cy2026-release-${{ hashFiles('cmake/Versions.cmake', 'cmake/versions/**', 'cmake/deps/**') }}
+          restore-keys: |
+            deps-ubuntu24-cy2026-release-
+            deps-cy2026-release-
+      - name: Build release CY2026
+        run: DAILYBOY_CI_IMAGE=${{ env.CI_IMAGE_UBUNTU_CY2026 }} ./ci/linux/docker.sh ./ci/linux/build.sh 2026 release
+      - name: Run perf tests
+        run: DAILYBOY_CI_IMAGE=${{ env.CI_IMAGE_UBUNTU_CY2026 }} ./ci/linux/docker.sh ./ci/linux/test.sh 2026 perf
+      - name: Run load tests
+        run: DAILYBOY_CI_IMAGE=${{ env.CI_IMAGE_UBUNTU_CY2026 }} ./ci/linux/docker.sh ./ci/linux/test.sh 2026 load

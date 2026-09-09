@@ -28,6 +28,7 @@
   - [7.2.1 `codec_options` for `h264`](#output-codec-options)
   - [7.2.2 `codec_options` for `mjpeg`](#output-codec-options-mjpeg)
   - [7.2.3 `codec_options` for `dnxhd`](#output-codec-options-dnxhd)
+  - [7.2.4 `codec_options` for `prores`](#output-codec-options-prores)
   - [7.3 `image_sequences[]` entries](#output-image-sequences)
   - [7.3.1 `format_options` for `.png`](#output-format-options-png)
   - [7.3.2 `format_options` for `.jpg` / `.jpeg`](#output-format-options-jpeg)
@@ -514,7 +515,7 @@ Each entry specifies one movie output.
 | `signal`        | yes      | object (range/matrix/…)       | —                  | Encode color tags + YCbCr matrix|
 | `path`          | yes      | string (non-empty)            | —                  | Output file path                |
 | `fps`           | no       | integer ≥ 1                   | `24`               | Frames per second               |
-| `codec`         | yes      | `h264`, `mjpeg`, `dnxhd`      | —                  | Output codec                    |
+| `codec`         | yes      | `h264`, `mjpeg`, `dnxhd`, `prores` | —                  | Output codec                    |
 | `codec_options` | no       | object                        | codec defaults     | Codec parameters (optional)     |
 
 See the documentation for details regarding available `codec_options` per codec.
@@ -566,6 +567,26 @@ Optional. If not specified, defaults are used.
 | `interlaced`    | no                         | `true`, `false`                                                     | `false`      | Interlacing (DNxHD only)                   |
 | `nitris_compat` | no                         | `true`, `false`                                                     | `false`      | Nitris compatibility (padding)             |
 | `faststart`     | no                         | `true`, `false`                                                     | `true`       | Store moov atom at file head               |
+
+<a id="output-codec-options-prores"></a>
+
+#### 7.2.4 `codec_options` for `prores`
+
+Optional. If not specified, defaults are used. Encoding uses FFmpeg `prores_ks`.
+
+- Profiles `proxy` / `lt` / `standard` / `hq` require `pix_fmt: yuv422p10` and `alpha_bits: 0`.
+- Profiles `4444` / `4444xq` use `yuv444p10` by default, or `yuva444p10` with `alpha_bits` 8 or 16.
+
+| Field           | Required | Values                                                          | Default      | Description                                      |
+| --------------- | -------- | --------------------------------------------------------------- | ------------ | ------------------------------------------------ |
+| `profile`       | no       | `proxy`, `lt`, `standard`, `hq`, `4444`, `4444xq`               | `hq`         | ProRes profile (YAML `4444` may be unquoted) |
+| `pix_fmt`       | no       | `yuv422p10`, `yuv444p10`, `yuva444p10`                          | by profile   | Pixel format (10-bit)                            |
+| `quant_mat`     | no       | `auto`, `proxy`, `lt`, `standard`, `hq`, `default`              | `auto`       | Quantization matrix                              |
+| `bits_per_mb`   | no       | integer 0–8192                                                  | `0`          | Bits per macroblock (`0` = encoder default)      |
+| `mbs_per_slice` | no       | integer 1–8                                                     | `8`          | Macroblocks per slice                            |
+| `vendor`        | no       | exactly 4 ASCII characters                                      | `apl0`       | ProRes vendor ID in the bitstream                |
+| `alpha_bits`    | no       | `0`, `8`, `16`                                                  | `0`          | Alpha plane depth (`yuva444p10` only)            |
+| `faststart`     | no       | `true`, `false`                                                 | `true`       | Store moov atom at file head                     |
 
 <a id="output-image-sequences"></a>
 
@@ -748,7 +769,7 @@ output:
 - To add a slate page, present `layout.slate` with `duration_frames` greater than 0 and the desired `lines`.
 - To output image sequences (in addition to or instead of a movie), add `image_sequences` similarly to the example in §7.3, ensuring that at least one output is `enabled: true`.
 
-A more complete example is available at [job.mvp.example.yaml](../../examples/job.mvp.example.yaml).
+A more complete example is available per year: [cy2026](../../examples/job.mvp.example.cy2026.yaml), [cy2025](../../examples/job.mvp.example.cy2025.yaml), [cy2024](../../examples/job.mvp.example.cy2024.yaml).
 
 ---
 

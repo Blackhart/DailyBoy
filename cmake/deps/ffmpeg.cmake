@@ -1,5 +1,5 @@
 # FFmpeg — video encode/decode + guide-track audio (always from source)
-# Formats: MJPEG, DNxHD, H.264 (libx264), H.265 (libx265), MOV, MP4
+# Formats: MJPEG, DNxHD, ProRes (prores_ks), H.264 (libx264), H.265 (libx265), MOV, MP4
 # Audio: WAV/AAC demux → AAC-LC encode, swresample
 # https://ffmpeg.org/documentation.html
 
@@ -72,11 +72,11 @@ ExternalProject_Add(
         --disable-outdevs
         --disable-everything
         --enable-protocol=file
-        --enable-encoder=libx264,libx265,mjpeg,dnxhd,aac
-        --enable-decoder=h264,hevc,mjpeg,dnxhd,aac,pcm_s16le,pcm_s24le,pcm_s32le,pcm_f32le,pcm_f64le
+        --enable-encoder=libx264,libx265,mjpeg,dnxhd,prores_ks,aac
+        --enable-decoder=h264,hevc,mjpeg,dnxhd,prores,aac,pcm_s16le,pcm_s24le,pcm_s32le,pcm_f32le,pcm_f64le
         --enable-muxer=mov,mp4
         --enable-demuxer=mov,mp4,wav,aac
-        --enable-parser=h264,hevc,mjpeg,dnxhd,aac
+        --enable-parser=h264,hevc,mjpeg,dnxhd,prores,aac
         --enable-bsf=h264_mp4toannexb,hevc_mp4toannexb,aac_adtstoasc
     BUILD_COMMAND
         ${DAILYBOY_MAKE_EXECUTABLE} -C <SOURCE_DIR> -j${DAILYBOY_EP_JOBS}
@@ -121,7 +121,7 @@ dailyboy_install_bundled_libs("${DAILYBOY_FFMPEG_PREFIX}" "${CMAKE_SHARED_LIBRAR
 message(
     STATUS
     "deps: FFmpeg ${DAILYBOY_FFMPEG_GIT_TAG} "
-    "(mjpeg, dnxhd, h264/x264, h265/x265, aac, wav, mov, mp4)"
+    "(mjpeg, dnxhd, prores_ks, h264/x264, h265/x265, aac, wav, mov, mp4)"
 )
 
 unset(_dailyboy_ffmpeg_libdir)

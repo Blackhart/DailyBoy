@@ -12,7 +12,7 @@ cmake --build ../../build
 ```python
 from dailyboy import makeDaily
 
-rc = makeDaily("examples/job.mvp.example.yaml")
+rc = makeDaily("examples/job.mvp.example.cy2026.yaml")
 ```
 
 ### CLI `makeDaily`
@@ -24,7 +24,7 @@ pip install -r requirements-dev.txt
 cmake -S . -B build -DDAILYBOY_BUILD_PYTHON=ON && cmake --build build
 pip install -e api/python
 
-makeDaily examples/job.mvp.example.yaml
+makeDaily examples/job.mvp.example.cy2026.yaml
 makeDaily -h
 ```
 

@@ -1,3 +1,4 @@
+# MVP example for CY2026 (OCIO 2.5 / ACES 2.0).
 dailyboy_version: 1
 
 metadata:
@@ -232,6 +233,24 @@ output:
         pix_fmt: yuv422p
         interlaced: false
         nitris_compat: false
+        faststart: true
+    - id: review_prores
+      enabled: true
+      display_view:
+        display: "Rec.1886 Rec.709 - Display"
+        view: "ACES 2.0 - SDR 100 nits (Rec.709)"
+      signal:
+        range: tv
+        matrix: bt709
+        primaries: bt709
+        transfer: bt709
+      path: "{dailies_root}/sh010_review_prores.mov"
+      fps: 24
+      codec: prores
+      codec_options:
+        profile: hq
+        pix_fmt: yuv422p10
+        vendor: apl0
         faststart: true
   image_sequences:
     - id: archive_acescg

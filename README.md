@@ -27,7 +27,13 @@ The **job YAML** is a YAML configuration file that defines a dailies render. It 
 
 See the [reference documentation](docs/reference/reference-job-yaml.md) for a full explanation of the fields, allowed values, and their effect on each deliverable.
 
-An example job file is provided at [`examples/job.mvp.example.yaml`](examples/job.mvp.example.yaml).
+An example job file is provided per VFX platform year:
+
+| Platform | Example | OCIO built-in |
+| --- | --- | --- |
+| CY2026 | [`job.mvp.example.cy2026.yaml`](examples/job.mvp.example.cy2026.yaml) | `ocio://studio-config-v4.0.0_aces-v2.0_ocio-v2.5` |
+| CY2025 | [`job.mvp.example.cy2025.yaml`](examples/job.mvp.example.cy2025.yaml) | `ocio://studio-config-v2.2.0_aces-v1.3_ocio-v2.4` |
+| CY2024 | [`job.mvp.example.cy2024.yaml`](examples/job.mvp.example.cy2024.yaml) | `ocio://studio-config-v2.1.0_aces-v1.3_ocio-v2.3` |
 
 ### CLI
 
@@ -118,11 +124,11 @@ Versions and git tags are defined in `cmake/versions/`. All third-party deps are
 - [x265](https://bitbucket.org/multicoreware/x265_git) — H.265 encoder
 - [libaom](https://aomedia.googlesource.com/aom/) — AV1 encoder/decoder
 - [libheif](https://github.com/strukturag/libheif) — HEIF/HEIC
-- [FFmpeg](https://ffmpeg.org/) — video reading and writing (**MJPEG, DNxHD, H.264, H.265, MOV, MP4**)
+- [FFmpeg](https://ffmpeg.org/) — video reading and writing (**MJPEG, DNxHD, ProRes, H.264, H.265, MOV, MP4**)
 - [OpenImageIO](https://openimageio.org/) — advanced image/video I/O (**EXR, TIFF, OCIO, JPEG, PNG, RAW, FFmpeg, TBB, HEIF, etc.**)
 
 #### Notes
-- FFmpeg is built with: **MJPEG, DNxHD, H.264, H.265, MOV, MP4** support.
+- FFmpeg is built with: **MJPEG, DNxHD, ProRes (prores_ks), H.264, H.265, MOV, MP4** support.
 - OpenImageIO is built with: **EXR, TIFF, OCIO, JPEG, PNG, RAW, FFmpeg, TBB, HEIF**, and more.
 
 ## Build, install, and test with CMake
@@ -242,7 +248,7 @@ The CI system uses Docker images under [`docker/ubuntu/`](docker/ubuntu/) and [`
 | Workflow | What triggers it? | What does it run? |
 | --- | --- | --- |
 | [`ci.yml`](.github/workflows/ci.yml) | On PRs or pushes to `develop` or `main` | **Ubuntu:** format + CY2024/25/26 debug + tests (coverage on CY2026). **Rocky 9:** CY2024/25/26 debug + tests. **macOS:** CY2024/25/26 debug + tests (native, no Docker) |
-| [`nightly.yml`](.github/workflows/nightly.yml) | On scheduled cron or manual trigger | **Ubuntu CY2026 only** on branch `develop`: debug (+ Codecov) ∥ sanitize ∥ **clang-tidy** |
+| [`nightly.yml`](.github/workflows/nightly.yml) | On scheduled cron or manual trigger | **Ubuntu CY2026 only** on branch `develop`: debug (+ Codecov) ∥ sanitize ∥ **clang-tidy** ∥ **perf + load** (release) |
 
 **Code coverage** is collected only for **Ubuntu CY2026** builds. In CY2024/CY2025 debug builds, coverage is disabled (`DAILYBOY_ENABLE_COVERAGE=OFF`).
 

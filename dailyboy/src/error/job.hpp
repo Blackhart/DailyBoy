@@ -715,6 +715,44 @@ inline constexpr std::string_view USER_ERROR_JOB_94 =
     "for zip, zips, dwaa, or dwab.";
 
 /*!
+ * \var USER_ERROR_JOB_95
+ * \brief Message when ProRes \c pix_fmt does not match the profile.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_95 =
+    "output: pix_fmt is incompatible with this ProRes profile. Check the job "
+    "YAML reference.";
+
+/*!
+ * \var USER_ERROR_JOB_96
+ * \brief Message when ProRes \c vendor is not exactly four ASCII characters.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_96 =
+    "output: vendor must be exactly four ASCII characters (e.g. apl0).";
+
+/*!
+ * \var USER_ERROR_JOB_97
+ * \brief Message when ProRes \c alpha_bits is incompatible with profile or
+ *        pix_fmt.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_97 =
+    "output: alpha_bits must be 0 unless pix_fmt is yuva444p10 with profile "
+    "4444 or 4444xq.";
+
+/*!
+ * \var USER_ERROR_JOB_98
+ * \brief Message when ProRes \c bits_per_mb is outside 0..8192.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_98 =
+    "output: bits_per_mb must be an integer in [0, 8192].";
+
+/*!
+ * \var USER_ERROR_JOB_99
+ * \brief Message when ProRes \c mbs_per_slice is outside 1..8.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_99 =
+    "output: mbs_per_slice must be an integer in [1, 8].";
+
+/*!
  * \var INTERNAL_ERROR_JOB_1
  * \brief Message when schema validation is called with an empty path.
  */

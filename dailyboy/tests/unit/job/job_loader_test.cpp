@@ -382,6 +382,66 @@ dailyboy::JobOutputVideoDnxhd load_dnxhd_options(
       job.value().output().videos().videos().front().codec_options());
 }
 
+std::filesystem::path write_prores_job(const std::string& name,
+                                       const std::string& codec_options) {
+  const std::filesystem::path dir =
+      std::filesystem::path(DAILYBOY_TEST_BINARY_DIR) / "prores_job_loader";
+  std::filesystem::create_directories(dir);
+  const std::filesystem::path path = dir / name;
+  std::ofstream out(path);
+  out << "dailyboy_version: 1\n"
+         "color:\n"
+         "  ocio_config: \"/unused/config.ocio\"\n"
+         "layout:\n"
+         "  canvas:\n"
+         "    width: 8\n"
+         "    height: 8\n"
+         "  image:\n"
+         "    fit: \"contain\"\n"
+         "  slate:\n"
+         "    duration_frames: 0\n"
+         "    lines: []\n"
+         "output:\n"
+         "  videos:\n"
+         "    - id: preview\n"
+         "      enabled: true\n"
+         "      display_view:\n"
+         "        display: \"passthrough\"\n"
+         "        view: \"passthrough\"\n"
+         "      signal:\n"
+         "        range: tv\n"
+         "        matrix: bt709\n"
+         "        primaries: bt709\n"
+         "        transfer: bt709\n"
+         "      path: /tmp/dailyboy_prores.mov\n"
+         "      codec: prores\n";
+  if (!codec_options.empty()) {
+    out << "      codec_options:\n" << codec_options;
+  }
+  out << "  image_sequences: []\n"
+         "plans:\n"
+         "  - id: plate\n"
+         "    input_colorspace: ACES - ACEScg\n"
+         "    sequence:\n"
+         "      path: /tmp/plate.%04d.png\n"
+         "      frame_start: 1001\n"
+         "      frame_end: 1003\n";
+  return path;
+}
+
+dailyboy::JobOutputVideoProres load_prores_options(
+    const std::filesystem::path& yaml) {
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  EXPECT_TRUE(schema.ok()) << schema.message();
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+  EXPECT_TRUE(job.ok()) << job.status().message();
+  if (!job.ok()) {
+    return {};
+  }
+  return std::get<dailyboy::JobOutputVideoProres>(
+      job.value().output().videos().videos().front().codec_options());
+}
+
 void expect_percent_position(const dailyboy::TextPosition& position, double x,
                              double y) {
   EXPECT_EQ(position.mode(), dailyboy::TextPosition::Mode::Percent);
@@ -6395,6 +6455,166 @@ TEST(JobLoader, ValidateJobSchema_DnxhdWithH264Keys_FailsValidation) {
   // Prepare
   const std::filesystem::path yaml =
       write_dnxhd_job("h264_keys.yaml", "        crf: 18\n");
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+
+  // Assert
+  EXPECT_FALSE(schema.ok()) << schema.message();
+}
+
+/*!
+ * \brief Loads ProRes with omitted codec_options and applies HQ defaults.
+ */
+TEST(JobLoader, LoadJob_OmittedProresOptions_UsesHqDefaults) {
+  // Prepare
+  const std::filesystem::path yaml =
+      std::filesystem::path(DAILYBOY_TEST_DATA_DIR) /
+      "test__job_loader__load_job__omitted_prores_options.yaml";
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  ASSERT_TRUE(schema.ok()) << schema.message();
+  ASSERT_TRUE(job.ok()) << job.status().message();
+  const dailyboy::JobOutputVideo& video =
+      job.value().output().videos().videos().front();
+  EXPECT_EQ(video.codec(),
+            dailyboy::JobOutputVideo::JobOutputVideoCodecValue::Prores);
+  const dailyboy::JobOutputVideoProres& options =
+      std::get<dailyboy::JobOutputVideoProres>(video.codec_options());
+  EXPECT_EQ(
+      options.profile(),
+      dailyboy::JobOutputVideoProres::JobOutputVideoProresProfileValue::Hq);
+  EXPECT_EQ(options.pix_fmt(), dailyboy::JobOutputVideoProres::
+                                   JobOutputVideoProresPixFmtValue::Yuv422p10);
+  EXPECT_EQ(
+      options.quant_mat(),
+      dailyboy::JobOutputVideoProres::JobOutputVideoProresQuantMatValue::Auto);
+  EXPECT_EQ(options.bits_per_mb(), 0);
+  EXPECT_EQ(options.mbs_per_slice(),
+            dailyboy::JobOutputVideoProres::kDefaultMbsPerSlice);
+  EXPECT_EQ(options.vendor(), dailyboy::JobOutputVideoProres::kDefaultVendor);
+  EXPECT_EQ(options.alpha_bits(), 0);
+  EXPECT_TRUE(options.faststart());
+}
+
+/*!
+ * \brief Loads explicit ProRes codec_options and stores all fields.
+ */
+TEST(JobLoader, LoadJob_ProresOptions_ParsesAllFields) {
+  // Prepare
+  const std::filesystem::path yaml =
+      std::filesystem::path(DAILYBOY_TEST_DATA_DIR) /
+      "test__job_loader__load_job__prores_options.yaml";
+
+  // Test
+  const dailyboy::JobOutputVideoProres options = load_prores_options(yaml);
+
+  // Assert
+  EXPECT_EQ(options.profile(),
+            dailyboy::JobOutputVideoProres::JobOutputVideoProresProfileValue::
+                FourFourFourFour);
+  EXPECT_EQ(options.pix_fmt(), dailyboy::JobOutputVideoProres::
+                                   JobOutputVideoProresPixFmtValue::Yuva444p10);
+  EXPECT_EQ(
+      options.quant_mat(),
+      dailyboy::JobOutputVideoProres::JobOutputVideoProresQuantMatValue::Hq);
+  EXPECT_EQ(options.bits_per_mb(), 8000);
+  EXPECT_EQ(options.mbs_per_slice(), 4);
+  EXPECT_EQ(options.vendor(), "Lavc");
+  EXPECT_EQ(options.alpha_bits(), 16);
+  EXPECT_FALSE(options.faststart());
+}
+
+/*!
+ * \brief Loads profile 4444xq with default yuv444p10 pix_fmt.
+ */
+TEST(JobLoader, LoadJob_Profile4444xq_DefaultsYuv444p10) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_prores_job("profile_4444xq.yaml", "        profile: 4444xq\n");
+
+  // Test
+  const dailyboy::JobOutputVideoProres options = load_prores_options(yaml);
+
+  // Assert
+  EXPECT_EQ(options.profile(),
+            dailyboy::JobOutputVideoProres::JobOutputVideoProresProfileValue::
+                FourFourFourFourXq);
+  EXPECT_EQ(options.pix_fmt(), dailyboy::JobOutputVideoProres::
+                                   JobOutputVideoProresPixFmtValue::Yuv444p10);
+}
+
+/*!
+ * \brief Rejects ProRes hq with yuv444p10 pix_fmt.
+ */
+TEST(JobLoader, LoadJob_ProresProfilePixFmtMismatch_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_prores_job("pix_mismatch.yaml",
+                       "        profile: hq\n"
+                       "        pix_fmt: yuv444p10\n");
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  EXPECT_FALSE(schema.ok() && job.ok());
+  if (!job.ok()) {
+    EXPECT_EQ(job.status().code(), dailyboy::Status::Code::kUser);
+    EXPECT_TRUE(job.status().message().find("pix_fmt") != std::string::npos)
+        << job.status().message();
+  }
+}
+
+/*!
+ * \brief Rejects ProRes vendor that is not four characters.
+ */
+TEST(JobLoader, LoadJob_ProresVendorInvalid_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_prores_job("vendor_bad.yaml", "        vendor: apple\n");
+
+  // Test
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  ASSERT_FALSE(job.ok());
+  EXPECT_EQ(job.status().code(), dailyboy::Status::Code::kUser);
+  EXPECT_TRUE(job.status().message().find("vendor") != std::string::npos)
+      << job.status().message();
+}
+
+/*!
+ * \brief Rejects ProRes alpha_bits on a 422 profile.
+ */
+TEST(JobLoader, LoadJob_ProresAlphaBitsOnHq_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_prores_job("alpha_hq.yaml", "        alpha_bits: 8\n");
+
+  // Test
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  ASSERT_FALSE(job.ok());
+  EXPECT_EQ(job.status().code(), dailyboy::Status::Code::kUser);
+  EXPECT_TRUE(job.status().message().find("alpha_bits") != std::string::npos)
+      << job.status().message();
+}
+
+/*!
+ * \brief Validates ProRes codec_options that use H.264 keys and fails schema.
+ */
+TEST(JobLoader, ValidateJobSchema_ProresWithH264Keys_FailsValidation) {
+  // Prepare
+  const std::filesystem::path yaml =
+      std::filesystem::path(DAILYBOY_TEST_DATA_DIR) /
+      "test__job_loader__load_job__prores_with_h264_keys.yaml";
 
   // Test
   dailyboy::Status schema = dailyboy::validate_job_schema(yaml);

@@ -131,7 +131,7 @@
         },
         "codec": {
           "type": "string",
-          "enum": ["h264", "mjpeg", "dnxhd"],
+          "enum": ["h264", "mjpeg", "dnxhd", "prores"],
           "description": "Video encoder."
         },
         "codec_options": {
@@ -170,6 +170,17 @@
           "then": {
             "properties": {
               "codec_options": { "$ref": "#/$defs/dnxhdCodecOptions" }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "codec": { "const": "prores" } },
+            "required": ["codec"]
+          },
+          "then": {
+            "properties": {
+              "codec_options": { "$ref": "#/$defs/proresCodecOptions" }
             }
           }
         }
@@ -354,6 +365,108 @@
           "description": "MOV muxer movflags +faststart."
         }
       }
+    },
+    "proresCodecOptions": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Optional ProRes (prores_ks) MOV settings when codec is prores. Omit the block or any key to use defaults (HQ / yuv422p10 / vendor apl0).",
+      "properties": {
+        "profile": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": ["proxy", "lt", "standard", "hq", "4444", "4444xq"]
+            },
+            {
+              "type": "integer",
+              "enum": [4444],
+              "description": "YAML unquoted 4444 is accepted as profile 4444."
+            }
+          ],
+          "default": "hq"
+        },
+        "pix_fmt": {
+          "type": "string",
+          "enum": ["yuv422p10", "yuv444p10", "yuva444p10"],
+          "description": "Must match profile. Omitted uses yuv422p10 (proxy/lt/standard/hq) or yuv444p10 (4444/4444xq)."
+        },
+        "quant_mat": {
+          "type": "string",
+          "enum": ["auto", "proxy", "lt", "standard", "hq", "default"],
+          "default": "auto",
+          "description": "FFmpeg prores_ks quant_mat."
+        },
+        "bits_per_mb": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 8192,
+          "default": 0,
+          "description": "Desired bits per macroblock. 0 uses the encoder default for the profile."
+        },
+        "mbs_per_slice": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 8,
+          "default": 8,
+          "description": "Macroblocks per slice (FFmpeg mbs_per_slice)."
+        },
+        "vendor": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 4,
+          "default": "apl0",
+          "description": "Four-character ProRes vendor ID (e.g. apl0, Lavc)."
+        },
+        "alpha_bits": {
+          "type": "integer",
+          "enum": [0, 8, 16],
+          "default": 0,
+          "description": "Alpha plane bit depth. Non-zero only with yuva444p10 and 4444/4444xq."
+        },
+        "faststart": {
+          "type": "boolean",
+          "default": true,
+          "description": "MOV muxer movflags +faststart."
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "profile": {
+                "enum": ["proxy", "lt", "standard", "hq"]
+              }
+            },
+            "required": ["profile"]
+          },
+          "then": {
+            "properties": {
+              "pix_fmt": { "const": "yuv422p10" },
+              "alpha_bits": { "const": 0 }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "profile": {
+                "anyOf": [
+                  { "enum": ["4444", "4444xq"] },
+                  { "const": 4444 }
+                ]
+              }
+            },
+            "required": ["profile"]
+          },
+          "then": {
+            "properties": {
+              "pix_fmt": {
+                "enum": ["yuv444p10", "yuva444p10"]
+              }
+            }
+          }
+        }
+      ]
     },
     "outputImageSequence": {
       "type": "object",

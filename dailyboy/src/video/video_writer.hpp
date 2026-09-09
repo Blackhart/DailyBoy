@@ -47,7 +47,7 @@ class VideoWriter {
 };
 
 /*!
- * \brief Returns an empty writer for \a codec (H.264, MJPEG, or DNxHD).
+ * \brief Returns an empty writer for \a codec (H.264, MJPEG, DNxHD, or ProRes).
  */
 std::unique_ptr<VideoWriter> make_video_writer(
     JobOutputVideo::JobOutputVideoCodecValue codec);
