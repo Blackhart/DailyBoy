@@ -1,5 +1,6 @@
 # libaom — AV1 codec for libheif AVIF encode/decode
 # https://aomedia.googlesource.com/aom
+# v3.13.2+ required for NASM 3.x detection (MSYS2 ships NASM 3.02).
 
 if(TARGET aom::aom)
     return()
