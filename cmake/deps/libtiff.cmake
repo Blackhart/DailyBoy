@@ -9,7 +9,15 @@ dailyboy_bundled_install_prefix(libtiff DAILYBOY_LIBTIFF_PREFIX)
 set(DAILYBOY_LIBTIFF_PREFIX "${DAILYBOY_LIBTIFF_PREFIX}" CACHE INTERNAL "bundled libtiff prefix")
 file(MAKE_DIRECTORY "${DAILYBOY_LIBTIFF_PREFIX}/include")
 file(MAKE_DIRECTORY "${DAILYBOY_LIBTIFF_PREFIX}/lib")
-dailyboy_bundled_shared_lib_path("${DAILYBOY_LIBTIFF_PREFIX}/lib" tiff _dailyboy_tiff_lib)
+if(WIN32)
+    file(MAKE_DIRECTORY "${DAILYBOY_LIBTIFF_PREFIX}/bin")
+    dailyboy_win_shared_basename(tiff _dailyboy_tiff_basename)
+else()
+    set(_dailyboy_tiff_basename tiff)
+endif()
+dailyboy_bundled_shared_lib_path(
+    "${DAILYBOY_LIBTIFF_PREFIX}/lib" "${_dailyboy_tiff_basename}" _dailyboy_tiff_lib
+)
 
 dailyboy_join_pkg_config_path(
     _dailyboy_tiff_pc "${DAILYBOY_ZLIB_PREFIX}" "${DAILYBOY_JPEG_TURBO_PREFIX}"
@@ -30,6 +38,9 @@ list(APPEND _dailyboy_tiff_args
     -DZLIB_ROOT=${DAILYBOY_ZLIB_PREFIX}
     -DCMAKE_PREFIX_PATH=${DAILYBOY_ZLIB_PREFIX}|${DAILYBOY_JPEG_TURBO_PREFIX}
 )
+if(MSVC)
+    list(APPEND _dailyboy_tiff_args -DCMAKE_DEBUG_POSTFIX=d)
+endif()
 
 ExternalProject_Add(
     dailyboy_libtiff
@@ -58,3 +69,4 @@ message(STATUS "deps: libtiff ${DAILYBOY_LIBTIFF_GIT_TAG}")
 unset(_dailyboy_tiff_lib)
 unset(_dailyboy_tiff_args)
 unset(_dailyboy_tiff_pc)
+unset(_dailyboy_tiff_basename)

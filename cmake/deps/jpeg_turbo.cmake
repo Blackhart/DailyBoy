@@ -9,7 +9,15 @@ dailyboy_bundled_install_prefix(jpeg-turbo DAILYBOY_JPEG_TURBO_PREFIX)
 set(DAILYBOY_JPEG_TURBO_PREFIX "${DAILYBOY_JPEG_TURBO_PREFIX}" CACHE INTERNAL "bundled jpeg-turbo prefix")
 file(MAKE_DIRECTORY "${DAILYBOY_JPEG_TURBO_PREFIX}/include")
 file(MAKE_DIRECTORY "${DAILYBOY_JPEG_TURBO_PREFIX}/lib")
-dailyboy_bundled_shared_lib_path("${DAILYBOY_JPEG_TURBO_PREFIX}/lib" jpeg _dailyboy_jpeg_lib)
+if(WIN32)
+    file(MAKE_DIRECTORY "${DAILYBOY_JPEG_TURBO_PREFIX}/bin")
+    dailyboy_win_shared_basename(jpeg _dailyboy_jpeg_basename)
+else()
+    set(_dailyboy_jpeg_basename jpeg)
+endif()
+dailyboy_bundled_shared_lib_path(
+    "${DAILYBOY_JPEG_TURBO_PREFIX}/lib" "${_dailyboy_jpeg_basename}" _dailyboy_jpeg_lib
+)
 
 dailyboy_ep_cmake_args(_dailyboy_jpeg_args "${DAILYBOY_JPEG_TURBO_PREFIX}")
 list(APPEND _dailyboy_jpeg_args
@@ -18,6 +26,9 @@ list(APPEND _dailyboy_jpeg_args
     -DWITH_TURBOJPEG=ON
     -DWITH_JPEG8=ON
 )
+if(MSVC)
+    list(APPEND _dailyboy_jpeg_args -DCMAKE_DEBUG_POSTFIX=d)
+endif()
 
 ExternalProject_Add(
     dailyboy_jpeg_turbo
@@ -35,9 +46,9 @@ ExternalProject_Add(
 dailyboy_add_imported_shared(
     JPEG::JPEG dailyboy_jpeg_turbo "${_dailyboy_jpeg_lib}" "${DAILYBOY_JPEG_TURBO_PREFIX}/include"
 )
-dailyboy_install_bundled_libs("${DAILYBOY_JPEG_TURBO_PREFIX}" "${CMAKE_SHARED_LIBRARY_PREFIX}jpeg*")
-dailyboy_install_bundled_libs("${DAILYBOY_JPEG_TURBO_PREFIX}" "${CMAKE_SHARED_LIBRARY_PREFIX}turbojpeg*")
+dailyboy_install_bundled_libs("${DAILYBOY_JPEG_TURBO_PREFIX}" "*jpeg*")
 
 message(STATUS "deps: libjpeg-turbo ${DAILYBOY_JPEG_TURBO_GIT_TAG}")
 unset(_dailyboy_jpeg_lib)
 unset(_dailyboy_jpeg_args)
+unset(_dailyboy_jpeg_basename)

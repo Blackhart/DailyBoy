@@ -10,6 +10,9 @@ dailyboy_bundled_install_prefix(tbb DAILYBOY_TBB_PREFIX)
 set(DAILYBOY_TBB_PREFIX "${DAILYBOY_TBB_PREFIX}" CACHE INTERNAL "bundled oneTBB prefix")
 file(MAKE_DIRECTORY "${DAILYBOY_TBB_PREFIX}/include")
 file(MAKE_DIRECTORY "${DAILYBOY_TBB_PREFIX}/lib")
+if(WIN32)
+    file(MAKE_DIRECTORY "${DAILYBOY_TBB_PREFIX}/bin")
+endif()
 
 dailyboy_bundled_build_type(_dailyboy_tbb_build_type)
 if(_dailyboy_tbb_build_type STREQUAL "Debug")
@@ -49,6 +52,13 @@ function(dailyboy_tbb2020_host_vars lib_basename out_make_extras out_built_lib)
 endfunction()
 
 if(DAILYBOY_ONETBB_VERSION STREQUAL "2020")
+    if(WIN32)
+        message(
+            FATAL_ERROR
+            "Classic TBB 2020 (CY2024) is not supported on Windows. "
+            "Use DAILYBOY_VFX_PLATFORM=2025 or 2026 (oneTBB CMake)."
+        )
+    endif()
     set(_dailyboy_tbb_make_prefix dailyboy)
     dailyboy_tbb2020_host_vars(
         "${_dailyboy_tbb_lib_basename}"
@@ -74,7 +84,7 @@ if(DAILYBOY_ONETBB_VERSION STREQUAL "2020")
             <BINARY_DIR>/${_dailyboy_tbb_build_subdir}/${_dailyboy_tbb_built_lib}
             "${DAILYBOY_TBB_PREFIX}/lib/${_dailyboy_tbb_built_lib}"
     )
-    if(NOT APPLE)
+    if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
         list(
             APPEND _dailyboy_tbb_install_cmds
             COMMAND ${CMAKE_COMMAND} -E create_symlink

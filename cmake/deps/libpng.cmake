@@ -9,7 +9,16 @@ dailyboy_bundled_install_prefix(libpng DAILYBOY_LIBPNG_PREFIX)
 set(DAILYBOY_LIBPNG_PREFIX "${DAILYBOY_LIBPNG_PREFIX}" CACHE INTERNAL "bundled libpng prefix")
 file(MAKE_DIRECTORY "${DAILYBOY_LIBPNG_PREFIX}/include")
 file(MAKE_DIRECTORY "${DAILYBOY_LIBPNG_PREFIX}/lib")
-dailyboy_bundled_shared_lib_path("${DAILYBOY_LIBPNG_PREFIX}/lib" png _dailyboy_png_lib)
+if(WIN32)
+    file(MAKE_DIRECTORY "${DAILYBOY_LIBPNG_PREFIX}/bin")
+    # libpng 1.6 installs libpng16[.d].dll on Windows.
+    dailyboy_win_shared_basename(libpng16 _dailyboy_png_basename)
+else()
+    set(_dailyboy_png_basename png)
+endif()
+dailyboy_bundled_shared_lib_path(
+    "${DAILYBOY_LIBPNG_PREFIX}/lib" "${_dailyboy_png_basename}" _dailyboy_png_lib
+)
 
 dailyboy_join_pkg_config_path(_dailyboy_png_pc "${DAILYBOY_ZLIB_PREFIX}")
 dailyboy_ep_cmake_args(_dailyboy_png_args "${DAILYBOY_LIBPNG_PREFIX}")
@@ -21,6 +30,9 @@ list(APPEND _dailyboy_png_args
     -DZLIB_ROOT=${DAILYBOY_ZLIB_PREFIX}
     -DCMAKE_PREFIX_PATH=${DAILYBOY_ZLIB_PREFIX}
 )
+if(MSVC)
+    list(APPEND _dailyboy_png_args -DCMAKE_DEBUG_POSTFIX=d)
+endif()
 
 ExternalProject_Add(
     dailyboy_libpng
@@ -48,3 +60,4 @@ message(STATUS "deps: libpng ${DAILYBOY_LIBPNG_GIT_TAG}")
 unset(_dailyboy_png_lib)
 unset(_dailyboy_png_args)
 unset(_dailyboy_png_pc)
+unset(_dailyboy_png_basename)

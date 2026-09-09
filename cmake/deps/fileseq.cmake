@@ -23,15 +23,37 @@ if(CMAKE_SCRIPT_MODE_FILE)
 
     file(MAKE_DIRECTORY "${INSTALL_PREFIX}/lib" "${INSTALL_PREFIX}/include/fileseq")
 
-    set(_lib "${BINARY_DIR}/libfileseq.a")
-    if(NOT EXISTS "${_lib}")
-        set(_lib "${BINARY_DIR}/lib/libfileseq.a")
-    endif()
-    if(NOT EXISTS "${_lib}")
-        message(FATAL_ERROR "libfileseq.a not found under ${BINARY_DIR}")
+    set(_lib_candidates
+        "${BINARY_DIR}/libfileseq.a"
+        "${BINARY_DIR}/lib/libfileseq.a"
+        "${BINARY_DIR}/fileseq.lib"
+        "${BINARY_DIR}/lib/fileseq.lib"
+        "${BINARY_DIR}/fileseq_static.lib"
+        "${BINARY_DIR}/lib/fileseq_static.lib"
+        "${BINARY_DIR}/Debug/fileseq.lib"
+        "${BINARY_DIR}/Release/fileseq.lib"
+        "${BINARY_DIR}/Debug/fileseq_static.lib"
+        "${BINARY_DIR}/Release/fileseq_static.lib"
+    )
+    set(_lib "")
+    foreach(_cand IN LISTS _lib_candidates)
+        if(EXISTS "${_cand}")
+            set(_lib "${_cand}")
+            break()
+        endif()
+    endforeach()
+    if(_lib STREQUAL "")
+        message(FATAL_ERROR "libfileseq archive not found under ${BINARY_DIR}")
     endif()
 
+    get_filename_component(_lib_name "${_lib}" NAME)
     file(COPY "${_lib}" DESTINATION "${INSTALL_PREFIX}/lib")
+    # Normalize import/static name for DailyBoy consumers.
+    if(NOT _lib_name STREQUAL "fileseq.lib" AND NOT _lib_name STREQUAL "libfileseq.a")
+        if(_lib_name MATCHES "\\.lib$")
+            file(RENAME "${INSTALL_PREFIX}/lib/${_lib_name}" "${INSTALL_PREFIX}/lib/fileseq.lib")
+        endif()
+    endif()
 
     set(_headers fileseq.h sequence.h frameset.h pad.h error.h)
     foreach(_hdr IN LISTS _headers)
