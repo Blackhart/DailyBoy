@@ -3,7 +3,7 @@
  * \brief Google Benchmark write timings: Fast vs HighQuality per deliverable.
  *
  * Image formats: png, jpeg, tiff, exr, heic, avif.
- * Video formats: h264, mjpeg, dnxhd.
+ * Video formats: h264, mjpeg, dnxhd, prores.
  *
  * Config matrix (job options exercised by each bench):
  *
@@ -18,6 +18,7 @@
  * | h264 | preset ultrafast, crf 28, yuv420p | preset slow, crf 18, yuv422p, high422 |
  * | mjpeg | qscale 8, yuv420p, huffman default | qscale 1, yuv444p, huffman optimal |
  * | dnxhd | profile dnxhr_lb, yuv422p | profile dnxhr_444, yuv444p10 |
+ * | prores | profile proxy, yuv422p10 | profile hq, yuv422p10 |
  */
 
 #include <OpenImageIO/imagebuf.h>
@@ -41,6 +42,7 @@ namespace {
 using H264 = dailyboy::JobOutputVideoH264;
 using Mjpeg = dailyboy::JobOutputVideoMjpeg;
 using Dnxhd = dailyboy::JobOutputVideoDnxhd;
+using Prores = dailyboy::JobOutputVideoProres;
 
 dailyboy::JobOutputVideoSignal tv_signal() {
   dailyboy::JobOutputVideoSignal signal;
@@ -114,6 +116,24 @@ dailyboy::JobOutputVideo dnxhd_high_quality() {
   options.set_pix_fmt(Dnxhd::JobOutputVideoDnxhdPixFmtValue::Yuv444p10);
   options.set_faststart(false);
   return make_video(dailyboy::JobOutputVideo::JobOutputVideoCodecValue::Dnxhd,
+                    std::move(options));
+}
+
+dailyboy::JobOutputVideo prores_fast() {
+  Prores options;
+  options.set_profile(Prores::JobOutputVideoProresProfileValue::Proxy);
+  options.set_pix_fmt(Prores::JobOutputVideoProresPixFmtValue::Yuv422p10);
+  options.set_faststart(false);
+  return make_video(dailyboy::JobOutputVideo::JobOutputVideoCodecValue::Prores,
+                    std::move(options));
+}
+
+dailyboy::JobOutputVideo prores_high_quality() {
+  Prores options;
+  options.set_profile(Prores::JobOutputVideoProresProfileValue::Hq);
+  options.set_pix_fmt(Prores::JobOutputVideoProresPixFmtValue::Yuv422p10);
+  options.set_faststart(false);
+  return make_video(dailyboy::JobOutputVideo::JobOutputVideoCodecValue::Prores,
                     std::move(options));
 }
 
@@ -304,6 +324,18 @@ static void Write_Dnxhd_HighQuality(benchmark::State& state) {
   run_video_write(state, "perf_dnxhd_hq", dnxhd_high_quality());
 }
 BENCHMARK(Write_Dnxhd_HighQuality)
+    ->Unit(benchmark::kMillisecond)
+    ->MinTime(0.05);
+
+static void Write_Prores_Fast(benchmark::State& state) {
+  run_video_write(state, "perf_prores_fast", prores_fast());
+}
+BENCHMARK(Write_Prores_Fast)->Unit(benchmark::kMillisecond)->MinTime(0.05);
+
+static void Write_Prores_HighQuality(benchmark::State& state) {
+  run_video_write(state, "perf_prores_hq", prores_high_quality());
+}
+BENCHMARK(Write_Prores_HighQuality)
     ->Unit(benchmark::kMillisecond)
     ->MinTime(0.05);
 

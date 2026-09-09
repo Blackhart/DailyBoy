@@ -1,0 +1,43 @@
+dailyboy_version: 1
+color:
+  ocio_config: "/unused/config.ocio"
+layout:
+  canvas:
+    width: 8
+    height: 8
+  image:
+    fit: "contain"
+  slate:
+    duration_frames: 0
+    lines: []
+output:
+  videos:
+    - id: preview
+      enabled: true
+      display_view:
+        display: "passthrough"
+        view: "passthrough"
+      signal:
+        range: tv
+        matrix: bt709
+        primaries: bt709
+        transfer: bt709
+      path: /tmp/dailyboy_prores_options.mov
+      codec: prores
+      codec_options:
+        profile: 4444
+        pix_fmt: yuva444p10
+        quant_mat: hq
+        bits_per_mb: 8000
+        mbs_per_slice: 4
+        vendor: Lavc
+        alpha_bits: 16
+        faststart: false
+  image_sequences: []
+plans:
+  - id: plate
+    input_colorspace: ACES - ACEScg
+    sequence:
+      path: /tmp/plate.%04d.png
+      frame_start: 1001
+      frame_end: 1003

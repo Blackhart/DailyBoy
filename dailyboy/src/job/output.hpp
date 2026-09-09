@@ -292,10 +292,99 @@ class JobOutputVideoDnxhd {
 };
 
 /*!
- * \brief Encoder-specific \c codec_options (\c h264, \c mjpeg, or \c dnxhd).
+ * \brief ProRes encoding settings (\c codec_options when \c codec is
+ *        \c prores). Uses FFmpeg \c prores_ks.
+ */
+class JobOutputVideoProres {
+ public:
+  /*!
+   * \brief FFmpeg \c prores_ks profile (maps to \c codec_options.profile).
+   */
+  enum class JobOutputVideoProresProfileValue : std::uint8_t {
+    Proxy = 0,
+    Lt = 1,
+    Standard = 2,
+    Hq = 3,
+    FourFourFourFour = 4,
+    FourFourFourFourXq = 5,
+  };
+
+  /*!
+   * \brief Encoder pixel format (maps to \c codec_options.pix_fmt).
+   */
+  enum class JobOutputVideoProresPixFmtValue : std::uint8_t {
+    Yuv422p10 = 0,
+    Yuv444p10 = 1,
+    Yuva444p10 = 2,
+  };
+
+  /*!
+   * \brief Quantization matrix (maps to \c codec_options.quant_mat).
+   */
+  enum class JobOutputVideoProresQuantMatValue : std::uint8_t {
+    Auto = 0,
+    Proxy = 1,
+    Lt = 2,
+    Standard = 3,
+    Hq = 4,
+    Default = 5,
+  };
+
+  static constexpr int kDefaultMbsPerSlice = 8;
+  static constexpr const char* kDefaultVendor = "apl0";
+
+  JobOutputVideoProres() = default;
+  JobOutputVideoProresProfileValue profile() const { return profile_; }
+  void set_profile(JobOutputVideoProresProfileValue profile) {
+    profile_ = profile;
+  }
+
+  JobOutputVideoProresPixFmtValue pix_fmt() const { return pix_fmt_; }
+  void set_pix_fmt(JobOutputVideoProresPixFmtValue pix_fmt) {
+    pix_fmt_ = pix_fmt;
+  }
+
+  JobOutputVideoProresQuantMatValue quant_mat() const { return quant_mat_; }
+  void set_quant_mat(JobOutputVideoProresQuantMatValue quant_mat) {
+    quant_mat_ = quant_mat;
+  }
+
+  int bits_per_mb() const { return bits_per_mb_; }
+  void set_bits_per_mb(int bits_per_mb) { bits_per_mb_ = bits_per_mb; }
+
+  int mbs_per_slice() const { return mbs_per_slice_; }
+  void set_mbs_per_slice(int mbs_per_slice) { mbs_per_slice_ = mbs_per_slice; }
+
+  const std::string& vendor() const { return vendor_; }
+  void set_vendor(std::string vendor) { vendor_ = std::move(vendor); }
+
+  int alpha_bits() const { return alpha_bits_; }
+  void set_alpha_bits(int alpha_bits) { alpha_bits_ = alpha_bits; }
+
+  bool faststart() const { return faststart_; }
+  void set_faststart(bool faststart) { faststart_ = faststart; }
+
+ private:
+  JobOutputVideoProresProfileValue profile_ =
+      JobOutputVideoProresProfileValue::Hq;
+  JobOutputVideoProresPixFmtValue pix_fmt_ =
+      JobOutputVideoProresPixFmtValue::Yuv422p10;
+  JobOutputVideoProresQuantMatValue quant_mat_ =
+      JobOutputVideoProresQuantMatValue::Auto;
+  int bits_per_mb_ = 0;
+  int mbs_per_slice_ = kDefaultMbsPerSlice;
+  std::string vendor_ = kDefaultVendor;
+  int alpha_bits_ = 0;
+  bool faststart_ = true;
+};
+
+/*!
+ * \brief Encoder-specific \c codec_options (\c h264, \c mjpeg, \c dnxhd, or
+ *        \c prores).
  */
 using JobOutputVideoCodecOptions =
-    std::variant<JobOutputVideoH264, JobOutputVideoMjpeg, JobOutputVideoDnxhd>;
+    std::variant<JobOutputVideoH264, JobOutputVideoMjpeg, JobOutputVideoDnxhd,
+                 JobOutputVideoProres>;
 
 /*!
  * \brief One video deliverable (QuickTime container).
@@ -309,6 +398,7 @@ class JobOutputVideo {
     H264 = 0,
     Mjpeg = 1,
     Dnxhd = 2,
+    Prores = 3,
   };
 
   JobOutputVideo() = default;

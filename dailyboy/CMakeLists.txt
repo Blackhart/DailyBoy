@@ -32,6 +32,7 @@ add_library(dailyboy SHARED
     src/video/h264_writer.cpp
     src/video/mjpeg_writer.cpp
     src/video/dnxhd_writer.cpp
+    src/video/prores_writer.cpp
 )
 
 dailyboy_target_cxx_std(dailyboy PUBLIC)

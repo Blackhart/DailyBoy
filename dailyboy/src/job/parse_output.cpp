@@ -370,6 +370,180 @@ StatusOr<JobOutputVideoDnxhd> parse_dnxhd(const YAML::Node& node,
   return dnxhd;
 }
 
+bool prores_is_444(JobOutputVideoProres::JobOutputVideoProresProfileValue p) {
+  using Profile = JobOutputVideoProres::JobOutputVideoProresProfileValue;
+  return p == Profile::FourFourFourFour || p == Profile::FourFourFourFourXq;
+}
+
+JobOutputVideoProres::JobOutputVideoProresPixFmtValue prores_default_pix_fmt(
+    JobOutputVideoProres::JobOutputVideoProresProfileValue profile) {
+  using Pix = JobOutputVideoProres::JobOutputVideoProresPixFmtValue;
+  return prores_is_444(profile) ? Pix::Yuv444p10 : Pix::Yuv422p10;
+}
+
+bool prores_pix_fmt_ok(
+    JobOutputVideoProres::JobOutputVideoProresProfileValue profile,
+    JobOutputVideoProres::JobOutputVideoProresPixFmtValue pix_fmt) {
+  using Pix = JobOutputVideoProres::JobOutputVideoProresPixFmtValue;
+  if (prores_is_444(profile)) {
+    return pix_fmt == Pix::Yuv444p10 || pix_fmt == Pix::Yuva444p10;
+  }
+  return pix_fmt == Pix::Yuv422p10;
+}
+
+bool prores_vendor_ok(const std::string& vendor) {
+  if (vendor.size() != 4) {
+    return false;
+  }
+  for (unsigned char c : vendor) {
+    if (c < 0x20 || c > 0x7e) {
+      return false;
+    }
+  }
+  return true;
+}
+
+StatusOr<JobOutputVideoProres> parse_prores(const YAML::Node& node,
+                                            const std::string& field) {
+  JobOutputVideoProres prores;
+  if (!node) {
+    return prores;
+  }
+  DAILYBOY_ASSIGN_OR_RETURN(const YAML::Node map, expect_map(node, field));
+
+  std::string profile = "hq";
+  if (map["profile"]) {
+    const YAML::Node profile_node = map["profile"];
+    if (!profile_node.IsScalar()) {
+      return Status::User(with_job_error(USER_ERROR_JOB_25, field + ".profile."));
+    }
+    profile = profile_node.Scalar();
+  }
+  if (profile == "proxy") {
+    prores.set_profile(
+        JobOutputVideoProres::JobOutputVideoProresProfileValue::Proxy);
+  } else if (profile == "lt") {
+    prores.set_profile(
+        JobOutputVideoProres::JobOutputVideoProresProfileValue::Lt);
+  } else if (profile == "standard") {
+    prores.set_profile(
+        JobOutputVideoProres::JobOutputVideoProresProfileValue::Standard);
+  } else if (profile == "hq") {
+    prores.set_profile(
+        JobOutputVideoProres::JobOutputVideoProresProfileValue::Hq);
+  } else if (profile == "4444") {
+    prores.set_profile(JobOutputVideoProres::JobOutputVideoProresProfileValue::
+                           FourFourFourFour);
+  } else if (profile == "4444xq") {
+    prores.set_profile(JobOutputVideoProres::JobOutputVideoProresProfileValue::
+                           FourFourFourFourXq);
+  } else {
+    return Status::User(with_job_error(USER_ERROR_JOB_25,
+                                       field + ".profile '" + profile + "'."));
+  }
+
+  if (map["pix_fmt"]) {
+    DAILYBOY_ASSIGN_OR_RETURN(const std::string pix_fmt,
+                              as_required<std::string>(map, "pix_fmt", field));
+    if (pix_fmt == "yuv422p10") {
+      prores.set_pix_fmt(
+          JobOutputVideoProres::JobOutputVideoProresPixFmtValue::Yuv422p10);
+    } else if (pix_fmt == "yuv444p10") {
+      prores.set_pix_fmt(
+          JobOutputVideoProres::JobOutputVideoProresPixFmtValue::Yuv444p10);
+    } else if (pix_fmt == "yuva444p10") {
+      prores.set_pix_fmt(
+          JobOutputVideoProres::JobOutputVideoProresPixFmtValue::Yuva444p10);
+    } else {
+      return Status::User(with_job_error(
+          USER_ERROR_JOB_25, field + ".pix_fmt '" + pix_fmt + "'."));
+    }
+    if (!prores_pix_fmt_ok(prores.profile(), prores.pix_fmt())) {
+      return Status::User(with_job_error(
+          USER_ERROR_JOB_95,
+          field + " pix_fmt '" + pix_fmt + "' profile '" + profile + "'."));
+    }
+  } else {
+    prores.set_pix_fmt(prores_default_pix_fmt(prores.profile()));
+  }
+
+  DAILYBOY_ASSIGN_OR_RETURN(
+      const std::string quant_mat,
+      as_optional<std::string>(map, "quant_mat", "auto", field));
+  if (quant_mat == "auto") {
+    prores.set_quant_mat(
+        JobOutputVideoProres::JobOutputVideoProresQuantMatValue::Auto);
+  } else if (quant_mat == "proxy") {
+    prores.set_quant_mat(
+        JobOutputVideoProres::JobOutputVideoProresQuantMatValue::Proxy);
+  } else if (quant_mat == "lt") {
+    prores.set_quant_mat(
+        JobOutputVideoProres::JobOutputVideoProresQuantMatValue::Lt);
+  } else if (quant_mat == "standard") {
+    prores.set_quant_mat(
+        JobOutputVideoProres::JobOutputVideoProresQuantMatValue::Standard);
+  } else if (quant_mat == "hq") {
+    prores.set_quant_mat(
+        JobOutputVideoProres::JobOutputVideoProresQuantMatValue::Hq);
+  } else if (quant_mat == "default") {
+    prores.set_quant_mat(
+        JobOutputVideoProres::JobOutputVideoProresQuantMatValue::Default);
+  } else {
+    return Status::User(with_job_error(
+        USER_ERROR_JOB_25, field + ".quant_mat '" + quant_mat + "'."));
+  }
+
+  DAILYBOY_ASSIGN_OR_RETURN(int bits_per_mb,
+                            as_optional<int>(map, "bits_per_mb", 0, field));
+  if (bits_per_mb < 0 || bits_per_mb > 8192) {
+    return Status::User(with_job_error(USER_ERROR_JOB_98, field + "."));
+  }
+  prores.set_bits_per_mb(bits_per_mb);
+
+  DAILYBOY_ASSIGN_OR_RETURN(
+      int mbs_per_slice,
+      as_optional<int>(map, "mbs_per_slice",
+                       JobOutputVideoProres::kDefaultMbsPerSlice, field));
+  if (mbs_per_slice < 1 || mbs_per_slice > 8) {
+    return Status::User(with_job_error(USER_ERROR_JOB_99, field + "."));
+  }
+  prores.set_mbs_per_slice(mbs_per_slice);
+
+  DAILYBOY_ASSIGN_OR_RETURN(
+      std::string vendor,
+      as_optional<std::string>(map, "vendor",
+                               JobOutputVideoProres::kDefaultVendor, field));
+  if (!prores_vendor_ok(vendor)) {
+    return Status::User(with_job_error(USER_ERROR_JOB_96, field + "."));
+  }
+  prores.set_vendor(std::move(vendor));
+
+  DAILYBOY_ASSIGN_OR_RETURN(int alpha_bits,
+                            as_optional<int>(map, "alpha_bits", 0, field));
+  if (alpha_bits != 0 && alpha_bits != 8 && alpha_bits != 16) {
+    return Status::User(with_job_error(
+        USER_ERROR_JOB_25, field + ".alpha_bits '" +
+                               std::to_string(alpha_bits) + "'."));
+  }
+  using Pix = JobOutputVideoProres::JobOutputVideoProresPixFmtValue;
+  const bool alpha_allowed =
+      prores_is_444(prores.profile()) &&
+      prores.pix_fmt() == Pix::Yuva444p10;
+  if (alpha_bits != 0 && !alpha_allowed) {
+    return Status::User(with_job_error(USER_ERROR_JOB_97, field + "."));
+  }
+  if (prores.pix_fmt() == Pix::Yuva444p10 && alpha_bits == 0) {
+    return Status::User(with_job_error(USER_ERROR_JOB_97, field + "."));
+  }
+  prores.set_alpha_bits(alpha_bits);
+
+  DAILYBOY_ASSIGN_OR_RETURN(bool faststart,
+                            as_optional<bool>(map, "faststart", true, field));
+  prores.set_faststart(faststart);
+
+  return prores;
+}
+
 StatusOr<JobOutputDisplayView> parse_display_view(const YAML::Node& node,
                                                   const std::string& field) {
   DAILYBOY_ASSIGN_OR_RETURN(const YAML::Node map, expect_map(node, field));
@@ -501,6 +675,12 @@ StatusOr<JobOutput> parse_output(const YAML::Node& node) {
         DAILYBOY_ASSIGN_OR_RETURN(
             JobOutputVideoDnxhd options,
             parse_dnxhd(video_map["codec_options"], base + ".codec_options"));
+        video.set_codec_options(options);
+      } else if (codec == "prores") {
+        video.set_codec(JobOutputVideo::JobOutputVideoCodecValue::Prores);
+        DAILYBOY_ASSIGN_OR_RETURN(
+            JobOutputVideoProres options,
+            parse_prores(video_map["codec_options"], base + ".codec_options"));
         video.set_codec_options(options);
       } else {
         std::string detail = base;

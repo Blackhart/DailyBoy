@@ -8,6 +8,7 @@
 #include "video/dnxhd_writer.hpp"
 #include "video/h264_writer.hpp"
 #include "video/mjpeg_writer.hpp"
+#include "video/prores_writer.hpp"
 
 namespace dailyboy {
 
@@ -18,6 +19,8 @@ std::unique_ptr<VideoWriter> make_video_writer(
       return std::make_unique<MjpegWriter>();
     case JobOutputVideo::JobOutputVideoCodecValue::Dnxhd:
       return std::make_unique<DnxhdWriter>();
+    case JobOutputVideo::JobOutputVideoCodecValue::Prores:
+      return std::make_unique<ProresWriter>();
     case JobOutputVideo::JobOutputVideoCodecValue::H264:
       return std::make_unique<H264Writer>();
   }
