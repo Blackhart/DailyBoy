@@ -132,8 +132,8 @@ TEST(ProresWriter, Open_ProfileStandard_WritesStandardProfile) {
   // Prepare
   const std::filesystem::path mov = unique_mov("prores_profile_standard");
   dailyboy::JobOutputVideoProres options;
-  options.set_profile(
-      dailyboy::JobOutputVideoProres::JobOutputVideoProresProfileValue::Standard);
+  options.set_profile(dailyboy::JobOutputVideoProres::
+                          JobOutputVideoProresProfileValue::Standard);
 
   // Test
   dailyboy::Status status = write_three_rgb(mov, options);
@@ -152,8 +152,8 @@ TEST(ProresWriter, Open_Profile4444_Writes4444Yuv444p10) {
   dailyboy::JobOutputVideoProres options;
   options.set_profile(dailyboy::JobOutputVideoProres::
                           JobOutputVideoProresProfileValue::FourFourFourFour);
-  options.set_pix_fmt(
-      dailyboy::JobOutputVideoProres::JobOutputVideoProresPixFmtValue::Yuv444p10);
+  options.set_pix_fmt(dailyboy::JobOutputVideoProres::
+                          JobOutputVideoProresPixFmtValue::Yuv444p10);
 
   // Test
   dailyboy::Status status = write_three_rgb(mov, options);
@@ -175,8 +175,8 @@ TEST(ProresWriter, Open_Profile4444xq_WritesXqYuv444p10) {
   dailyboy::JobOutputVideoProres options;
   options.set_profile(dailyboy::JobOutputVideoProres::
                           JobOutputVideoProresProfileValue::FourFourFourFourXq);
-  options.set_pix_fmt(
-      dailyboy::JobOutputVideoProres::JobOutputVideoProresPixFmtValue::Yuv444p10);
+  options.set_pix_fmt(dailyboy::JobOutputVideoProres::
+                          JobOutputVideoProresPixFmtValue::Yuv444p10);
 
   // Test
   dailyboy::Status status = write_three_rgb(mov, options);
@@ -239,9 +239,8 @@ TEST(ProresWriter, Open_SignalTv_WritesValidMov) {
   dailyboy::JobOutputVideo video = prores_video(options);
 
   // Test
-  dailyboy::Status status =
-      writer.open(mov, kWidth, kHeight, dailyboy::VideoWriter::kDefaultFps,
-                  video);
+  dailyboy::Status status = writer.open(
+      mov, kWidth, kHeight, dailyboy::VideoWriter::kDefaultFps, video);
   ASSERT_TRUE(status.ok()) << status.message();
   status = writer.write(solid_rgb_frame(kWidth, kHeight, 0.5f, 0.5f, 0.5f));
   ASSERT_TRUE(status.ok()) << status.message();

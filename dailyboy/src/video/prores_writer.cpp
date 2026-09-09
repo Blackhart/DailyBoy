@@ -151,8 +151,7 @@ Status apply_bits_per_mb(AVCodecContext* codec,
 
 Status apply_mbs_per_slice(AVCodecContext* codec,
                            const JobOutputVideoProres& options) {
-  log_debug("encode: mbs_per_slice " +
-            std::to_string(options.mbs_per_slice()));
+  log_debug("encode: mbs_per_slice " + std::to_string(options.mbs_per_slice()));
   if (av_opt_set_int(codec->priv_data, "mbs_per_slice", options.mbs_per_slice(),
                      0) < 0) {
     return ffmpeg_error("failed to set prores mbs_per_slice.");

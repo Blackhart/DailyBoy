@@ -415,7 +415,8 @@ StatusOr<JobOutputVideoProres> parse_prores(const YAML::Node& node,
   if (map["profile"]) {
     const YAML::Node profile_node = map["profile"];
     if (!profile_node.IsScalar()) {
-      return Status::User(with_job_error(USER_ERROR_JOB_25, field + ".profile."));
+      return Status::User(
+          with_job_error(USER_ERROR_JOB_25, field + ".profile."));
     }
     profile = profile_node.Scalar();
   }
@@ -522,13 +523,12 @@ StatusOr<JobOutputVideoProres> parse_prores(const YAML::Node& node,
                             as_optional<int>(map, "alpha_bits", 0, field));
   if (alpha_bits != 0 && alpha_bits != 8 && alpha_bits != 16) {
     return Status::User(with_job_error(
-        USER_ERROR_JOB_25, field + ".alpha_bits '" +
-                               std::to_string(alpha_bits) + "'."));
+        USER_ERROR_JOB_25,
+        field + ".alpha_bits '" + std::to_string(alpha_bits) + "'."));
   }
   using Pix = JobOutputVideoProres::JobOutputVideoProresPixFmtValue;
   const bool alpha_allowed =
-      prores_is_444(prores.profile()) &&
-      prores.pix_fmt() == Pix::Yuva444p10;
+      prores_is_444(prores.profile()) && prores.pix_fmt() == Pix::Yuva444p10;
   if (alpha_bits != 0 && !alpha_allowed) {
     return Status::User(with_job_error(USER_ERROR_JOB_97, field + "."));
   }

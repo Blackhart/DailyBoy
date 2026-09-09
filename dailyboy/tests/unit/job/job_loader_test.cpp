@@ -6485,11 +6485,11 @@ TEST(JobLoader, LoadJob_OmittedProresOptions_UsesHqDefaults) {
             dailyboy::JobOutputVideo::JobOutputVideoCodecValue::Prores);
   const dailyboy::JobOutputVideoProres& options =
       std::get<dailyboy::JobOutputVideoProres>(video.codec_options());
-  EXPECT_EQ(options.profile(),
-            dailyboy::JobOutputVideoProres::JobOutputVideoProresProfileValue::Hq);
   EXPECT_EQ(
-      options.pix_fmt(),
-      dailyboy::JobOutputVideoProres::JobOutputVideoProresPixFmtValue::Yuv422p10);
+      options.profile(),
+      dailyboy::JobOutputVideoProres::JobOutputVideoProresProfileValue::Hq);
+  EXPECT_EQ(options.pix_fmt(), dailyboy::JobOutputVideoProres::
+                                   JobOutputVideoProresPixFmtValue::Yuv422p10);
   EXPECT_EQ(
       options.quant_mat(),
       dailyboy::JobOutputVideoProres::JobOutputVideoProresQuantMatValue::Auto);
@@ -6517,9 +6517,8 @@ TEST(JobLoader, LoadJob_ProresOptions_ParsesAllFields) {
   EXPECT_EQ(options.profile(),
             dailyboy::JobOutputVideoProres::JobOutputVideoProresProfileValue::
                 FourFourFourFour);
-  EXPECT_EQ(options.pix_fmt(),
-            dailyboy::JobOutputVideoProres::JobOutputVideoProresPixFmtValue::
-                Yuva444p10);
+  EXPECT_EQ(options.pix_fmt(), dailyboy::JobOutputVideoProres::
+                                   JobOutputVideoProresPixFmtValue::Yuva444p10);
   EXPECT_EQ(
       options.quant_mat(),
       dailyboy::JobOutputVideoProres::JobOutputVideoProresQuantMatValue::Hq);
@@ -6545,9 +6544,8 @@ TEST(JobLoader, LoadJob_Profile4444xq_DefaultsYuv444p10) {
   EXPECT_EQ(options.profile(),
             dailyboy::JobOutputVideoProres::JobOutputVideoProresProfileValue::
                 FourFourFourFourXq);
-  EXPECT_EQ(
-      options.pix_fmt(),
-      dailyboy::JobOutputVideoProres::JobOutputVideoProresPixFmtValue::Yuv444p10);
+  EXPECT_EQ(options.pix_fmt(), dailyboy::JobOutputVideoProres::
+                                   JobOutputVideoProresPixFmtValue::Yuv444p10);
 }
 
 /*!
@@ -6555,10 +6553,10 @@ TEST(JobLoader, LoadJob_Profile4444xq_DefaultsYuv444p10) {
  */
 TEST(JobLoader, LoadJob_ProresProfilePixFmtMismatch_ReturnsUserError) {
   // Prepare
-  const std::filesystem::path yaml = write_prores_job(
-      "pix_mismatch.yaml",
-      "        profile: hq\n"
-      "        pix_fmt: yuv444p10\n");
+  const std::filesystem::path yaml =
+      write_prores_job("pix_mismatch.yaml",
+                       "        profile: hq\n"
+                       "        pix_fmt: yuv444p10\n");
 
   // Test
   dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
