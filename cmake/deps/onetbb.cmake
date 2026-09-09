@@ -171,6 +171,12 @@ else()
         -DTBB_STRICT=OFF
         -DTBB4PY_BUILD=OFF
     )
+    # Optional tbbbind needs an MSVC-compatible HWLOC. GHA Windows runners put
+    # MSYS2 MinGW hwloc on pkg-config PATH; linking that .a with cl.exe fails
+    # (__mingw_*, __stack_chk_*, lt_dl*). Skip auto-search — tbb/tbbmalloc still build.
+    if(WIN32)
+        list(APPEND _dailyboy_tbb_args -DTBB_DISABLE_HWLOC_AUTOMATIC_SEARCH=ON)
+    endif()
 
     ExternalProject_Add(
         dailyboy_onetbb
