@@ -80,7 +80,9 @@ function(dailyboy_add_engine_test name)
     dailyboy_target_cxx_std(${name} PRIVATE)
     target_compile_definitions(
         ${name}
-        PRIVATE "DAILYBOY_TEST_BINARY_DIR=\"${CMAKE_CURRENT_BINARY_DIR}\""
+        PRIVATE
+            "DAILYBOY_TEST_BINARY_DIR=\"${CMAKE_CURRENT_BINARY_DIR}\""
+            "DAILYBOY_TEST_FONTS_DIR=\"${CMAKE_SOURCE_DIR}/dailyboy/tests/data/fonts\""
     )
     set_target_properties(${name} PROPERTIES BUILD_RPATH "${_dailyboy_test_rpath}")
     dailyboy_enable_sanitizers(${name})

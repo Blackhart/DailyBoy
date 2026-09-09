@@ -44,7 +44,7 @@ layout:
         mode: "layout"
         anchor: "top_left"
       font:
-        path: "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+        path: "dailyboy/tests/data/fonts/DejaVuSans.ttf"
         size_px: 18
       box:
         mode: fill
@@ -59,7 +59,7 @@ layout:
         mode: "layout"
         anchor: "top_center"
       font:
-        path: "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+        path: "dailyboy/tests/data/fonts/DejaVuSans.ttf"
         size_px: 18
         color:
           r: 1
@@ -78,7 +78,7 @@ layout:
         mode: "layout"
         anchor: "top_right"
       font:
-        path: "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+        path: "dailyboy/tests/data/fonts/DejaVuSans.ttf"
         size_px: 18
       box:
         mode: outline
@@ -93,7 +93,7 @@ layout:
         mode: "layout"
         anchor: "bottom_left"
       font:
-        path: "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+        path: "dailyboy/tests/data/fonts/DejaVuSans.ttf"
         size_px: 18
       box:
         mode: fill
@@ -108,14 +108,14 @@ layout:
         mode: "layout"
         anchor: "bottom_center"
       font:
-        path: "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+        path: "dailyboy/tests/data/fonts/DejaVuSans.ttf"
         size_px: 16
     - template: "{frame_start}-{frame_end}  {plan_id}"
       position:
         mode: "layout"
         anchor: "bottom_right"
       font:
-        path: "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+        path: "dailyboy/tests/data/fonts/DejaVuSans.ttf"
         size_px: 18
       box:
         mode: fill
@@ -134,7 +134,7 @@ layout:
           x: 50
           y: 40
         font:
-          path: "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+          path: "dailyboy/tests/data/fonts/DejaVuSans.ttf"
           size_px: 32
       - text: "SHOT — {shot}"
         position:
@@ -142,7 +142,7 @@ layout:
           x: 50
           y: 50
         font:
-          path: "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+          path: "dailyboy/tests/data/fonts/DejaVuSans-Bold.ttf"
           size_px: 28
       - text: "{frame_start}-{frame_end}  {plan_id}"
         position:
@@ -150,7 +150,7 @@ layout:
           x: 50
           y: 60
         font:
-          path: "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+          path: "dailyboy/tests/data/fonts/DejaVuSans.ttf"
           size_px: 20
 
 output:

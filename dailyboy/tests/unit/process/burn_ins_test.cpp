@@ -25,6 +25,7 @@
 #include "process/tokens.hpp"
 #include "status.hpp"
 #include "support/test_fixtures.hpp"
+#include "support/test_fonts.hpp"
 
 namespace {
 
@@ -34,9 +35,6 @@ dailyboy::JobOutputDisplayView passthrough_display_view() {
   display_view.set_view("passthrough");
   return display_view;
 }
-
-constexpr const char* kDejaVu =
-    "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf";
 
 OIIO::ImageBuf make_rgb(int width, int height, const float* fill) {
   OIIO::ImageSpec spec(width, height, 3, OIIO::TypeDesc::FLOAT);
@@ -72,7 +70,7 @@ dailyboy::JobLayoutBurnIn make_burn_in(
   burn_in.set_template_text(text);
   burn_in.set_position(std::move(position));
   dailyboy::TextFont font;
-  font.set_path(kDejaVu);
+  font.set_path(dailyboy::test::kDejaVuSans);
   font.set_size_px(16);
   font.set_color(font_color);
   burn_in.set_font(std::move(font));

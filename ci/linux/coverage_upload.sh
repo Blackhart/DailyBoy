@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # Emit LCOV / Cobertura via coverage-report (CY2026 debug by default).
 #
-# Usage: ci/coverage_upload.sh [2025|2026]
+# Usage: ci/linux/coverage_upload.sh [2025|2026]
 set -euo pipefail
 
-root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$root"
 
 year="${1:-2026}"
@@ -18,7 +18,7 @@ export DAILYBOY_VFX_PLATFORM="${year}"
 binary_dir="build/${DAILYBOY_BUILD_ROOT}CY${year}/debug"
 
 if [[ ! -d "${binary_dir}" ]]; then
-  echo "error: ${binary_dir} missing — run ci/build.sh ${year} debug and tests first" >&2
+  echo "error: ${binary_dir} missing — run ci/linux/build.sh ${year} debug and tests first" >&2
   exit 1
 fi
 

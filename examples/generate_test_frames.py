@@ -22,7 +22,7 @@ FRAME_END = 1048
 ORANGE = (255, 122, 0)
 WHITE = (255, 255, 255)
 BLACK = (20, 20, 20)
-FONT_PATH = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+FONT_PATH = "dailyboy/tests/data/fonts/DejaVuSans-Bold.ttf"
 
 # (width, height) — HD CIDs, DNxHR min, 2K.
 RESOLUTIONS: tuple[tuple[int, int], ...] = (

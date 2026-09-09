@@ -21,11 +21,10 @@
 #include "process/colorimetry.hpp"
 #include "process/compositing.hpp"
 #include "process/tokens.hpp"
+#include "support/test_fonts.hpp"
 
 namespace {
 
-constexpr const char* kDejaVu =
-    "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf";
 constexpr int kHdWidth = 1920;
 constexpr int kHdHeight = 1080;
 constexpr float kGreen[3] = {0.0f, 1.0f, 0.0f};
@@ -86,7 +85,7 @@ dailyboy::JobLayoutBurnIn make_burn_in(
   burn_in.set_template_text(text);
   burn_in.set_position(std::move(position));
   dailyboy::TextFont font;
-  font.set_path(kDejaVu);
+  font.set_path(dailyboy::test::kDejaVuSans);
   font.set_size_px(18);
   font.set_color(dailyboy::RGBColor(1.0, 1.0, 1.0));
   burn_in.set_font(std::move(font));

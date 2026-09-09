@@ -127,7 +127,7 @@ jobs:
       - name: Load Ubuntu CY2026 image
         run: docker load -i /tmp/dailyboy-ci-ubuntu24-cy2026.tar
       - name: Format check
-        run: DAILYBOY_CI_IMAGE=${{ env.CI_IMAGE_UBUNTU_CY2026 }} ./ci/docker.sh ./ci/format.sh
+        run: DAILYBOY_CI_IMAGE=${{ env.CI_IMAGE_UBUNTU_CY2026 }} ./ci/linux/docker.sh ./ci/linux/format.sh
 
   tests-ubuntu24-cy2026:
     name: run tests (Ubuntu CY2026)
@@ -160,11 +160,11 @@ jobs:
             deps-ubuntu24-cy2026-debug-
             deps-cy2026-debug-
       - name: Build debug CY2026
-        run: DAILYBOY_CI_IMAGE=${{ env.CI_IMAGE_UBUNTU_CY2026 }} ./ci/docker.sh ./ci/build.sh 2026 debug
+        run: DAILYBOY_CI_IMAGE=${{ env.CI_IMAGE_UBUNTU_CY2026 }} ./ci/linux/docker.sh ./ci/linux/build.sh 2026 debug
       - name: Run tests CY2026
-        run: DAILYBOY_CI_IMAGE=${{ env.CI_IMAGE_UBUNTU_CY2026 }} ./ci/docker.sh ./ci/test.sh 2026 tests
+        run: DAILYBOY_CI_IMAGE=${{ env.CI_IMAGE_UBUNTU_CY2026 }} ./ci/linux/docker.sh ./ci/linux/test.sh 2026 tests
       - name: Coverage reports
-        run: DAILYBOY_CI_IMAGE=${{ env.CI_IMAGE_UBUNTU_CY2026 }} ./ci/docker.sh ./ci/coverage_upload.sh 2026
+        run: DAILYBOY_CI_IMAGE=${{ env.CI_IMAGE_UBUNTU_CY2026 }} ./ci/linux/docker.sh ./ci/linux/coverage_upload.sh 2026
       - name: Upload coverage HTML
         uses: actions/upload-artifact@v4
         with:
@@ -211,9 +211,9 @@ jobs:
             deps-ubuntu24-cy2025-debug-
             deps-cy2025-debug-
       - name: Build debug CY2025
-        run: DAILYBOY_CI_IMAGE=${{ env.CI_IMAGE_UBUNTU_CY2025 }} ./ci/docker.sh ./ci/build.sh 2025 debug
+        run: DAILYBOY_CI_IMAGE=${{ env.CI_IMAGE_UBUNTU_CY2025 }} ./ci/linux/docker.sh ./ci/linux/build.sh 2025 debug
       - name: Run tests CY2025
-        run: DAILYBOY_CI_IMAGE=${{ env.CI_IMAGE_UBUNTU_CY2025 }} ./ci/docker.sh ./ci/test.sh 2025 tests
+        run: DAILYBOY_CI_IMAGE=${{ env.CI_IMAGE_UBUNTU_CY2025 }} ./ci/linux/docker.sh ./ci/linux/test.sh 2025 tests
 
   tests-ubuntu24-cy2024:
     name: run tests (Ubuntu CY2024)
@@ -246,9 +246,9 @@ jobs:
             deps-ubuntu24-cy2024-debug-
             deps-cy2024-debug-
       - name: Build debug CY2024
-        run: DAILYBOY_CI_IMAGE=${{ env.CI_IMAGE_UBUNTU_CY2024 }} ./ci/docker.sh ./ci/build.sh 2024 debug
+        run: DAILYBOY_CI_IMAGE=${{ env.CI_IMAGE_UBUNTU_CY2024 }} ./ci/linux/docker.sh ./ci/linux/build.sh 2024 debug
       - name: Run tests CY2024
-        run: DAILYBOY_CI_IMAGE=${{ env.CI_IMAGE_UBUNTU_CY2024 }} ./ci/docker.sh ./ci/test.sh 2024 tests
+        run: DAILYBOY_CI_IMAGE=${{ env.CI_IMAGE_UBUNTU_CY2024 }} ./ci/linux/docker.sh ./ci/linux/test.sh 2024 tests
 
   image-rocky9-base:
     name: image-rocky9-base
@@ -374,9 +374,9 @@ jobs:
           restore-keys: |
             deps-rocky9-cy2026-debug-
       - name: Build debug CY2026
-        run: DAILYBOY_CI_IMAGE=${{ env.CI_IMAGE_ROCKY_CY2026 }} ./ci/docker.sh ./ci/build.sh 2026 debug
+        run: DAILYBOY_CI_IMAGE=${{ env.CI_IMAGE_ROCKY_CY2026 }} ./ci/linux/docker.sh ./ci/linux/build.sh 2026 debug
       - name: Run tests CY2026
-        run: DAILYBOY_CI_IMAGE=${{ env.CI_IMAGE_ROCKY_CY2026 }} ./ci/docker.sh ./ci/test.sh 2026 tests
+        run: DAILYBOY_CI_IMAGE=${{ env.CI_IMAGE_ROCKY_CY2026 }} ./ci/linux/docker.sh ./ci/linux/test.sh 2026 tests
 
   tests-rocky9-cy2025:
     name: run tests (Rocky CY2025)
@@ -409,9 +409,9 @@ jobs:
           restore-keys: |
             deps-rocky9-cy2025-debug-
       - name: Build debug CY2025
-        run: DAILYBOY_CI_IMAGE=${{ env.CI_IMAGE_ROCKY_CY2025 }} ./ci/docker.sh ./ci/build.sh 2025 debug
+        run: DAILYBOY_CI_IMAGE=${{ env.CI_IMAGE_ROCKY_CY2025 }} ./ci/linux/docker.sh ./ci/linux/build.sh 2025 debug
       - name: Run tests CY2025
-        run: DAILYBOY_CI_IMAGE=${{ env.CI_IMAGE_ROCKY_CY2025 }} ./ci/docker.sh ./ci/test.sh 2025 tests
+        run: DAILYBOY_CI_IMAGE=${{ env.CI_IMAGE_ROCKY_CY2025 }} ./ci/linux/docker.sh ./ci/linux/test.sh 2025 tests
 
   tests-rocky9-cy2024:
     name: run tests (Rocky CY2024)
@@ -444,6 +444,105 @@ jobs:
           restore-keys: |
             deps-rocky9-cy2024-debug-
       - name: Build debug CY2024
-        run: DAILYBOY_CI_IMAGE=${{ env.CI_IMAGE_ROCKY_CY2024 }} ./ci/docker.sh ./ci/build.sh 2024 debug
+        run: DAILYBOY_CI_IMAGE=${{ env.CI_IMAGE_ROCKY_CY2024 }} ./ci/linux/docker.sh ./ci/linux/build.sh 2024 debug
       - name: Run tests CY2024
-        run: DAILYBOY_CI_IMAGE=${{ env.CI_IMAGE_ROCKY_CY2024 }} ./ci/docker.sh ./ci/test.sh 2024 tests
+        run: DAILYBOY_CI_IMAGE=${{ env.CI_IMAGE_ROCKY_CY2024 }} ./ci/linux/docker.sh ./ci/linux/test.sh 2024 tests
+
+  tests-macos-cy2026:
+    name: run tests (macOS CY2026)
+    runs-on: macos-14
+    timeout-minutes: 360
+    env:
+      DAILYBOY_BUILD_ROOT: macos/
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Homebrew dependencies
+        run: |
+          brew update
+          brew install cmake ninja ccache pkg-config autoconf automake libtool \
+            nasm freetype openssl@3 python@3.13
+      - name: Cache ccache
+        uses: actions/cache@v4
+        with:
+          path: .ccache
+          key: ccache-macos-cy2026-debug-${{ hashFiles('cmake/Versions.cmake', 'cmake/versions/**', 'cmake/deps/**', 'CMakePresets.json') }}-${{ github.sha }}
+          restore-keys: |
+            ccache-macos-cy2026-debug-${{ hashFiles('cmake/Versions.cmake', 'cmake/versions/**', 'cmake/deps/**', 'CMakePresets.json') }}-
+            ccache-macos-cy2026-debug-
+      - name: Cache CMake deps
+        uses: actions/cache@v4
+        with:
+          path: build/macos/CY2026/debug/_deps
+          key: deps-macos-cy2026-debug-${{ hashFiles('cmake/Versions.cmake', 'cmake/versions/**', 'cmake/deps/**') }}
+          restore-keys: |
+            deps-macos-cy2026-debug-
+      - name: Build debug CY2026
+        run: ./ci/macos/build.sh 2026 debug
+      - name: Run tests CY2026
+        run: ./ci/macos/test.sh 2026 tests
+
+  tests-macos-cy2025:
+    name: run tests (macOS CY2025)
+    runs-on: macos-14
+    timeout-minutes: 360
+    env:
+      DAILYBOY_BUILD_ROOT: macos/
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Homebrew dependencies
+        run: |
+          brew update
+          brew install cmake ninja ccache pkg-config autoconf automake libtool \
+            nasm freetype openssl@3 python@3.11
+      - name: Cache ccache
+        uses: actions/cache@v4
+        with:
+          path: .ccache
+          key: ccache-macos-cy2025-debug-${{ hashFiles('cmake/Versions.cmake', 'cmake/versions/**', 'cmake/deps/**', 'CMakePresets.json') }}-${{ github.sha }}
+          restore-keys: |
+            ccache-macos-cy2025-debug-${{ hashFiles('cmake/Versions.cmake', 'cmake/versions/**', 'cmake/deps/**', 'CMakePresets.json') }}-
+            ccache-macos-cy2025-debug-
+      - name: Cache CMake deps
+        uses: actions/cache@v4
+        with:
+          path: build/macos/CY2025/debug/_deps
+          key: deps-macos-cy2025-debug-${{ hashFiles('cmake/Versions.cmake', 'cmake/versions/**', 'cmake/deps/**') }}
+          restore-keys: |
+            deps-macos-cy2025-debug-
+      - name: Build debug CY2025
+        run: ./ci/macos/build.sh 2025 debug
+      - name: Run tests CY2025
+        run: ./ci/macos/test.sh 2025 tests
+
+  tests-macos-cy2024:
+    name: run tests (macOS CY2024)
+    runs-on: macos-14
+    timeout-minutes: 360
+    env:
+      DAILYBOY_BUILD_ROOT: macos/
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Homebrew dependencies
+        run: |
+          brew update
+          brew install cmake ninja ccache pkg-config autoconf automake libtool \
+            nasm freetype openssl@3 python@3.11
+      - name: Cache ccache
+        uses: actions/cache@v4
+        with:
+          path: .ccache
+          key: ccache-macos-cy2024-debug-${{ hashFiles('cmake/Versions.cmake', 'cmake/versions/**', 'cmake/deps/**', 'CMakePresets.json') }}-${{ github.sha }}
+          restore-keys: |
+            ccache-macos-cy2024-debug-${{ hashFiles('cmake/Versions.cmake', 'cmake/versions/**', 'cmake/deps/**', 'CMakePresets.json') }}-
+            ccache-macos-cy2024-debug-
+      - name: Cache CMake deps
+        uses: actions/cache@v4
+        with:
+          path: build/macos/CY2024/debug/_deps
+          key: deps-macos-cy2024-debug-${{ hashFiles('cmake/Versions.cmake', 'cmake/versions/**', 'cmake/deps/**') }}
+          restore-keys: |
+            deps-macos-cy2024-debug-
+      - name: Build debug CY2024
+        run: ./ci/macos/build.sh 2024 debug
+      - name: Run tests CY2024
+        run: ./ci/macos/test.sh 2024 tests

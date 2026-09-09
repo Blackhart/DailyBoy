@@ -659,7 +659,7 @@ inline constexpr std::string_view USER_ERROR_JOB_86 =
  */
 inline constexpr std::string_view USER_ERROR_JOB_87 =
     "layout.burn_ins[].font.path: must be a quoted string (e.g. "
-    "\"/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf\").";
+    "\"dailyboy/tests/data/fonts/DejaVuSans.ttf\").";
 
 /*!
  * \var USER_ERROR_JOB_88

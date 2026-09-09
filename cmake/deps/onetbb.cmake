@@ -1,5 +1,5 @@
 # oneTBB / Intel TBB — tag from DAILYBOY_ONETBB_* (CY2026: 2022.x; CY2025: 2021.x;
-# CY2024: classic TBB 2020 Update 3 via make — no root CMakeLists.txt).
+# CY2024: classic TBB 2020 Update 3 via make — Linux .so / macOS .dylib).
 # https://github.com/uxlfoundation/oneTBB
 
 if(TARGET TBB::tbb)
@@ -23,31 +23,46 @@ dailyboy_bundled_shared_lib_path(
     "${DAILYBOY_TBB_PREFIX}/lib" "${_dailyboy_tbb_lib_basename}" _dailyboy_tbb_lib
 )
 
+# Classic TBB 2020 arch token for Darwin make (auto-detect is broken on Apple Silicon).
+function(dailyboy_tbb2020_apple_arch out_arch)
+    if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(arm64|aarch64)$")
+        set(${out_arch} arm64 PARENT_SCOPE)
+    else()
+        set(${out_arch} intel64 PARENT_SCOPE)
+    endif()
+endfunction()
+
+# Classic TBB 2020: make extras and built shared-lib filename for this host.
+function(dailyboy_tbb2020_host_vars lib_basename out_make_extras out_built_lib)
+    if(APPLE)
+        dailyboy_tbb2020_apple_arch(_arch)
+        set(_extras compiler=clang "arch=${_arch}")
+        if(CMAKE_OSX_DEPLOYMENT_TARGET)
+            list(APPEND _extras "MACOSX_DEPLOYMENT_TARGET=${CMAKE_OSX_DEPLOYMENT_TARGET}")
+        endif()
+        set(${out_make_extras} "${_extras}" PARENT_SCOPE)
+        set(${out_built_lib} "lib${lib_basename}.dylib" PARENT_SCOPE)
+    else()
+        set(${out_make_extras} "compiler=gcc" PARENT_SCOPE)
+        set(${out_built_lib} "lib${lib_basename}.so.2" PARENT_SCOPE)
+    endif()
+endfunction()
+
 if(DAILYBOY_ONETBB_VERSION STREQUAL "2020")
     set(_dailyboy_tbb_make_prefix dailyboy)
+    dailyboy_tbb2020_host_vars(
+        "${_dailyboy_tbb_lib_basename}"
+        _dailyboy_tbb_make_extras
+        _dailyboy_tbb_built_lib
+    )
+    set(_dailyboy_tbb_build_subdir
+        "${_dailyboy_tbb_make_prefix}_${_dailyboy_tbb_cfg}"
+    )
     # Classic TBB: Makefile under src/; libs land in tbb_build_dir/<prefix>_<cfg>/.
-    ExternalProject_Add(
-        dailyboy_onetbb
-        GIT_REPOSITORY https://github.com/uxlfoundation/oneTBB.git
-        GIT_TAG "${DAILYBOY_ONETBB_GIT_TAG}"
-        GIT_SHALLOW TRUE
-        UPDATE_DISCONNECTED TRUE
-        CONFIGURE_COMMAND ""
-        # Classic TBB requires GNU make (Ninja is the top-level generator).
-        BUILD_COMMAND
-            make
-            -C <SOURCE_DIR>/src
-            tbb_${_dailyboy_tbb_cfg}
-            tbbmalloc_${_dailyboy_tbb_cfg}
-            tbb_root=<SOURCE_DIR>
-            tbb_build_dir=<BINARY_DIR>
-            tbb_build_prefix=${_dailyboy_tbb_make_prefix}
-            compiler=gcc
-            -j${DAILYBOY_EP_JOBS}
-        INSTALL_COMMAND
-            ${CMAKE_COMMAND} -E rm -rf
-                "${DAILYBOY_TBB_PREFIX}/include/tbb"
-                "${DAILYBOY_TBB_PREFIX}/include/serial"
+    set(_dailyboy_tbb_install_cmds
+        COMMAND ${CMAKE_COMMAND} -E rm -rf
+            "${DAILYBOY_TBB_PREFIX}/include/tbb"
+            "${DAILYBOY_TBB_PREFIX}/include/serial"
         COMMAND ${CMAKE_COMMAND} -E make_directory
             "${DAILYBOY_TBB_PREFIX}/include"
             "${DAILYBOY_TBB_PREFIX}/lib"
@@ -56,11 +71,36 @@ if(DAILYBOY_ONETBB_VERSION STREQUAL "2020")
         COMMAND ${CMAKE_COMMAND} -E copy_directory
             <SOURCE_DIR>/include/serial "${DAILYBOY_TBB_PREFIX}/include/serial"
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            <BINARY_DIR>/${_dailyboy_tbb_make_prefix}_${_dailyboy_tbb_cfg}/lib${_dailyboy_tbb_lib_basename}.so.2
-            "${DAILYBOY_TBB_PREFIX}/lib/lib${_dailyboy_tbb_lib_basename}.so.2"
-        COMMAND ${CMAKE_COMMAND} -E create_symlink
-            lib${_dailyboy_tbb_lib_basename}.so.2
-            "${DAILYBOY_TBB_PREFIX}/lib/lib${_dailyboy_tbb_lib_basename}.so"
+            <BINARY_DIR>/${_dailyboy_tbb_build_subdir}/${_dailyboy_tbb_built_lib}
+            "${DAILYBOY_TBB_PREFIX}/lib/${_dailyboy_tbb_built_lib}"
+    )
+    if(NOT APPLE)
+        list(
+            APPEND _dailyboy_tbb_install_cmds
+            COMMAND ${CMAKE_COMMAND} -E create_symlink
+                ${_dailyboy_tbb_built_lib}
+                "${DAILYBOY_TBB_PREFIX}/lib/lib${_dailyboy_tbb_lib_basename}.so"
+        )
+    endif()
+
+    ExternalProject_Add(
+        dailyboy_onetbb
+        GIT_REPOSITORY https://github.com/uxlfoundation/oneTBB.git
+        GIT_TAG "${DAILYBOY_ONETBB_GIT_TAG}"
+        GIT_SHALLOW TRUE
+        UPDATE_DISCONNECTED TRUE
+        CONFIGURE_COMMAND ""
+        BUILD_COMMAND
+            make
+            -C <SOURCE_DIR>/src
+            tbb_${_dailyboy_tbb_cfg}
+            tbbmalloc_${_dailyboy_tbb_cfg}
+            tbb_root=<SOURCE_DIR>
+            tbb_build_dir=<BINARY_DIR>
+            tbb_build_prefix=${_dailyboy_tbb_make_prefix}
+            ${_dailyboy_tbb_make_extras}
+            -j${DAILYBOY_EP_JOBS}
+        INSTALL_COMMAND ${_dailyboy_tbb_install_cmds}
         BUILD_BYPRODUCTS "${_dailyboy_tbb_lib}"
         USES_TERMINAL_BUILD TRUE
     )
@@ -101,3 +141,7 @@ unset(_dailyboy_tbb_lib)
 unset(_dailyboy_tbb_args)
 unset(_dailyboy_tbb_cfg)
 unset(_dailyboy_tbb_make_prefix)
+unset(_dailyboy_tbb_make_extras)
+unset(_dailyboy_tbb_built_lib)
+unset(_dailyboy_tbb_build_subdir)
+unset(_dailyboy_tbb_install_cmds)

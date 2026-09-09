@@ -456,7 +456,7 @@ layout:
         mode: "layout"
         anchor: "bottom_left"
       font:
-        path: "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+        path: "dailyboy/tests/data/fonts/DejaVuSans.ttf"
         size_px: 22
       box:
         mode: fill
@@ -474,7 +474,7 @@ layout:
           mode: "layout"
           anchor: "top_left"
         font:
-          path: "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+          path: "dailyboy/tests/data/fonts/DejaVuSans.ttf"
           size_px: 32
 ```
 

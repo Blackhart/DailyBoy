@@ -14,11 +14,9 @@
 #include "job/loader.hpp"
 #include "process/run.hpp"
 #include "support/perf_frame.hpp"
+#include "support/test_fonts.hpp"
 
 namespace {
-
-constexpr const char* kDejaVu =
-    "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf";
 
 enum class PipelineOutput { Png, H264 };
 
@@ -54,7 +52,8 @@ bool write_pipeline_yaml(const std::filesystem::path& yaml_path,
       << "  burn_ins:\n"
       << "    - template: \"{project}  {shot}\"\n"
       << "      position: {mode: \"layout\", anchor: \"top_left\"}\n"
-      << "      font: {path: \"" << kDejaVu << "\", size_px: 18}\n"
+      << "      font: {path: \"" << dailyboy::test::kDejaVuSans
+      << "\", size_px: 18}\n"
       << "      box:\n"
       << "        mode: fill\n"
       << "        color: {r: 0, g: 0, b: 0}\n"
@@ -62,7 +61,8 @@ bool write_pipeline_yaml(const std::filesystem::path& yaml_path,
       << "        margin: 6\n"
       << "    - template: \"{shot}  {frame}\"\n"
       << "      position: {mode: \"layout\", anchor: \"bottom_left\"}\n"
-      << "      font: {path: \"" << kDejaVu << "\", size_px: 18}\n"
+      << "      font: {path: \"" << dailyboy::test::kDejaVuSans
+      << "\", size_px: 18}\n"
       << "      box:\n"
       << "        mode: fill\n"
       << "        color: {r: 0, g: 0, b: 0}\n"
@@ -70,7 +70,8 @@ bool write_pipeline_yaml(const std::filesystem::path& yaml_path,
       << "        margin: 6\n"
       << "    - template: \"{frame_start}-{frame_end}\"\n"
       << "      position: {mode: \"layout\", anchor: \"bottom_right\"}\n"
-      << "      font: {path: \"" << kDejaVu << "\", size_px: 18}\n"
+      << "      font: {path: \"" << dailyboy::test::kDejaVuSans
+      << "\", size_px: 18}\n"
       << "      box:\n"
       << "        mode: outline\n"
       << "        color: {r: 1, g: 1, b: 1}\n"
@@ -78,13 +79,16 @@ bool write_pipeline_yaml(const std::filesystem::path& yaml_path,
       << "        margin: 6\n"
       << "    - template: \"DEMO\"\n"
       << "      position: {mode: \"layout\", anchor: \"top_right\"}\n"
-      << "      font: {path: \"" << kDejaVu << "\", size_px: 18}\n"
+      << "      font: {path: \"" << dailyboy::test::kDejaVuSans
+      << "\", size_px: 18}\n"
       << "    - template: \"note\"\n"
       << "      position: {mode: \"layout\", anchor: \"top_center\"}\n"
-      << "      font: {path: \"" << kDejaVu << "\", size_px: 16}\n"
+      << "      font: {path: \"" << dailyboy::test::kDejaVuSans
+      << "\", size_px: 16}\n"
       << "    - template: \"{plan_id}\"\n"
       << "      position: {mode: \"layout\", anchor: \"bottom_center\"}\n"
-      << "      font: {path: \"" << kDejaVu << "\", size_px: 16}\n"
+      << "      font: {path: \"" << dailyboy::test::kDejaVuSans
+      << "\", size_px: 16}\n"
       << "  slate:\n"
       << "    duration_frames: 0\n"
       << "    lines: []\n"
