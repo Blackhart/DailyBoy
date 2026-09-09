@@ -10,7 +10,12 @@ dailyboy_bundled_install_prefix(ocio DAILYBOY_OCIO_PREFIX)
 set(DAILYBOY_OCIO_PREFIX "${DAILYBOY_OCIO_PREFIX}" CACHE INTERNAL "bundled OpenColorIO prefix")
 file(MAKE_DIRECTORY "${DAILYBOY_OCIO_PREFIX}/include")
 file(MAKE_DIRECTORY "${DAILYBOY_OCIO_PREFIX}/lib")
-dailyboy_bundled_shared_lib_path("${DAILYBOY_OCIO_PREFIX}/lib" OpenColorIO _dailyboy_ocio_lib)
+if(WIN32)
+    file(MAKE_DIRECTORY "${DAILYBOY_OCIO_PREFIX}/bin")
+endif()
+dailyboy_bundled_shared_lib_path(
+    "${DAILYBOY_OCIO_PREFIX}/lib" OpenColorIO _dailyboy_ocio_lib
+)
 
 dailyboy_ep_cmake_args(_dailyboy_ocio_args "${DAILYBOY_OCIO_PREFIX}")
 list(APPEND _dailyboy_ocio_args

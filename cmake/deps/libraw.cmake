@@ -1,7 +1,13 @@
 # LibRaw — camera RAW for OpenImageIO (autotools)
 # https://github.com/LibRaw/LibRaw
+# Windows: no official CMake; OIIO builds with ENABLE_LibRaw=OFF (see openimageio.cmake).
 
 if(TARGET LibRaw::LibRaw)
+    return()
+endif()
+
+if(WIN32)
+    message(STATUS "deps: LibRaw skipped on Windows (no official CMake; OIIO RAW disabled)")
     return()
 endif()
 

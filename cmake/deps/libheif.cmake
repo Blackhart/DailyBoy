@@ -9,6 +9,9 @@ dailyboy_bundled_install_prefix(libheif DAILYBOY_LIBHEIF_PREFIX)
 set(DAILYBOY_LIBHEIF_PREFIX "${DAILYBOY_LIBHEIF_PREFIX}" CACHE INTERNAL "bundled libheif prefix")
 file(MAKE_DIRECTORY "${DAILYBOY_LIBHEIF_PREFIX}/include")
 file(MAKE_DIRECTORY "${DAILYBOY_LIBHEIF_PREFIX}/lib")
+if(WIN32)
+    file(MAKE_DIRECTORY "${DAILYBOY_LIBHEIF_PREFIX}/bin")
+endif()
 dailyboy_bundled_shared_lib_path("${DAILYBOY_LIBHEIF_PREFIX}/lib" heif _dailyboy_heif_lib)
 
 dailyboy_join_pkg_config_path(
