@@ -7,6 +7,13 @@ include(ExternalProject)
 include(ProcessorCount)
 include(CMakeDependentOption)
 
+# CMake 4+ rejects cmake_minimum_required < 3.5; FetchContent deps (yaml-cpp, …)
+# still declare older floors. ExternalProject gets the same via dailyboy_ep_cmake_args.
+if(CMAKE_VERSION VERSION_GREATER_EQUAL "4.0")
+    set(CMAKE_POLICY_VERSION_MINIMUM "3.5" CACHE STRING
+        "Floor for cmake_minimum_required in bundled deps (CMake 4+)")
+endif()
+
 # ---------------------------------------------------------------------------
 # Module path (Find*.cmake for bundled prefixes only)
 # ---------------------------------------------------------------------------
@@ -191,6 +198,10 @@ function(dailyboy_ep_cmake_args out_var install_prefix)
         -DCMAKE_POSITION_INDEPENDENT_CODE=ON
         -DBUILD_SHARED_LIBS=ON
     )
+    # CMake 4+ rejects cmake_minimum_required < 3.5; many bundled deps still use it.
+    if(CMAKE_VERSION VERSION_GREATER_EQUAL "4.0")
+        list(APPEND _args -DCMAKE_POLICY_VERSION_MINIMUM=3.5)
+    endif()
     if(CMAKE_CXX_COMPILER)
         list(APPEND _args "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}")
     endif()
@@ -536,7 +547,7 @@ function(_dailyboy_finalize)
     else()
         set(_dailyboy_env_sh "${CMAKE_SOURCE_DIR}/cmake/dailyboy-env.linux.sh.in")
     endif()
-    
+
     install(
         FILES "${_dailyboy_env_sh}"
         DESTINATION ${CMAKE_INSTALL_DATADIR}/dailyboy
