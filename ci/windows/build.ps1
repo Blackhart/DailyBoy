@@ -3,9 +3,9 @@
 #
 # Default tree: build/windows/CY<year>/<config>
 #
-# Usage: ci/windows/build.ps1 2026 debug
+# Usage: ci/windows/build.ps1 <2025|2026> <debug|release|sanitize>
 param(
-    [Parameter(Mandatory = $true)][ValidateSet("2026")][string]$Year,
+    [Parameter(Mandatory = $true)][ValidateSet("2025", "2026")][string]$Year,
     [Parameter(Mandatory = $true)][ValidateSet("debug", "release", "sanitize")][string]$Config
 )
 
@@ -16,6 +16,12 @@ Set-Location $root
 if (-not $env:DAILYBOY_BUILD_ROOT) { $env:DAILYBOY_BUILD_ROOT = "windows/" }
 $env:DAILYBOY_VFX_PLATFORM = $Year
 if (-not $env:CMAKE_POLICY_VERSION_MINIMUM) { $env:CMAKE_POLICY_VERSION_MINIMUM = "3.5" }
+
+$pythonVersion = switch ($Year) {
+    "2025" { "3.11" }
+    "2026" { "3.13" }
+}
+$pythonTag = $pythonVersion.Replace(".", "")
 
 $preset = "cy$Year-$Config"
 $binaryDir = "build/$($env:DAILYBOY_BUILD_ROOT)CY$Year/$Config"
@@ -33,15 +39,15 @@ if ($jobs -lt 1) { $jobs = 4 }
 
 $extra = @("-DDAILYBOY_ENABLE_COVERAGE=OFF")
 $pyCandidates = @(
-    "$env:LocalAppData\Programs\Python\Python313\python.exe",
-    "C:\Python313\python.exe"
+    "$env:LocalAppData\Programs\Python\Python$pythonTag\python.exe",
+    "C:\Python$pythonTag\python.exe"
 )
 $pythonCmd = Get-Command python -ErrorAction SilentlyContinue
 if ($pythonCmd) { $pyCandidates += $pythonCmd.Source }
 foreach ($candidate in $pyCandidates) {
     if ($candidate -and (Test-Path -LiteralPath $candidate)) {
         $ver = & $candidate -c "import sys; print('%d.%d' % sys.version_info[:2])"
-        if ($ver -eq "3.13") {
+        if ($ver -eq $pythonVersion) {
             $extra += "-DPython3_EXECUTABLE=$candidate"
             break
         }
