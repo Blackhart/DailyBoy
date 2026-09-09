@@ -386,6 +386,14 @@ function(dailyboy_join_pkg_config_path out_var)
     set(${out_var} "${_joined}" PARENT_SCOPE)
 endfunction()
 
+# Single ExternalProject COMMAND argv for cmake -E env (escapes ';' so WIN32
+# multi-path PKG_CONFIG_PATH is not split into extra arguments).
+function(dailyboy_ep_pkg_config_path_env out_var)
+    dailyboy_join_pkg_config_path(_pc ${ARGN})
+    string(REPLACE ";" "\\;" _pc "${_pc}")
+    set(${out_var} "PKG_CONFIG_PATH=${_pc}" PARENT_SCOPE)
+endfunction()
+
 # Absolute bundled runtime dirs in the build tree (FFmpeg, x264, OIIO, engine, API).
 function(dailyboy_bundled_runtime_lib_dirs out_var)
     file(GLOB _dirs "${CMAKE_BINARY_DIR}/_deps/*/*/lib")

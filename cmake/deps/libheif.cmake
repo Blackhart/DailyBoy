@@ -14,8 +14,8 @@ if(WIN32)
 endif()
 dailyboy_bundled_shared_lib_path("${DAILYBOY_LIBHEIF_PREFIX}/lib" heif _dailyboy_heif_lib)
 
-dailyboy_join_pkg_config_path(
-    _dailyboy_heif_pc
+dailyboy_ep_pkg_config_path_env(
+    _dailyboy_heif_pc_env
     "${DAILYBOY_ZLIB_PREFIX}"
     "${DAILYBOY_JPEG_TURBO_PREFIX}"
     "${DAILYBOY_LIBDE265_PREFIX}"
@@ -52,7 +52,7 @@ ExternalProject_Add(
     UPDATE_DISCONNECTED TRUE
     LIST_SEPARATOR |
     CONFIGURE_COMMAND
-        ${CMAKE_COMMAND} -E env PKG_CONFIG_PATH=${_dailyboy_heif_pc}
+        ${CMAKE_COMMAND} -E env "${_dailyboy_heif_pc_env}"
         ${CMAKE_COMMAND} -S <SOURCE_DIR> -B <BINARY_DIR> ${_dailyboy_heif_args}
     BUILD_COMMAND
         ${CMAKE_COMMAND} --build <BINARY_DIR> --parallel ${DAILYBOY_EP_JOBS}
@@ -69,5 +69,5 @@ dailyboy_install_bundled_libs("${DAILYBOY_LIBHEIF_PREFIX}" "${CMAKE_SHARED_LIBRA
 message(STATUS "deps: libheif ${DAILYBOY_LIBHEIF_GIT_TAG}")
 unset(_dailyboy_heif_lib)
 unset(_dailyboy_heif_args)
-unset(_dailyboy_heif_pc)
+unset(_dailyboy_heif_pc_env)
 unset(_dailyboy_ep_byproducts)

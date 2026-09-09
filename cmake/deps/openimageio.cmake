@@ -38,8 +38,8 @@ dailyboy_ep_imported_byproducts(
     "${_dailyboy_oiio_util_lib}" "${_dailyboy_oiio_lib}"
 )
 
-dailyboy_join_pkg_config_path(
-    _dailyboy_oiio_pc
+dailyboy_ep_pkg_config_path_env(
+    _dailyboy_oiio_pc_env
     "${DAILYBOY_ZLIB_PREFIX}"
     "${DAILYBOY_JPEG_TURBO_PREFIX}"
     "${DAILYBOY_LIBPNG_PREFIX}"
@@ -139,7 +139,7 @@ ExternalProject_Add(
     UPDATE_DISCONNECTED TRUE
     LIST_SEPARATOR |
     CONFIGURE_COMMAND
-        ${CMAKE_COMMAND} -E env PKG_CONFIG_PATH=${_dailyboy_oiio_pc}
+        ${CMAKE_COMMAND} -E env "${_dailyboy_oiio_pc_env}"
         ${CMAKE_COMMAND} -S <SOURCE_DIR> -B <BINARY_DIR> ${_dailyboy_oiio_args}
     BUILD_COMMAND
         ${CMAKE_COMMAND} --build <BINARY_DIR> --parallel ${DAILYBOY_EP_JOBS}
@@ -192,7 +192,7 @@ unset(_dailyboy_oiio_lib_basename)
 unset(_dailyboy_oiio_util_basename)
 unset(_dailyboy_oiio_util_lib)
 unset(_dailyboy_oiio_lib)
-unset(_dailyboy_oiio_pc)
+unset(_dailyboy_oiio_pc_env)
 unset(_dailyboy_oiio_prefix_path)
 unset(_dailyboy_oiio_args)
 unset(_dailyboy_oiio_byproducts)
