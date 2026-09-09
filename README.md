@@ -242,7 +242,7 @@ The CI system uses Docker images under [`docker/ubuntu/`](docker/ubuntu/) and [`
 | Workflow | What triggers it? | What does it run? |
 | --- | --- | --- |
 | [`ci.yml`](.github/workflows/ci.yml) | On PRs or pushes to `develop` or `main` | **Ubuntu:** format + CY2024/25/26 debug + tests (coverage on CY2026). **Rocky 9:** CY2024/25/26 debug + tests. **macOS:** CY2024/25/26 debug + tests (native, no Docker) |
-| [`nightly.yml`](.github/workflows/nightly.yml) | On scheduled cron or manual trigger | **Ubuntu CY2026 only** on branch `develop`: debug (+ Codecov) ∥ sanitize ∥ **clang-tidy** |
+| [`nightly.yml`](.github/workflows/nightly.yml) | On scheduled cron or manual trigger | **Ubuntu CY2026 only** on branch `develop`: debug (+ Codecov) ∥ sanitize ∥ **clang-tidy** ∥ **perf + load** (release) |
 
 **Code coverage** is collected only for **Ubuntu CY2026** builds. In CY2024/CY2025 debug builds, coverage is disabled (`DAILYBOY_ENABLE_COVERAGE=OFF`).
 
