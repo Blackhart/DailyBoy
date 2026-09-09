@@ -18,6 +18,7 @@ set(DAILYBOY_OPENIMAGEIO_VERSION "3.0")
 set(DAILYBOY_OPENIMAGEIO_GIT_TAG "v3.0.11.0")
 
 # Intel TBB 2020 Update 3 (oneTBB migration deferred until CY2025).
+# Unix: Makefile (gcc/clang). Windows: same Makefile with compiler=cl (MSVC).
 set(DAILYBOY_ONETBB_VERSION "2020")
 set(DAILYBOY_ONETBB_GIT_TAG "v2020.3")
 

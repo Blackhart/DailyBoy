@@ -199,7 +199,7 @@ if(DAILYBOY_EP_JOBS LESS_EQUAL 0)
     set(DAILYBOY_EP_JOBS 1)
 endif()
 
-find_program(DAILYBOY_MAKE_EXECUTABLE NAMES gmake make)
+find_program(DAILYBOY_MAKE_EXECUTABLE NAMES mingw32-make gmake make)
 find_program(DAILYBOY_NASM_EXECUTABLE NAMES nasm)
 if(WIN32)
     find_program(

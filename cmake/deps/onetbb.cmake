@@ -1,5 +1,5 @@
 # oneTBB / Intel TBB — tag from DAILYBOY_ONETBB_* (CY2026: 2022.x; CY2025: 2021.x;
-# CY2024: classic TBB 2020 Update 3 via make — Linux .so / macOS .dylib).
+# CY2024: classic TBB 2020 Update 3 via make — Unix gcc/clang, Windows MSVC cl).
 # https://github.com/uxlfoundation/oneTBB
 
 if(TARGET TBB::tbb)
@@ -22,11 +22,18 @@ else()
     set(_dailyboy_tbb_lib_basename tbb)
     set(_dailyboy_tbb_cfg release)
 endif()
-# Windows oneTBB OUTPUT_NAME is tbb${TBB_BINARY_VERSION} (12); MSVC also installs
-# legacy tbb[_debug].lib copies we use as IMPORTED_IMPLIB.
+
+# Classic TBB 2020: Makefile (Unix + Windows/MSVC). oneTBB 2021+: CMake.
+set(_dailyboy_tbb_use_classic FALSE)
+if(DAILYBOY_ONETBB_VERSION STREQUAL "2020")
+    set(_dailyboy_tbb_use_classic TRUE)
+endif()
+
+# Windows oneTBB (CMake) OUTPUT_NAME is tbb12; classic 2020 keeps tbb[_debug].
+# MSVC oneTBB also installs legacy tbb[_debug].lib copies as IMPORTED_IMPLIB.
 set(_dailyboy_tbb_dll_basename "${_dailyboy_tbb_lib_basename}")
 set(_dailyboy_tbb_implib "")
-if(WIN32 AND NOT DAILYBOY_ONETBB_VERSION STREQUAL "2020")
+if(WIN32 AND NOT _dailyboy_tbb_use_classic)
     set(_dailyboy_tbb_binary_version "12")
     if(_dailyboy_tbb_build_type STREQUAL "Debug")
         set(_dailyboy_tbb_dll_basename "tbb${_dailyboy_tbb_binary_version}_debug")
@@ -59,7 +66,11 @@ endfunction()
 
 # Classic TBB 2020: make extras and built shared-lib filename for this host.
 function(dailyboy_tbb2020_host_vars lib_basename out_make_extras out_built_lib)
-    if(APPLE)
+    if(WIN32)
+        # windows.inc + windows.cl.inc: SHELL=cmd, cl.exe (needs VS env / msvc-dev-cmd).
+        set(${out_make_extras} compiler=cl arch=intel64 PARENT_SCOPE)
+        set(${out_built_lib} "${lib_basename}.dll" PARENT_SCOPE)
+    elseif(APPLE)
         dailyboy_tbb2020_apple_arch(_arch)
         set(_extras compiler=clang "arch=${_arch}")
         if(CMAKE_OSX_DEPLOYMENT_TARGET)
@@ -73,12 +84,12 @@ function(dailyboy_tbb2020_host_vars lib_basename out_make_extras out_built_lib)
     endif()
 endfunction()
 
-if(DAILYBOY_ONETBB_VERSION STREQUAL "2020")
-    if(WIN32)
+if(_dailyboy_tbb_use_classic)
+    if(NOT DAILYBOY_MAKE_EXECUTABLE)
         message(
             FATAL_ERROR
-            "Classic TBB 2020 (CY2024) is not supported on Windows. "
-            "Use DAILYBOY_VFX_PLATFORM=2025 or 2026 (oneTBB CMake)."
+            "Classic TBB 2020 requires GNU make "
+            "(Windows: mingw32-make from MSYS2 on PATH)."
         )
     endif()
     set(_dailyboy_tbb_make_prefix dailyboy)
@@ -102,10 +113,26 @@ if(DAILYBOY_ONETBB_VERSION STREQUAL "2020")
             <SOURCE_DIR>/include/tbb "${DAILYBOY_TBB_PREFIX}/include/tbb"
         COMMAND ${CMAKE_COMMAND} -E copy_directory
             <SOURCE_DIR>/include/serial "${DAILYBOY_TBB_PREFIX}/include/serial"
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            <BINARY_DIR>/${_dailyboy_tbb_build_subdir}/${_dailyboy_tbb_built_lib}
-            "${DAILYBOY_TBB_PREFIX}/lib/${_dailyboy_tbb_built_lib}"
     )
+    if(WIN32)
+        list(
+            APPEND _dailyboy_tbb_install_cmds
+            COMMAND ${CMAKE_COMMAND} -E make_directory "${DAILYBOY_TBB_PREFIX}/bin"
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                <BINARY_DIR>/${_dailyboy_tbb_build_subdir}/${_dailyboy_tbb_built_lib}
+                "${DAILYBOY_TBB_PREFIX}/bin/${_dailyboy_tbb_built_lib}"
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                <BINARY_DIR>/${_dailyboy_tbb_build_subdir}/${_dailyboy_tbb_lib_basename}.lib
+                "${DAILYBOY_TBB_PREFIX}/lib/${_dailyboy_tbb_lib_basename}.lib"
+        )
+    else()
+        list(
+            APPEND _dailyboy_tbb_install_cmds
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                <BINARY_DIR>/${_dailyboy_tbb_build_subdir}/${_dailyboy_tbb_built_lib}
+                "${DAILYBOY_TBB_PREFIX}/lib/${_dailyboy_tbb_built_lib}"
+        )
+    endif()
     if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
         list(
             APPEND _dailyboy_tbb_install_cmds
@@ -123,7 +150,7 @@ if(DAILYBOY_ONETBB_VERSION STREQUAL "2020")
         UPDATE_DISCONNECTED TRUE
         CONFIGURE_COMMAND ""
         BUILD_COMMAND
-            make
+            ${DAILYBOY_MAKE_EXECUTABLE}
             -C <SOURCE_DIR>/src
             tbb_${_dailyboy_tbb_cfg}
             tbbmalloc_${_dailyboy_tbb_cfg}
@@ -190,3 +217,5 @@ unset(_dailyboy_tbb_built_lib)
 unset(_dailyboy_tbb_build_subdir)
 unset(_dailyboy_tbb_install_cmds)
 unset(_dailyboy_tbb_byproducts)
+unset(_dailyboy_tbb_use_classic)
+unset(_dailyboy_tbb_binary_version)

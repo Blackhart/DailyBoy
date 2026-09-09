@@ -1,9 +1,9 @@
 #!/usr/bin/env pwsh
 # Run unit / sanitize / perf / load tests on native Windows.
 #
-# Usage: ci/windows/test.ps1 <2025|2026> tests
+# Usage: ci/windows/test.ps1 <2024|2025|2026> tests
 param(
-    [Parameter(Mandatory = $true)][ValidateSet("2025", "2026")][string]$Year,
+    [Parameter(Mandatory = $true)][ValidateSet("2024", "2025", "2026")][string]$Year,
     [Parameter(Mandatory = $true)][ValidateSet("tests", "sanitize", "perf", "load")][string]$Kind
 )
 
