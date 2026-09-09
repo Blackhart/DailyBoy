@@ -35,7 +35,6 @@ dailyboy::JobOutputDisplayView passthrough_display_view() {
   return display_view;
 }
 
-
 OIIO::ImageBuf make_rgb(int width, int height, const float* fill) {
   OIIO::ImageSpec spec(width, height, 3, OIIO::TypeDesc::FLOAT);
   OIIO::ImageBuf buf(spec);

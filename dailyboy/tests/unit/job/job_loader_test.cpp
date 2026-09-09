@@ -5544,8 +5544,8 @@ TEST(JobLoader, LoadJob_ValidYaml_LoadsAllFields) {
                        dailyboy::TextPositionModeLayout::Anchor::BottomLeft);
   // defined
   // BottomLeft
-  expect_font(burn_ins[0].font(),
-              "dailyboy/tests/data/fonts/DejaVuSans.ttf", 22);
+  expect_font(burn_ins[0].font(), "dailyboy/tests/data/fonts/DejaVuSans.ttf",
+              22);
   // user font choice
   expect_rgb(burn_ins[0].font().color(), 1.0, 1.0, 1.0);
   ASSERT_TRUE(burn_ins[0].box().has_value());
@@ -5574,8 +5574,8 @@ TEST(JobLoader, LoadJob_ValidYaml_LoadsAllFields) {
   EXPECT_EQ(burn_ins[1].template_text(), "{project} — {version}");
   expect_layout_anchor(burn_ins[1].position(),
                        dailyboy::TextPositionModeLayout::Anchor::BottomRight);
-  expect_font(burn_ins[1].font(),
-              "dailyboy/tests/data/fonts/DejaVuSans.ttf", 18);
+  expect_font(burn_ins[1].font(), "dailyboy/tests/data/fonts/DejaVuSans.ttf",
+              18);
   ASSERT_TRUE(burn_ins[1].box().has_value());
   expect_burn_in_box_outline(*burn_ins[1].box(), 1, 1, 1, 0.85, 4, 12, 4, 8);
   // custom outline color and margins
@@ -5647,8 +5647,8 @@ TEST(JobLoader, LoadJob_ValidYaml_LoadsAllFields) {
   //         left: 2
   EXPECT_EQ(burn_ins[4].template_text(), "PCT {frame_start}-{frame_end}");
   expect_percent_position(burn_ins[4].position(), 5, 92);
-  expect_font(burn_ins[4].font(),
-              "dailyboy/tests/data/fonts/DejaVuSans.ttf", 20);
+  expect_font(burn_ins[4].font(), "dailyboy/tests/data/fonts/DejaVuSans.ttf",
+              20);
   ASSERT_TRUE(burn_ins[4].box().has_value());
   expect_burn_in_box_fill(*burn_ins[4].box(), 0, 0, 0, 0.35, 2);
   //   - template: "TOP {shot}"
@@ -5669,8 +5669,8 @@ TEST(JobLoader, LoadJob_ValidYaml_LoadsAllFields) {
   EXPECT_EQ(burn_ins[5].template_text(), "TOP {shot}");
   expect_layout_anchor(burn_ins[5].position(),
                        dailyboy::TextPositionModeLayout::Anchor::TopLeft);
-  expect_font(burn_ins[5].font(),
-              "dailyboy/tests/data/fonts/DejaVuSans.ttf", 14);
+  expect_font(burn_ins[5].font(), "dailyboy/tests/data/fonts/DejaVuSans.ttf",
+              14);
   ASSERT_TRUE(burn_ins[5].box().has_value());
   expect_burn_in_box_fill(*burn_ins[5].box(), 0, 0, 0, 0.25, 0);
   //   - template: "TOP-R {episode}"
@@ -5691,8 +5691,8 @@ TEST(JobLoader, LoadJob_ValidYaml_LoadsAllFields) {
   EXPECT_EQ(burn_ins[6].template_text(), "TOP-R {episode}");
   expect_layout_anchor(burn_ins[6].position(),
                        dailyboy::TextPositionModeLayout::Anchor::TopRight);
-  expect_font(burn_ins[6].font(),
-              "dailyboy/tests/data/fonts/DejaVuSans.ttf", 14);
+  expect_font(burn_ins[6].font(), "dailyboy/tests/data/fonts/DejaVuSans.ttf",
+              14);
   ASSERT_TRUE(burn_ins[6].box().has_value());
   expect_burn_in_box_outline(*burn_ins[6].box(), 1, 0.5, 0, 0.6, 10, 10, 10,
                              10);
@@ -5714,8 +5714,7 @@ TEST(JobLoader, LoadJob_ValidYaml_LoadsAllFields) {
   EXPECT_EQ(lines[0].text(), "PROJECT — {project}");
   expect_layout_anchor(lines[0].position(),
                        dailyboy::TextPositionModeLayout::Anchor::TopLeft);
-  expect_font(lines[0].font(),
-              "dailyboy/tests/data/fonts/DejaVuSans.ttf", 36);
+  expect_font(lines[0].font(), "dailyboy/tests/data/fonts/DejaVuSans.ttf", 36);
   //     - text: "SHOT — {shot}"
   //       position:
   //         mode: layout
@@ -5726,8 +5725,8 @@ TEST(JobLoader, LoadJob_ValidYaml_LoadsAllFields) {
   EXPECT_EQ(lines[1].text(), "SHOT — {shot}");
   expect_layout_anchor(lines[1].position(),
                        dailyboy::TextPositionModeLayout::Anchor::TopRight);
-  expect_font(lines[1].font(),
-              "dailyboy/tests/data/fonts/DejaVuSans-Bold.ttf", 32);
+  expect_font(lines[1].font(), "dailyboy/tests/data/fonts/DejaVuSans-Bold.ttf",
+              32);
   //     - text: "CENTER — {artist}"
   //       position:
   //         mode: layout
@@ -5738,8 +5737,7 @@ TEST(JobLoader, LoadJob_ValidYaml_LoadsAllFields) {
   EXPECT_EQ(lines[2].text(), "CENTER — {artist}");
   expect_layout_anchor(lines[2].position(),
                        dailyboy::TextPositionModeLayout::Anchor::CenterCenter);
-  expect_font(lines[2].font(),
-              "dailyboy/tests/data/fonts/DejaVuSans.ttf", 28);
+  expect_font(lines[2].font(), "dailyboy/tests/data/fonts/DejaVuSans.ttf", 28);
   //     - text: "NOTE — {note_prod}"
   //       position:
   //         mode: layout
@@ -5750,8 +5748,7 @@ TEST(JobLoader, LoadJob_ValidYaml_LoadsAllFields) {
   EXPECT_EQ(lines[3].text(), "NOTE — {note_prod}");
   expect_layout_anchor(lines[3].position(),
                        dailyboy::TextPositionModeLayout::Anchor::BottomLeft);
-  expect_font(lines[3].font(),
-              "dailyboy/tests/data/fonts/DejaVuSans.ttf", 22);
+  expect_font(lines[3].font(), "dailyboy/tests/data/fonts/DejaVuSans.ttf", 22);
   //     - text: "FRAME NOTE — {note_frame}"
   //       position:
   //         mode: layout
@@ -5762,8 +5759,7 @@ TEST(JobLoader, LoadJob_ValidYaml_LoadsAllFields) {
   EXPECT_EQ(lines[4].text(), "FRAME NOTE — {note_frame}");
   expect_layout_anchor(lines[4].position(),
                        dailyboy::TextPositionModeLayout::Anchor::BottomRight);
-  expect_font(lines[4].font(),
-              "dailyboy/tests/data/fonts/DejaVuSans.ttf", 20);
+  expect_font(lines[4].font(), "dailyboy/tests/data/fonts/DejaVuSans.ttf", 20);
   //     - text: "SLATE PIXEL"
   //       position:
   //         mode: pixel
@@ -5774,8 +5770,8 @@ TEST(JobLoader, LoadJob_ValidYaml_LoadsAllFields) {
   //         size_px: 18
   EXPECT_EQ(lines[5].text(), "SLATE PIXEL");
   expect_pixel_position(lines[5].position(), 120, 900);
-  expect_font(lines[5].font(),
-              "dailyboy/tests/data/fonts/DejaVuSansMono.ttf", 18);
+  expect_font(lines[5].font(), "dailyboy/tests/data/fonts/DejaVuSansMono.ttf",
+              18);
   //     - text: "SLATE %"
   //       position:
   //         mode: percent
@@ -5786,8 +5782,7 @@ TEST(JobLoader, LoadJob_ValidYaml_LoadsAllFields) {
   //         size_px: 18
   EXPECT_EQ(lines[6].text(), "SLATE %");
   expect_percent_position(lines[6].position(), 50, 50);
-  expect_font(lines[6].font(),
-              "dailyboy/tests/data/fonts/DejaVuSans.ttf", 18);
+  expect_font(lines[6].font(), "dailyboy/tests/data/fonts/DejaVuSans.ttf", 18);
   // ############################################################
   // output:
   //  videos:
