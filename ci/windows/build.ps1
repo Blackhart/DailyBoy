@@ -3,9 +3,9 @@
 #
 # Default tree: build/windows/CY<year>/<config>
 #
-# Usage: ci/windows/build.ps1 <2025|2026> <debug|release|sanitize>
+# Usage: ci/windows/build.ps1 <2024|2025|2026> <debug|release|sanitize>
 param(
-    [Parameter(Mandatory = $true)][ValidateSet("2025", "2026")][string]$Year,
+    [Parameter(Mandatory = $true)][ValidateSet("2024", "2025", "2026")][string]$Year,
     [Parameter(Mandatory = $true)][ValidateSet("debug", "release", "sanitize")][string]$Config
 )
 
@@ -18,7 +18,7 @@ $env:DAILYBOY_VFX_PLATFORM = $Year
 if (-not $env:CMAKE_POLICY_VERSION_MINIMUM) { $env:CMAKE_POLICY_VERSION_MINIMUM = "3.5" }
 
 $pythonVersion = switch ($Year) {
-    "2025" { "3.11" }
+    { $_ -in @("2024", "2025") } { "3.11" }
     "2026" { "3.13" }
 }
 $pythonTag = $pythonVersion.Replace(".", "")
