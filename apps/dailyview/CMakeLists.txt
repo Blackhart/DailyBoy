@@ -13,6 +13,7 @@ qt_add_qml_module(dailyview
     VERSION 1.0
     QML_FILES
         View/qml/Main.qml
+        View/qml/TransportBar.qml
     SOURCES
         Model/sequence_model.hpp
         Model/sequence_model.cpp

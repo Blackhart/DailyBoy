@@ -2,7 +2,6 @@
 
 #include <OpenImageIO/imagebufalgo.h>
 
-#include "image/sequence.hpp"
 #include "job/plans.hpp"
 
 #ifndef DAILYBOY_SOURCE_DIR
@@ -21,39 +20,108 @@ constexpr int kExampleFrameEnd = 1048;
 
 SequenceModel::SequenceModel(QObject* parent) : QObject(parent) {}
 
-dailyboy::Status SequenceModel::LoadExamplePlate() {
-  dailyboy::StatusOr<dailyboy::Frame> frame =
-      OpenAndLoadFirst(kExamplePattern, kExampleFrameStart, kExampleFrameEnd);
-  if (!frame.ok()) {
-    SetError(frame.status());
-    return frame.status();
-  }
-
-  const dailyboy::Status pack_status = PackRgb8(*frame);
-  if (!pack_status.ok()) {
-    SetError(pack_status);
-    return pack_status;
-  }
-
-  error_string_.clear();
-  emit errorChanged();
-  emit frameReady();
-  return dailyboy::Status::Ok();
+int SequenceModel::frame_start() const {
+  return sequence_ ? sequence_->frame_start() : 0;
 }
 
-dailyboy::StatusOr<dailyboy::Frame> SequenceModel::OpenAndLoadFirst(
-    const std::string& pattern, int frame_start, int frame_end) {
+int SequenceModel::frame_end() const {
+  return sequence_ ? sequence_->frame_end() : 0;
+}
+
+dailyboy::Status SequenceModel::LoadExamplePlate() {
+  const dailyboy::Status open_status =
+      OpenSequence(kExamplePattern, kExampleFrameStart, kExampleFrameEnd);
+  if (!open_status.ok()) {
+    return open_status;
+  }
+  return SeekTo(sequence_->frame_start());
+}
+
+dailyboy::Status SequenceModel::OpenSequence(const std::string& pattern,
+                                             int frame_start, int frame_end) {
   dailyboy::JobSequence job_sequence;
   job_sequence.set_path(pattern);
   job_sequence.set_frame_start(frame_start);
   job_sequence.set_frame_end(frame_end);
 
-  dailyboy::StatusOr<dailyboy::Sequence> sequence =
+  dailyboy::StatusOr<dailyboy::Sequence> opened =
       dailyboy::Sequence::open(job_sequence);
-  if (!sequence.ok()) {
-    return sequence.status();
+  if (!opened.ok()) {
+    SetError(opened.status());
+    return opened.status();
   }
-  return (*sequence).load((*sequence).frame_start());
+
+  sequence_ = std::move(*opened);
+  Pause();
+  emit sequenceChanged();
+  return dailyboy::Status::Ok();
+}
+
+dailyboy::Status SequenceModel::SeekTo(int frame) {
+  if (!sequence_) {
+    return dailyboy::Status::User("no sequence open");
+  }
+
+  const int clamped = ClampFrame(frame);
+  const dailyboy::Status load_status = LoadFrame(clamped);
+  if (!load_status.ok()) {
+    SetError(load_status);
+    return load_status;
+  }
+
+  current_frame_ = clamped;
+  error_string_.clear();
+  emit errorChanged();
+  emit currentFrameChanged();
+  emit frameReady();
+  return dailyboy::Status::Ok();
+}
+
+void SequenceModel::Seek(int frame) { SeekTo(frame); }
+
+dailyboy::Status SequenceModel::LoadFrame(int frame) {
+  dailyboy::StatusOr<dailyboy::Frame> loaded = sequence_->load(frame);
+  if (!loaded.ok()) {
+    return loaded.status();
+  }
+  return PackRgb8(*loaded);
+}
+
+void SequenceModel::Play() {
+  if (playing_ || !sequence_) {
+    return;
+  }
+  playing_ = true;
+  emit playingChanged();
+}
+
+void SequenceModel::Pause() {
+  if (!playing_) {
+    return;
+  }
+  playing_ = false;
+  emit playingChanged();
+}
+
+void SequenceModel::TogglePlay() {
+  if (playing_) {
+    Pause();
+  } else {
+    Play();
+  }
+}
+
+int SequenceModel::ClampFrame(int frame) const {
+  if (!sequence_) {
+    return frame;
+  }
+  if (frame < sequence_->frame_start()) {
+    return sequence_->frame_start();
+  }
+  if (frame > sequence_->frame_end()) {
+    return sequence_->frame_end();
+  }
+  return frame;
 }
 
 void SequenceModel::SetChannelOrder(int channel_count, int order[3]) {
