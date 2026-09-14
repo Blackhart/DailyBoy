@@ -44,30 +44,36 @@ else()
     )
 endif()
 
-# Resolve installed prefix (aqt may use gcc_64 even when arch is linux_gcc_64).
-set(_dailyboy_qt_prefix "")
-foreach(_dailyboy_qt_arch_dir IN ITEMS
-    "${_dailyboy_aqt_arch}"
-    "gcc_64"
-    "linux_gcc_64"
-    "linux_gcc_arm64"
-    "clang_64"
-)
-    set(
-        _dailyboy_qt_candidate
-        "${_dailyboy_qt_output_dir}/${DAILYBOY_QT_VERSION}/${_dailyboy_qt_arch_dir}"
+# aqt arch arg ≠ install folder (e.g. clang_64 → macos, linux_gcc_64 → gcc_64).
+function(dailyboy_qt_resolve_prefix output_dir version out_var)
+    file(
+        GLOB _dailyboy_qt_configs
+        "${output_dir}/${version}/*/lib/cmake/Qt6/Qt6Config.cmake"
     )
-    if(EXISTS "${_dailyboy_qt_candidate}/lib/cmake/Qt6/Qt6Config.cmake")
-        set(_dailyboy_qt_prefix "${_dailyboy_qt_candidate}")
-        break()
+    if(_dailyboy_qt_configs STREQUAL "")
+        set(${out_var} "" PARENT_SCOPE)
+        return()
     endif()
-endforeach()
+    list(SORT _dailyboy_qt_configs)
+    list(GET _dailyboy_qt_configs 0 _dailyboy_qt_config)
+    get_filename_component(_dailyboy_qt_cmake_qt6 "${_dailyboy_qt_config}" DIRECTORY)
+    get_filename_component(_dailyboy_qt_cmake "${_dailyboy_qt_cmake_qt6}" DIRECTORY)
+    get_filename_component(_dailyboy_qt_lib "${_dailyboy_qt_cmake}" DIRECTORY)
+    get_filename_component(_dailyboy_qt_prefix "${_dailyboy_qt_lib}" DIRECTORY)
+    set(${out_var} "${_dailyboy_qt_prefix}" PARENT_SCOPE)
+endfunction()
+
+dailyboy_qt_resolve_prefix(
+    "${_dailyboy_qt_output_dir}"
+    "${DAILYBOY_QT_VERSION}"
+    _dailyboy_qt_prefix
+)
 
 if(_dailyboy_qt_prefix STREQUAL "")
     message(
         STATUS
         "deps: Qt ${DAILYBOY_QT_VERSION} missing under ${_dailyboy_qt_output_dir}; "
-        "installing with aqtinstall"
+        "installing with aqtinstall (${_dailyboy_aqt_host}/${_dailyboy_aqt_arch})"
     )
 
     find_package(Python3 COMPONENTS Interpreter REQUIRED)
@@ -98,12 +104,13 @@ if(_dailyboy_qt_prefix STREQUAL "")
             "${_dailyboy_aqt_python}" -m pip install --upgrade pip aqtinstall
         RESULT_VARIABLE _dailyboy_pip_rc
         ERROR_VARIABLE _dailyboy_pip_err
+        OUTPUT_VARIABLE _dailyboy_pip_out
     )
     if(NOT _dailyboy_pip_rc EQUAL 0)
         message(
             FATAL_ERROR
             "Failed to install aqtinstall into ${_dailyboy_aqt_venv}:\n"
-            "${_dailyboy_pip_err}"
+            "${_dailyboy_pip_out}\n${_dailyboy_pip_err}"
         )
     endif()
 
@@ -123,6 +130,7 @@ if(_dailyboy_qt_prefix STREQUAL "")
         ERROR_VARIABLE _dailyboy_aqt_err
         OUTPUT_VARIABLE _dailyboy_aqt_out
     )
+    message(STATUS "aqt install-qt:\n${_dailyboy_aqt_out}${_dailyboy_aqt_err}")
     if(NOT _dailyboy_aqt_rc EQUAL 0)
         message(
             FATAL_ERROR
@@ -132,30 +140,25 @@ if(_dailyboy_qt_prefix STREQUAL "")
         )
     endif()
 
-    foreach(_dailyboy_qt_arch_dir IN ITEMS
-        "${_dailyboy_aqt_arch}"
-        "gcc_64"
-        "linux_gcc_64"
-        "linux_gcc_arm64"
-        "clang_64"
+    dailyboy_qt_resolve_prefix(
+        "${_dailyboy_qt_output_dir}"
+        "${DAILYBOY_QT_VERSION}"
+        _dailyboy_qt_prefix
     )
-        set(
-            _dailyboy_qt_candidate
-            "${_dailyboy_qt_output_dir}/${DAILYBOY_QT_VERSION}/${_dailyboy_qt_arch_dir}"
-        )
-        if(EXISTS "${_dailyboy_qt_candidate}/lib/cmake/Qt6/Qt6Config.cmake")
-            set(_dailyboy_qt_prefix "${_dailyboy_qt_candidate}")
-            break()
-        endif()
-    endforeach()
 endif()
 
 if(_dailyboy_qt_prefix STREQUAL ""
    OR NOT EXISTS "${_dailyboy_qt_prefix}/lib/cmake/Qt6/Qt6Config.cmake")
+    file(
+        GLOB _dailyboy_qt_tree
+        RELATIVE "${_dailyboy_qt_output_dir}"
+        "${_dailyboy_qt_output_dir}/*/*"
+    )
     message(
         FATAL_ERROR
         "Qt ${DAILYBOY_QT_VERSION} not found after aqtinstall "
-        "(expected under ${_dailyboy_qt_output_dir})"
+        "(expected under ${_dailyboy_qt_output_dir}). "
+        "Entries: ${_dailyboy_qt_tree}"
     )
 endif()
 
