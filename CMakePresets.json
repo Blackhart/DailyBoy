@@ -16,6 +16,7 @@
         "CMAKE_BUILD_TYPE": "Debug",
         "BUILD_TESTING": "ON",
         "DAILYBOY_BUILD_PYTHON": "ON",
+        "DAILYBOY_BUILD_DAILYVIEW": "ON",
         "DAILYBOY_ENABLE_COVERAGE": "ON",
         "DAILYBOY_ENABLE_SANITIZERS": "OFF"
       }
@@ -30,6 +31,7 @@
         "CMAKE_BUILD_TYPE": "Release",
         "BUILD_TESTING": "ON",
         "DAILYBOY_BUILD_PYTHON": "ON",
+        "DAILYBOY_BUILD_DAILYVIEW": "ON",
         "DAILYBOY_ENABLE_COVERAGE": "OFF",
         "DAILYBOY_ENABLE_SANITIZERS": "OFF"
       }
@@ -44,6 +46,7 @@
         "CMAKE_BUILD_TYPE": "RelWithDebInfo",
         "BUILD_TESTING": "ON",
         "DAILYBOY_BUILD_PYTHON": "OFF",
+        "DAILYBOY_BUILD_DAILYVIEW": "ON",
         "DAILYBOY_ENABLE_COVERAGE": "OFF",
         "DAILYBOY_ENABLE_SANITIZERS": "ON"
       }
@@ -58,6 +61,7 @@
         "CMAKE_BUILD_TYPE": "Debug",
         "BUILD_TESTING": "ON",
         "DAILYBOY_BUILD_PYTHON": "ON",
+        "DAILYBOY_BUILD_DAILYVIEW": "ON",
         "DAILYBOY_ENABLE_COVERAGE": "OFF",
         "DAILYBOY_ENABLE_SANITIZERS": "OFF"
       }
@@ -72,6 +76,7 @@
         "CMAKE_BUILD_TYPE": "Release",
         "BUILD_TESTING": "ON",
         "DAILYBOY_BUILD_PYTHON": "ON",
+        "DAILYBOY_BUILD_DAILYVIEW": "ON",
         "DAILYBOY_ENABLE_COVERAGE": "OFF",
         "DAILYBOY_ENABLE_SANITIZERS": "OFF"
       }
@@ -86,6 +91,7 @@
         "CMAKE_BUILD_TYPE": "RelWithDebInfo",
         "BUILD_TESTING": "ON",
         "DAILYBOY_BUILD_PYTHON": "OFF",
+        "DAILYBOY_BUILD_DAILYVIEW": "ON",
         "DAILYBOY_ENABLE_COVERAGE": "OFF",
         "DAILYBOY_ENABLE_SANITIZERS": "ON"
       }
@@ -100,6 +106,7 @@
         "CMAKE_BUILD_TYPE": "Debug",
         "BUILD_TESTING": "ON",
         "DAILYBOY_BUILD_PYTHON": "ON",
+        "DAILYBOY_BUILD_DAILYVIEW": "ON",
         "DAILYBOY_ENABLE_COVERAGE": "OFF",
         "DAILYBOY_ENABLE_SANITIZERS": "OFF"
       }
@@ -114,6 +121,7 @@
         "CMAKE_BUILD_TYPE": "Release",
         "BUILD_TESTING": "ON",
         "DAILYBOY_BUILD_PYTHON": "ON",
+        "DAILYBOY_BUILD_DAILYVIEW": "ON",
         "DAILYBOY_ENABLE_COVERAGE": "OFF",
         "DAILYBOY_ENABLE_SANITIZERS": "OFF"
       }
@@ -128,6 +136,7 @@
         "CMAKE_BUILD_TYPE": "RelWithDebInfo",
         "BUILD_TESTING": "ON",
         "DAILYBOY_BUILD_PYTHON": "OFF",
+        "DAILYBOY_BUILD_DAILYVIEW": "ON",
         "DAILYBOY_ENABLE_COVERAGE": "OFF",
         "DAILYBOY_ENABLE_SANITIZERS": "ON"
       }
