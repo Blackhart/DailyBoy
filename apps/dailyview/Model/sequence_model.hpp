@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cstdint>
-#include <optional>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -9,11 +9,12 @@
 #include <QString>
 #include <QtQml/qqmlregistration.h>
 
-#include "image/frame.hpp"
-#include "image/sequence.hpp"
+#include "Model/load_frame_result.hpp"
 #include "status.hpp"
 
 namespace dailyview {
+
+class JobRunner;
 
 /*!
  * \brief Métier séquence : ouvre une plate, seek, et expose la frame RGB8.
@@ -32,16 +33,16 @@ class SequenceModel : public QObject {
 
  public:
   explicit SequenceModel(QObject* parent = nullptr);
+  ~SequenceModel() override;
 
   /*!
-   * \brief Opens the examples plate and seeks to \c frame_start.
-   * \return Engine \c Status; on failure also updates \c errorString.
+   * \brief Enqueues open of the examples plate then seek to \c frame_start.
+   * \return \c Ok after enqueue; failures arrive via \c errorString.
    */
   dailyboy::Status LoadExamplePlate();
 
   /*!
-   * \brief Loads \a frame into the RGB8 buffer (clamped to the open range).
-   *        Updates \c errorString on I/O failure.
+   * \brief Requests load of \a frame (clamped); non-blocking via TBB.
    */
   Q_INVOKABLE void Seek(int frame);
 
@@ -49,11 +50,14 @@ class SequenceModel : public QObject {
   Q_INVOKABLE void Pause();
   Q_INVOKABLE void TogglePlay();
 
+  void OnSequenceOpened(OpenSequenceResult result);
+  void OnFrameLoaded(LoadFrameResult result);
+
   int frame_width() const { return width_; }
   int frame_height() const { return height_; }
   int current_frame() const { return current_frame_; }
-  int frame_start() const;
-  int frame_end() const;
+  int frame_start() const { return frame_start_; }
+  int frame_end() const { return frame_end_; }
   bool playing() const { return playing_; }
   const std::vector<uint8_t>& rgb8() const { return rgb8_; }
   QString error_string() const { return error_string_; }
@@ -66,22 +70,26 @@ class SequenceModel : public QObject {
   void playingChanged();
 
  private:
-  dailyboy::Status OpenSequence(const std::string& pattern, int frame_start,
-                                int frame_end);
-  dailyboy::Status SeekTo(int frame);
-  dailyboy::Status LoadFrame(int frame);
-  dailyboy::Status PackRgb8(const dailyboy::Frame& frame);
-  void SetChannelOrder(int channel_count, int order[3]);
-  void SetError(const dailyboy::Status& status);
+  void EnqueueDesiredLoad();
+  void ApplyAcceptedFrame(LoadFrameResult result);
+  void SetErrorMessage(const std::string& message);
+  void ClearError();
   int ClampFrame(int frame) const;
 
-  std::optional<dailyboy::Sequence> sequence_;
+  int frame_start_ = 0;
+  int frame_end_ = 0;
+  bool sequence_open_ = false;
   int current_frame_ = 0;
+  int desired_frame_ = 0;
+  uint64_t generation_ = 0;
+  bool load_inflight_ = false;
   bool playing_ = false;
   int width_ = 0;
   int height_ = 0;
   std::vector<uint8_t> rgb8_;
   QString error_string_;
+  // Destroyed first so arena.wait() finishes while this QObject is alive.
+  std::unique_ptr<JobRunner> job_runner_;
 };
 
 }  // namespace dailyview

@@ -15,6 +15,9 @@ qt_add_qml_module(dailyview
         View/qml/Main.qml
         View/qml/TransportBar.qml
     SOURCES
+        Model/load_frame_result.hpp
+        Model/job_runner.hpp
+        Model/job_runner.cpp
         Model/sequence_model.hpp
         Model/sequence_model.cpp
         View/viewport_item.hpp
@@ -42,6 +45,7 @@ target_link_libraries(
     dailyview
     PRIVATE
         dailyboy
+        TBB::tbb
         Qt6::Quick
         Qt6::QuickControls2
         OpenImageIO::OpenImageIO

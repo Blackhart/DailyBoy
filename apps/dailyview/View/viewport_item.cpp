@@ -150,12 +150,7 @@ void ViewportItem::setModel(SequenceModel* model) {
             &ViewportItem::OnFrameReady);
     connect(model_, &SequenceModel::errorChanged, this,
             &ViewportItem::OnErrorChanged);
-    const dailyboy::Status status = model_->LoadExamplePlate();
-    if (status.ok()) {
-      OnFrameReady();
-    } else {
-      OnErrorChanged();
-    }
+    model_->LoadExamplePlate();
   }
   emit modelChanged();
 }
