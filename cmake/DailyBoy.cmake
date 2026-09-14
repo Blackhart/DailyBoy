@@ -94,6 +94,11 @@ endif()
 option(BUILD_TESTING "Build tests (CTest, GoogleTest) and test-only dependencies" ON)
 option(DAILYBOY_BUILD_PYTHON "Build Python bindings (api/python)" ON)
 option(
+    DAILYBOY_BUILD_DAILYVIEW
+    "Build DailyView Qt Quick app (apps/dailyview); fetches Qt via aqtinstall if needed"
+    OFF
+)
+option(
     DAILYBOY_PYTHON_BUILD_IN_SOURCE
     "Place _dailyboy_native under api/python/dailyboy/ (OFF = CMake build tree)"
     ON
@@ -326,6 +331,10 @@ include("${CMAKE_CURRENT_LIST_DIR}/deps/libheif.cmake")
 include("${CMAKE_CURRENT_LIST_DIR}/deps/ffmpeg.cmake")
 include("${CMAKE_CURRENT_LIST_DIR}/deps/openimageio.cmake")
 
+if(DAILYBOY_BUILD_DAILYVIEW)
+    include("${CMAKE_CURRENT_LIST_DIR}/deps/qt.cmake")
+endif()
+
 # ---------------------------------------------------------------------------
 # clang-format
 # ---------------------------------------------------------------------------
@@ -335,6 +344,7 @@ set(_dailyboy_clang_format_dirs
     "${CMAKE_SOURCE_DIR}/dailyboy"
     "${CMAKE_SOURCE_DIR}/api/cpp"
     "${CMAKE_SOURCE_DIR}/api/python"
+    "${CMAKE_SOURCE_DIR}/apps/dailyview"
 )
 set(DAILYBOY_CLANG_FORMAT_SOURCES "")
 foreach(_dir IN LISTS _dailyboy_clang_format_dirs)
