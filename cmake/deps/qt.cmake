@@ -170,7 +170,15 @@ find_package(
     Qt6
     ${DAILYBOY_QT_VERSION}
     COMPONENTS Quick QuickControls2
-    REQUIRED
 )
+if(NOT Qt6_FOUND)
+    message(
+        FATAL_ERROR
+        "find_package(Qt6 Quick) failed at ${DAILYBOY_QT_PREFIX}. "
+        "Qt Gui/Quick need system OpenGL and XKB (e.g. Ubuntu: "
+        "libgl1-mesa-dev libopengl-dev libxkbcommon-dev; "
+        "rebuild CI images after docker/*/Dockerfile.*.base updates)."
+    )
+endif()
 
 message(STATUS "deps: Qt ${Qt6_VERSION} (aqt → ${DAILYBOY_QT_PREFIX})")
