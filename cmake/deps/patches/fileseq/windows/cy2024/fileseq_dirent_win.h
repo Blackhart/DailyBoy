@@ -10,6 +10,11 @@
 #define WIN32_LEAN_AND_MEAN
 #endif
 #include <windows.h>
+#include <sys/stat.h>
+
+#ifndef S_ISDIR
+#define S_ISDIR(mode) (((mode) & _S_IFMT) == _S_IFDIR)
+#endif
 
 #ifndef DT_UNKNOWN
 #define DT_UNKNOWN 0
