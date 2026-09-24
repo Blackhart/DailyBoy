@@ -202,11 +202,18 @@ The value must exactly match a colorspace defined in your OCIO config. For examp
 | Sub-field     | Required | Type               | Description |
 | ------------- | -------- | ------------------ | ----------- |
 | `path`        | yes      | string (non-empty) | Pattern for locating the image sequence. |
-| `frame_start` | yes      | integer            | The first frame to include. |
-| `frame_end`   | yes      | integer            | The last frame to include. |
+| `frame_start` | yes      | integer            | The first shot frame (hero range start). |
+| `frame_end`   | yes      | integer            | The last shot frame (hero range end). |
+| `handles`     | no       | object             | Optional head/tail source frames around the hero range. |
+
+| `handles` sub-field | Required | Type            | Default | Description |
+| ------------------- | -------- | --------------- | ------- | ----------- |
+| `head`              | no       | integer (≥ 0)   | `0`     | Frames before `frame_start` to include (`frame_start - head` .. `frame_start - 1`). |
+| `tail`              | no       | integer (≥ 0)   | `0`     | Frames after `frame_end` to include (`frame_end + 1` .. `frame_end + tail`). |
 
 - `path` specifies the sequence pattern for the image files. You can use patterns like `%04d`, `####`, `@@@@`, `$F4`, as well as explicit ranges (e.g., `file.1001-1050.exr`). Refer to the [fileseq documentation](https://github.com/shotgunsoftware/fileseq) for more pattern details. Substitutions (such as `{dailies_root}`) can also be included in the path.
-- `frame_start` and `frame_end` define the inclusive range of frames to process.
+- `frame_start` and `frame_end` define the inclusive hero shot range. Overlay tokens `{frame_start}` / `{frame_end}` use these values.
+- The processed range is `[frame_start - handles.head, frame_end + handles.tail]`. Missing handle frames fail like any other missing plate.
 
 Example:
 
@@ -218,6 +225,9 @@ plans:
       path: /shots/sh010/renders/v003/bg.%04d.png
       frame_start: 1001
       frame_end: 1048
+      handles:
+        head: 8
+        tail: 8
 ```
 
 Explanation:
@@ -227,10 +237,11 @@ This example defines a `plans` block containing a single entry (a shot/plan).
 - `input_colorspace: "ACEScg"`: Specifies that the source images are in the ACEScg colorspace, as defined by your OCIO configuration.
 - `sequence`: Details how to find the image files for this shot:
   - `path`: The file pattern DailyBoy should use to find the images (here, `/shots/sh010/renders/v003/bg.%04d.png`, where `%04d` is replaced by the four-digit frame number).
-  - `frame_start`: The first frame to process (here, 1001).
-  - `frame_end`: The last frame to process (here, 1048).
+  - `frame_start`: The first hero frame (here, 1001).
+  - `frame_end`: The last hero frame (here, 1048).
+  - `handles`: Also read eight frames before 1001 and eight after 1048 (993–1000 and 1049–1056).
 
-This means: “For the shot named `sh010_bg`, process images `/shots/sh010/renders/v003/bg.1001.png` through `/shots/sh010/renders/v003/bg.1048.png`, interpreting the files as ACEScg.”
+This means: “For the shot named `sh010_bg`, process images `/shots/sh010/renders/v003/bg.993.png` through `/shots/sh010/renders/v003/bg.1056.png`, interpreting the files as ACEScg, with burn-in tokens still reporting the hero range 1001–1048.”
 
 <a id="plans-audio"></a>
 
@@ -243,7 +254,7 @@ This means: “For the shot named `sh010_bg`, process images `/shots/sh010/rende
 Optional. When present on at least one plan, every enabled MOV gets the same AAC-LC stereo 48 kHz guide track at a fixed **192 kbps**:
 
 1. Silence for `layout.slate.duration_frames` (no speech during the slate).
-2. For each plan in order: load `audio.path` (or silence if omitted), resample to 48 kHz stereo, then trim or pad silence to `(frame_end - frame_start + 1) / fps` of that plan’s plates.
+2. For each plan in order: load `audio.path` (or silence if omitted), resample to 48 kHz stereo, then trim or pad silence to `(frame_end - frame_start + 1 + handles.head + handles.tail) / fps` of that plan’s plates (effective range including handles).
 
 Example:
 
@@ -415,7 +426,7 @@ Each entry:
 
 ### 6.6 `slate` (optional)
 
-Defines a title card prepended to each enabled movie and image sequence. Omit the whole block to skip the slate. Sequence files use frame numbers immediately before `plans[].sequence.frame_start`; plate files keep source numbers.
+Defines a title card prepended to each enabled movie and image sequence. Omit the whole block to skip the slate. Sequence files use frame numbers immediately before the first processed plate (`plans[].sequence.frame_start - plans[].sequence.handles.head`, or `frame_start` when handles are omitted); plate files keep source numbers.
 
 | Field             | Required | Type             | Description                  |
 | ----------------- | -------- | ---------------- | ---------------------------- |

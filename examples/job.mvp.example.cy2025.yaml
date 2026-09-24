@@ -282,5 +282,7 @@ plans:
       path: examples/frames/2048x1080/plate.%04d.png
       frame_start: 1001
       frame_end: 1048
+      handles:
+        tail: 8
     audio:
       path: examples/audio/sh010_bg_guide.wav
