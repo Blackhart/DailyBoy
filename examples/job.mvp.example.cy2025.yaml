@@ -8,7 +8,6 @@ metadata:
     "shot": "sh010"
     "version": "v003"
     "artist": "jdoe"
-    "note_prod": "WIP lighting — not for distribution"
     "dailies_root": "/home/blackhart/Development/Personnal/DailyBoy/examples/output"
     "working_colorspace": "ACEScg"
     "note_frame":
@@ -104,7 +103,7 @@ layout:
           b: 0
         opacity: 0.45
         margin: 6
-    - template: "{note_prod}"
+    - template: "{timecode}"
       position:
         mode: "layout"
         anchor: "bottom_center"
@@ -278,11 +277,11 @@ output:
 plans:
   - id: sh010_bg
     input_colorspace: "ACEScg"
+    timecode:
+      start: 101
     sequence:
       path: examples/frames/2048x1080/plate.%04d.png
       frame_start: 1001
       frame_end: 1048
-      handles:
-        tail: 8
     audio:
       path: examples/audio/sh010_bg_guide.wav

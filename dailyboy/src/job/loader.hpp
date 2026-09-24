@@ -13,7 +13,7 @@ namespace dailyboy {
  * Loads the file, converts the document to JSON, validates with
  * \c dailyboy/schemas/job.schema.json, then runs DailyBoy-specific rules
  * (substitution token usage, file sequence patterns, unique output ids,
- * at least one enabled video or image sequence).
+ * at least one enabled video or image sequence, timecode fps consistency).
  *
  * \param job_path Path to the job YAML file.
  * \return \c Status::Internal if \a job_path is empty or the schema file is

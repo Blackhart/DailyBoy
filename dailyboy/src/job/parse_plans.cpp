@@ -72,6 +72,63 @@ StatusOr<std::optional<JobPlanAudio>> parse_plan_audio(
   return std::optional<JobPlanAudio>{std::move(audio)};
 }
 
+StatusOr<JobPlanTimecode::Start> parse_timecode_start(const YAML::Node& node,
+                                                      const std::string& loc) {
+  if (!node || !node.IsScalar()) {
+    return Status::User(with_job_error(USER_ERROR_JOB_101, loc + "."));
+  }
+  const std::string scalar = node.Scalar();
+  if (scalar.find(':') != std::string::npos ||
+      scalar.find(';') != std::string::npos) {
+    return JobPlanTimecode::Start{scalar};
+  }
+  int frames = 0;
+  try {
+    frames = node.as<int>();
+  } catch (const YAML::Exception&) {
+    return Status::User(with_job_error(USER_ERROR_JOB_101, loc + "."));
+  }
+  if (frames < 0) {
+    return Status::User(with_job_error(USER_ERROR_JOB_101, loc + "."));
+  }
+  return JobPlanTimecode::Start{frames};
+}
+
+StatusOr<std::optional<JobPlanTimecode>> parse_plan_timecode(
+    const YAML::Node& node, const std::string& field) {
+  if (!node) {
+    return std::optional<JobPlanTimecode>{};
+  }
+  DAILYBOY_ASSIGN_OR_RETURN(const YAML::Node map, expect_map(node, field));
+  for (const auto& kv : map) {
+    const std::string key = kv.first.as<std::string>();
+    if (key != "start" && key != "drop_frame") {
+      return Status::User(
+          with_job_error(USER_ERROR_JOB_40, field + "." + key + "."));
+    }
+  }
+  if (!map["start"]) {
+    return Status::User(with_job_error(USER_ERROR_JOB_101, field + ".start."));
+  }
+  JobPlanTimecode timecode;
+  DAILYBOY_ASSIGN_OR_RETURN(
+      JobPlanTimecode::Start start,
+      parse_timecode_start(map["start"], field + ".start"));
+  timecode.set_start(std::move(start));
+  DAILYBOY_ASSIGN_OR_RETURN(bool drop_frame,
+                            as_optional<bool>(map, "drop_frame", false, field));
+  timecode.set_drop_frame(drop_frame);
+  if (std::holds_alternative<std::string>(timecode.start())) {
+    const std::string& text = std::get<std::string>(timecode.start());
+    const bool has_semicolon = text.find(';') != std::string::npos;
+    if (has_semicolon && !drop_frame) {
+      return Status::User(
+          with_job_error(USER_ERROR_JOB_102, field + ".start."));
+    }
+  }
+  return std::optional<JobPlanTimecode>{std::move(timecode)};
+}
+
 }  // namespace
 
 StatusOr<JobPlans> parse_plans(const YAML::Node& node) {
@@ -108,10 +165,14 @@ StatusOr<JobPlans> parse_plans(const YAML::Node& node) {
         sequence_map["handles"], base + ".sequence.handles", sequence));
     DAILYBOY_ASSIGN_OR_RETURN(std::optional<JobPlanAudio> audio,
                               parse_plan_audio(map["audio"], base + ".audio"));
+    DAILYBOY_ASSIGN_OR_RETURN(
+        std::optional<JobPlanTimecode> timecode,
+        parse_plan_timecode(map["timecode"], base + ".timecode"));
     plan.set_id(std::move(id));
     plan.set_input_colorspace(std::move(input_colorspace));
     plan.set_sequence(std::move(sequence));
     plan.set_audio(std::move(audio));
+    plan.set_timecode(std::move(timecode));
     plans.push_back(std::move(plan));
   }
   out.set_plans(std::move(plans));

@@ -923,7 +923,35 @@
             }
           }
         },
-        "audio": { "$ref": "#/$defs/planAudio" }
+        "audio": { "$ref": "#/$defs/planAudio" },
+        "timecode": { "$ref": "#/$defs/planTimecode" }
+      }
+    },
+    "planTimecode": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["start"],
+      "description": "Optional SMPTE clock for this plan. start is hero frame_start TC (string HH:MM:SS:FF or frame count from 00:00:00:00). Rate is the common fps of enabled videos (default 24). drop_frame defaults to false.",
+      "properties": {
+        "start": {
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "description": "SMPTE HH:MM:SS:FF (use ; before FF only with drop_frame: true)."
+            },
+            {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Frame count from 00:00:00:00 at the resolved fps."
+            }
+          ]
+        },
+        "drop_frame": {
+          "type": "boolean",
+          "default": false,
+          "description": "Drop-frame counting (only valid when resolved fps is 30 or 60)."
+        }
       }
     },
     "planAudio": {

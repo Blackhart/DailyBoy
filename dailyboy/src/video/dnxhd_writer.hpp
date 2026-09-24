@@ -24,7 +24,8 @@ class DnxhdWriter : public VideoWriter {
 
   Status open(const std::filesystem::path& path, int width, int height, int fps,
               const JobOutputVideo& video,
-              std::shared_ptr<const AudioPcmTimeline> audio = nullptr) override;
+              std::shared_ptr<const AudioPcmTimeline> audio = nullptr,
+              std::optional<std::string> mov_timecode = std::nullopt) override;
   Status write(const Frame& frame) override;
   Status close() override;
 

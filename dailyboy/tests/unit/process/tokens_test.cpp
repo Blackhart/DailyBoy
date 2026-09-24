@@ -79,6 +79,23 @@ TEST(OverlayTokens, ExpandOverlayTokens_BuiltinNameClash_BuiltinWins) {
 }
 
 /*!
+ * \brief Inserts \c {timecode} when the overlay context provides it.
+ */
+TEST(OverlayTokens, ExpandOverlayTokens_TimecodeBuiltin_InsertsValue) {
+  // Prepare
+  dailyboy::OverlayTokenContext context = make_context();
+  context.timecode = "01:00:00:04";
+  std::map<std::string, dailyboy::JobMetadataSubstitutionValue> subs;
+
+  // Test
+  const std::string out =
+      dailyboy::expand_overlay_tokens("TC {timecode}", context, subs);
+
+  // Assert
+  EXPECT_EQ(out, "TC 01:00:00:04");
+}
+
+/*!
  * \brief Leaves an unknown token intact.
  */
 TEST(OverlayTokens, ExpandOverlayTokens_UnknownKey_LeavesLiteral) {

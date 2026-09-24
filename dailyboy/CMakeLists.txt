@@ -20,6 +20,7 @@ add_library(dailyboy SHARED
     src/process/reformat.cpp
     src/process/compositing.cpp
     src/process/tokens.cpp
+    src/process/timecode.cpp
     src/process/burn_ins.cpp
     src/process/slate.cpp
     src/process/colorimetry.cpp

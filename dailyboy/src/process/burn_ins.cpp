@@ -18,13 +18,15 @@
 #include "process/colorimetry.hpp"
 #include "process/compositing.hpp"
 #include "process/reformat.hpp"
+#include "process/timecode.hpp"
 #include "status.hpp"
 
 namespace dailyboy {
 
 namespace {
 
-OverlayTokenContext plate_tokens(const Sequence::Iterator& it, const Job& job) {
+StatusOr<OverlayTokenContext> plate_tokens(const Sequence::Iterator& it,
+                                           const Job& job) {
   OverlayTokenContext tokens;
   const JobSequence& sequence = job.plans().plans().front().sequence();
   tokens.frame = it.frame();
@@ -32,6 +34,11 @@ OverlayTokenContext plate_tokens(const Sequence::Iterator& it, const Job& job) {
   tokens.frame_end = sequence.frame_end();
   tokens.source_file = it.path();
   tokens.plan_id = job.plans().plans().front().id();
+  DAILYBOY_ASSIGN_OR_RETURN(std::string timecode,
+                            format_overlay_timecode(job, it.frame()));
+  if (!timecode.empty()) {
+    tokens.timecode = std::move(timecode);
+  }
   return tokens;
 }
 
@@ -92,7 +99,8 @@ Status write_plate(const Sequence::Iterator& it, const Job& job, Outputs& out,
   log_debug_banner("burn-in frame " + std::to_string(it.frame()));
   DAILYBOY_ASSIGN_OR_RETURN(Frame working,
                             load_working_plate(it, color_pipeline));
-  const OverlayTokenContext tokens = plate_tokens(it, job);
+  DAILYBOY_ASSIGN_OR_RETURN(const OverlayTokenContext tokens,
+                            plate_tokens(it, job));
   for (const JobOutputDisplayView& display_view :
        unique_enabled_display_views(job)) {
     DAILYBOY_ASSIGN_OR_RETURN(

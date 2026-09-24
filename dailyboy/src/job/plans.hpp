@@ -3,6 +3,7 @@
 #include <optional>
 #include <string>
 #include <utility>
+#include <variant>
 #include <vector>
 
 namespace dailyboy {
@@ -69,6 +70,29 @@ class JobPlanAudio {
 };
 
 /*!
+ * \brief Optional SMPTE clock for a plan (\c plans[].timecode).
+ *
+ * \c start is either an SMPTE string (\c HH:MM:SS:FF) or a non-negative frame
+ * count from \c 00:00:00:00 at the resolved output fps.
+ */
+class JobPlanTimecode {
+ public:
+  using Start = std::variant<std::string, int>;
+
+  JobPlanTimecode() = default;
+
+  const Start& start() const { return start_; }
+  void set_start(Start start) { start_ = std::move(start); }
+
+  bool drop_frame() const { return drop_frame_; }
+  void set_drop_frame(bool drop_frame) { drop_frame_ = drop_frame; }
+
+ private:
+  Start start_;
+  bool drop_frame_ = false;
+};
+
+/*!
  * \brief One composited source plan (input colorspace + sequence).
  */
 class JobPlan {
@@ -93,11 +117,18 @@ class JobPlan {
     audio_ = std::move(audio);
   }
 
+  const std::optional<JobPlanTimecode>& timecode() const { return timecode_; }
+  std::optional<JobPlanTimecode>& timecode() { return timecode_; }
+  void set_timecode(std::optional<JobPlanTimecode> timecode) {
+    timecode_ = std::move(timecode);
+  }
+
  private:
   std::string id_;
   std::string input_colorspace_;
   JobSequence sequence_;
   std::optional<JobPlanAudio> audio_;
+  std::optional<JobPlanTimecode> timecode_;
 };
 
 /*!

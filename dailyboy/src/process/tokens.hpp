@@ -2,6 +2,7 @@
 
 #include <filesystem>
 #include <map>
+#include <optional>
 #include <string>
 
 #include "job/metadata.hpp"
@@ -17,13 +18,15 @@ struct OverlayTokenContext {
   int frame_end = 0;
   std::filesystem::path source_file;
   std::string plan_id;
+  /*! Populated when \c plans[].timecode is set; empty otherwise. */
+  std::optional<std::string> timecode;
 };
 
 /*!
  * \brief Expands \c {key} tokens in burn-in / slate templates.
  *
  * Builtins (\c frame, \c frame_start, \c frame_end, \c source_file,
- * \c plan_id) win over a substitution of the same name. String
+ * \c plan_id, \c timecode) win over a substitution of the same name. String
  * substitutions come next, then frame maps (miss yields an empty
  * string). Unknown keys stay as literal \c {key} and log a warning.
  *

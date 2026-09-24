@@ -14,6 +14,7 @@
 #include "image/text.hpp"
 #include "log_internal.hpp"
 #include "process/compositing.hpp"
+#include "process/timecode.hpp"
 #include "status.hpp"
 
 namespace dailyboy {
@@ -35,13 +36,19 @@ Status draw_one_line(Frame& canvas, const JobLayoutSlateLine& line,
   return draw_text(canvas.buf(), origin, text, line.font());
 }
 
-OverlayTokenContext slate_tokens(const Job& job) {
+StatusOr<OverlayTokenContext> slate_tokens(const Job& job) {
   OverlayTokenContext tokens;
   const JobSequence& sequence = job.plans().plans().front().sequence();
   tokens.frame = sequence.frame_start();
   tokens.frame_start = sequence.frame_start();
   tokens.frame_end = sequence.frame_end();
   tokens.plan_id = job.plans().plans().front().id();
+  DAILYBOY_ASSIGN_OR_RETURN(
+      std::string timecode,
+      format_overlay_timecode(job, sequence.frame_start()));
+  if (!timecode.empty()) {
+    tokens.timecode = std::move(timecode);
+  }
   return tokens;
 }
 
@@ -59,7 +66,9 @@ Status write_slate_copies(Outputs& out, const Frame& canvas, const Job& job,
 
 StatusOr<Frame> make_slate_canvas(const Job& job) {
   DAILYBOY_ASSIGN_OR_RETURN(Frame canvas, make_filled_canvas(job));
-  DAILYBOY_RETURN_IF_ERROR(draw_slate_texts(canvas, job, slate_tokens(job)));
+  DAILYBOY_ASSIGN_OR_RETURN(const OverlayTokenContext tokens,
+                            slate_tokens(job));
+  DAILYBOY_RETURN_IF_ERROR(draw_slate_texts(canvas, job, tokens));
   return canvas;
 }
 

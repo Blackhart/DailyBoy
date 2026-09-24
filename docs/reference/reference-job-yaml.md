@@ -15,6 +15,7 @@
   - [4.3 `sequence` (image sequence)](#plans-sequence)
     - [4.3.1 `handles` (optional head/tail frames)](#plans-sequence)
   - [4.4 `audio` (optional guide track)](#plans-audio)
+  - [4.5 `timecode` (optional SMPTE clock)](#plans-timecode)
 - [5. `color` (OpenColorIO)](#section-5-color)
 - [6. `layout` (page layout)](#section-6-layout)
   - [6.1 `canvas`](#layout-canvas)
@@ -165,6 +166,7 @@ DailyBoy provides certain automatic tokens that can be used in templates for sla
 | `{frame_end}`   | The ending frame of the shot as set in `plans[].sequence.frame_end`. |
 | `{source_file}` | The resolved file path for the given image frame. |
 | `{plan_id}`     | The value of the `id` field for that plan (see §4.1). |
+| `{timecode}`    | SMPTE clock for this frame when `plans[].timecode` is set (see §4.5). Absent timecode → unknown-token warning. |
 
 ---
 
@@ -246,12 +248,39 @@ Audio behavior per plan:
 2. **Guide track matching plate range**: For each plan, the guide audio is loaded, resampled to 48 kHz stereo, and trimmed/padded to match the *processed plate range* (`frame_end - frame_start + 1 + handles.head + handles.tail`), then appended to the shared output audio stream.
 3. **Missing/omitted audio**: If `audio.path` is omitted on a plan, silence fills its entire range.
 
-#### Example: full plans section
+<a id="plans-timecode"></a>
+
+### 4.5 `timecode`
+
+The `timecode` block is optional. It specifies a SMPTE timecode clock for overlays (burn-ins, such as `{timecode}`) and for embedding QuickTime MOV timecode metadata. If you do not need timecode, omit the entire `timecode` section from the plan.
+
+| Field        | Required (if `timecode` is present) | Type | Default | Description |
+| ------------ | ----------------------------------- | ---- | ------- | ----------- |
+| `start`      | yes | string `HH:MM:SS:FF` **or** integer ≥ 0 | — | The timecode at the hero `sequence.frame_start`. Strings are SMPTE format, e.g. `01:00:00:00`. Integers specify the frame count from `00:00:00:00` at the resolved frame rate. If `drop_frame` is `true`, use a semicolon before the frame number (`;FF`) as per SMPTE practice. |
+| `drop_frame` | no  | boolean | `false` | Whether to use drop-frame timecode counting. **Must only be `true` at `30` or `60` fps.** |
+
+**Frame Rate Resolution (How the timecode "fps" is chosen):**
+- There is *no* explicit `rate` field in the job.
+- The timecode's frame rate is taken as the common `fps` set on all **enabled** `output.videos[]` entries (the default is `24` if omitted).
+- If `timecode` is set and any enabled video outputs disagree on `fps`, DailyBoy will flag a job error.
+- If there are no enabled video outputs, and only image sequences are enabled, the timecode frame rate is `24`.
+
+**Timecode anchoring and offsets:**
+- The `start` value is the timecode assigned to the hero `frame_start`.
+- Handles (if present) extend before and/or after the hero range, and timecodes before/after `start` are counted using normal SMPTE rules. For example, a head handle will yield negative or earlier timecode values prior to the `frame_start`.
+- The slate burn-in (if used) shows the `start` timecode on every slate frame.
+- For QuickTime MOV files, the embedded timecode is for the *first media frame* as encoded (which includes slate frames and head handles if present).
+
+#### Example: plans section with all relevant fields
 
 ```yaml
 plans:
   - id: sh010_bg
     input_colorspace: "ACEScg"
+    timecode:
+      start: "01:00:00:00"
+      # drop_frame: false
+      # You can also use: start: 86400   # (frame count at 24 fps)
     sequence:
       path: /shots/sh010/renders/v003/bg.%04d.png
       frame_start: 1001
@@ -263,14 +292,16 @@ plans:
       path: "{dailies_root}/audio/sh010_guide.wav"
 ```
 
-**What this does:**
+**Explanation:**
 
-- Defines one shot, referenced as `sh010_bg`.
-- Expects input images `/shots/sh010/renders/v003/bg.993.png` through `/shots/sh010/renders/v003/bg.1056.png` (`frame_start` 1001, `frame_end` 1048, `handles` 8 each side).
-- Treats all images as ACEScg for color conversion.
-- If supplied, guide audio is synchronized to the full plate range (including handles) and silence is enforced over the slate.
+- Declares a plan called `sh010_bg`.
+- Input plate images are expected for frames 993 to 1056, due to 8 head and 8 tail handles (`frame_start` 1001, `frame_end` 1048).
+- All frames are interpreted as ACEScg color space for correct color management.
+- If a guide audio track is provided, it is conformed to the entire plate range (handles included), and silence covers the slate duration.
+- Timecode at hero frame 1001 is set to `01:00:00:00`. The head handle frame 993 gets the timecode `00:59:59:16` at 24 fps, progressing forward by one for every frame.
+- The hero range—used for overlays and burn-ins—remains 1001–1048; the handles merely extend the processed image/audio beyond this range.
 
-The hero range for overlays/burn-ins is always 1001–1048, even though handles extend image/audio processing before/after this range.
+This ensures your timecode overlays and MOV files are always consistent and predictable, even when using handles or slates.
 
 ---
 
@@ -528,7 +559,7 @@ Each entry specifies one movie output.
 | `display_view`  | yes      | object (`display`, `view`)    | —                  | OCIO DisplayView for review     |
 | `signal`        | yes      | object — see [§7.2.0](#output-signal) | —                  | Encode color tags + YCbCr matrix|
 | `path`          | yes      | string (non-empty)            | —                  | Output file path (QuickTime `.mov`; muxer is always `mov`) |
-| `fps`           | no       | integer ≥ 1                   | `24`               | Frames per second               |
+| `fps`           | no       | integer ≥ 1                   | `24`               | Frames per second. When `plans[].timecode` is set, every enabled video must share the same `fps` (see §4.5). |
 | `codec`         | yes      | `h264`, `mjpeg`, `dnxhd`, `prores` | —                  | Output codec                    |
 | `codec_options` | no       | object                        | codec defaults     | Codec parameters (optional)     |
 
@@ -758,6 +789,8 @@ metadata:
 plans:
   - id: my_shot
     input_colorspace: "ACEScg"   # CHANGE_ME: OCIO input colorspace
+    timecode:
+      start: "01:00:00:00"       # optional; omit block if unused
     sequence:
       path: /path/to/frames/plate.%04d.png   # CHANGE_ME
       frame_start: 1001                      # CHANGE_ME

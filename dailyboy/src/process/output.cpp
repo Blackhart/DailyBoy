@@ -8,6 +8,7 @@
 #include <dailyboy/log.hpp>
 #include <filesystem>
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
 #include <system_error>
@@ -19,6 +20,7 @@
 #include "image/sequence_writer.hpp"
 #include "process/colorimetry.hpp"
 #include "process/path_tokens.hpp"
+#include "process/timecode.hpp"
 #include "status.hpp"
 #include "video/audio_timeline.hpp"
 #include "video/video_writer.hpp"
@@ -176,14 +178,19 @@ Status open_movies(std::vector<ActiveVideo>& movies, bool& movies_open,
                    const Frame& frame, const Job& job, int& audio_fps,
                    std::shared_ptr<const AudioPcmTimeline>& audio) {
   log_debug("render: open movies " + size_text(frame));
+  DAILYBOY_ASSIGN_OR_RETURN(std::string mov_timecode, format_mov_timecode(job));
+  std::optional<std::string> timecode_tag;
+  if (!mov_timecode.empty()) {
+    timecode_tag = std::move(mov_timecode);
+  }
   for (ActiveVideo& active : movies) {
     log_debug("render: open movie " + active.video->id() + " " +
               active.path.string());
     DAILYBOY_RETURN_IF_ERROR(ensure_movie_audio_timeline(
         job, active.video->fps(), audio_fps, audio));
-    DAILYBOY_RETURN_IF_ERROR(
-        active.writer->open(active.path, frame.width(), frame.height(),
-                            active.video->fps(), *active.video, audio));
+    DAILYBOY_RETURN_IF_ERROR(active.writer->open(
+        active.path, frame.width(), frame.height(), active.video->fps(),
+        *active.video, audio, timecode_tag));
   }
   movies_open = true;
   return Status::Ok();
