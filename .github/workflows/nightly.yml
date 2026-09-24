@@ -12,6 +12,8 @@ concurrency:
 env:
   CI_IMAGE_UBUNTU_BASE: dailyboy-ci:ubuntu24-base
   CI_IMAGE_UBUNTU_CY2026: dailyboy-ci:ubuntu24-cy2026
+  # Cron always tests develop; workflow_dispatch uses the selected commit.
+  NIGHTLY_REF: ${{ github.event_name == 'schedule' && 'develop' || github.sha }}
 
 jobs:
   image-ubuntu24-base:
@@ -21,7 +23,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: develop
+          ref: ${{ env.NIGHTLY_REF }}
       - uses: docker/setup-buildx-action@v4
       - name: Build Ubuntu base image
         uses: docker/build-push-action@v7
@@ -48,7 +50,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: develop
+          ref: ${{ env.NIGHTLY_REF }}
       - uses: actions/download-artifact@v5
         with:
           name: dailyboy-ci-ubuntu24-base-nightly
@@ -75,7 +77,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: develop
+          ref: ${{ env.NIGHTLY_REF }}
       - uses: actions/download-artifact@v5
         with:
           name: dailyboy-ci-ubuntu24-cy2026-nightly
@@ -127,7 +129,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: develop
+          ref: ${{ env.NIGHTLY_REF }}
       - uses: actions/download-artifact@v5
         with:
           name: dailyboy-ci-ubuntu24-cy2026-nightly
@@ -168,7 +170,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: develop
+          ref: ${{ env.NIGHTLY_REF }}
       - uses: actions/download-artifact@v5
         with:
           name: dailyboy-ci-ubuntu24-cy2026-nightly
@@ -205,7 +207,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: develop
+          ref: ${{ env.NIGHTLY_REF }}
       - uses: actions/download-artifact@v5
         with:
           name: dailyboy-ci-ubuntu24-cy2026-nightly
