@@ -1,0 +1,146 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Override SemVer (ex. 1.2.0). Leave empty for git-cliff auto-bump."
+        required: false
+        type: string
+        default: ""
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: release
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: develop
+          token: ${{ secrets.RELEASE_TOKEN }}
+
+      - name: Install git-cliff
+        run: ./ci/install-git-cliff.sh
+
+      - name: Configure git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Resolve version
+        id: version
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          git fetch origin main develop --tags
+          git checkout develop
+          git reset --hard origin/develop
+
+          if [[ -n "${INPUT_VERSION}" ]]; then
+            VERSION="${INPUT_VERSION}"
+            echo "Using override version ${VERSION}"
+          else
+            VERSION="$(git cliff --bumped-version | sed 's/^v//')"
+            echo "Using auto-bump version ${VERSION}"
+          fi
+
+          if [[ ! "${VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "error: invalid SemVer '${VERSION}' (expected X.Y.Z)" >&2
+            exit 1
+          fi
+
+          if git rev-parse "v${VERSION}" >/dev/null 2>&1; then
+            echo "error: tag v${VERSION} already exists" >&2
+            exit 1
+          fi
+
+          if git show-ref --verify --quiet "refs/remotes/origin/release/${VERSION}"; then
+            echo "error: branch release/${VERSION} already exists on origin" >&2
+            exit 1
+          fi
+
+          if ! git merge-base --is-ancestor origin/main origin/develop; then
+            echo "error: origin/main is not an ancestor of origin/develop (history must stay linear)" >&2
+            exit 1
+          fi
+
+          echo "version=${VERSION}" >> "${GITHUB_OUTPUT}"
+
+      - name: Create release branch
+        run: git checkout -b "release/${{ steps.version.outputs.version }}"
+
+      - name: Promote Unreleased changelog
+        run: ./ci/promote-unreleased-changelog.sh "${{ steps.version.outputs.version }}"
+
+      - name: Bump version files
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          sed -i -E "s/^([[:space:]]*VERSION )[0-9]+\.[0-9]+\.[0-9]+/\1${VERSION}/" CMakeLists.txt
+          sed -i -E "s/^version = \".*\"/version = \"${VERSION}\"/" api/python/pyproject.toml
+          grep -E "^[[:space:]]*VERSION ${VERSION}$" CMakeLists.txt
+          grep -E "^version = \"${VERSION}\"$" api/python/pyproject.toml
+
+      - name: Commit release
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          git add CHANGELOG.md CMakeLists.txt api/python/pyproject.toml
+          git commit -m "chore(release): release DailyBoy ${VERSION}"
+          git push origin "HEAD:release/${VERSION}"
+
+      - name: Fast-forward main, tag, and develop
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          RELEASE_REF="release/${VERSION}"
+
+          git fetch origin main develop
+          git checkout -B main origin/main
+          git merge --ff-only "${RELEASE_REF}"
+          git tag -a "v${VERSION}" -m "DailyBoy ${VERSION}"
+          git push origin main
+          git push origin "v${VERSION}"
+
+          git checkout -B develop origin/develop
+          git merge --ff-only "${RELEASE_REF}"
+          git push origin develop
+
+          git push origin --delete "${RELEASE_REF}"
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          NOTES="$(mktemp)"
+          python3 - "${VERSION}" "${NOTES}" <<'PY'
+          import re
+          import sys
+          from pathlib import Path
+
+          version = sys.argv[1]
+          notes_path = Path(sys.argv[2])
+          text = Path("CHANGELOG.md").read_text(encoding="utf-8")
+          pattern = rf"(?ms)^## \[{re.escape(version)}\] - [0-9-]+\n(.*?)(?=^## \[|\Z)"
+          match = re.search(pattern, text)
+          if not match:
+              raise SystemExit(f"error: section [{version}] not found in CHANGELOG.md")
+          notes_path.write_text(match.group(1).strip() + "\n", encoding="utf-8")
+          PY
+          gh release create "v${VERSION}" \
+            --title "DailyBoy ${VERSION}" \
+            --notes-file "${NOTES}" \
+            --target main

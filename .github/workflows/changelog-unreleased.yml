@@ -1,0 +1,47 @@
+name: Changelog Unreleased
+
+on:
+  push:
+    branches: [develop]
+  workflow_dispatch:
+
+concurrency:
+  group: changelog-unreleased
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  update-unreleased:
+    name: update-unreleased
+    runs-on: ubuntu-24.04
+    # Skip the bot's own changelog commits to avoid an update loop.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'push' &&
+       !startsWith(github.event.head_commit.message, 'chore(changelog):'))
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: develop
+          token: ${{ secrets.RELEASE_TOKEN }}
+
+      - name: Install git-cliff
+        run: ./ci/install-git-cliff.sh
+
+      - name: Update Unreleased section
+        run: ./ci/update-unreleased-changelog.sh
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet -- CHANGELOG.md; then
+            echo "CHANGELOG.md unchanged"
+            exit 0
+          fi
+          git add CHANGELOG.md
+          git commit -m "chore(changelog): update unreleased" -m "[skip ci]"
+          git push origin HEAD:develop
