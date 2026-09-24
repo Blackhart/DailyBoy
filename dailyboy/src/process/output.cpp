@@ -77,6 +77,9 @@ StatusOr<ActiveVideo> collect_one_video(const Job& job, std::size_t index,
   active.video = &video;
   active.path = output_path;
   active.writer = make_video_writer(video.codec());
+  if (!active.writer) {
+    return Status::Internal(std::string(INTERNAL_ERROR_ENCODE_2));
+  }
   return active;
 }
 

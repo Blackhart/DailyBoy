@@ -10,6 +10,7 @@
 
 extern "C" {
 #include <libavutil/frame.h>
+#include <libavutil/pixfmt.h>
 
 struct AVCodecContext;
 struct AVDictionary;
@@ -19,6 +20,14 @@ struct SwsContext;
 }
 
 namespace dailyboy {
+
+/*!
+ * \brief Packed RGB sample depth used as the swscale source for encode.
+ */
+enum class RgbEncodeDepth : std::uint8_t {
+  Bits8 = 0,
+  Bits16 = 1,
+};
 
 /*!
  * \brief Drops FFmpeg stderr chatter (encoder stats, swscaler, faststart).
@@ -59,17 +68,40 @@ Status ffmpeg_error(const std::string& detail);
 
 /*!
  * \brief Sends \a frame (or flush if null) and muxes received packets.
+ *
+ * Does not install a \c FfmpegLogCapture; callers must hold one if they want
+ * \c av_log text on failure.
  */
 Status send_packet_loop(AVFormatContext* format, AVCodecContext* codec,
                         AVStream* stream, AVFrame* frame);
 
 /*!
- * \brief Extracts packed RGB8 from \a frame into \a rgb.
+ * \brief RGB encode depth matching the bits-per-component of \a pix_fmt.
+ *
+ * Destinations with more than 8 bits per component use 16-bit RGB so float
+ * ImageBuf precision is not collapsed before swscale.
  */
-Status extract_rgb8(const Frame& frame, std::vector<uint8_t>& rgb);
+RgbEncodeDepth rgb_encode_depth_for_pix_fmt(AVPixelFormat pix_fmt);
 
 /*!
- * \brief Stages RGB8 for \c sws_scale with aligned stride and SIMD overread.
+ * \brief Packed RGB swscale source format for \a depth.
+ */
+AVPixelFormat sws_rgb_pix_fmt(RgbEncodeDepth depth);
+
+/*!
+ * \brief Bytes per packed RGB pixel for \a depth (3 or 6).
+ */
+int rgb_bytes_per_pixel(RgbEncodeDepth depth);
+
+/*!
+ * \brief Extracts packed RGB from \a frame at \a depth into \a rgb.
+ */
+Status extract_rgb(const Frame& frame, RgbEncodeDepth depth,
+                   std::vector<uint8_t>& rgb);
+
+/*!
+ * \brief Stages packed RGB for \c sws_scale with aligned stride and SIMD
+ *        overread.
  *
  * Always copies into \a padded (never returns \a rgb). Stride is 32-byte
  * aligned; allocation includes trailing bytes past the last row so swscale
@@ -77,20 +109,37 @@ Status extract_rgb8(const Frame& frame, std::vector<uint8_t>& rgb);
  *
  * \return Pointer to \a padded. \a dst_stride is the padded row stride.
  */
-const uint8_t* rgb8_with_encode_pad(const std::vector<uint8_t>& rgb, int width,
-                                    int height, int encode_width,
-                                    int encode_height,
-                                    std::vector<uint8_t>& padded,
-                                    int* dst_stride);
+const uint8_t* rgb_with_encode_pad(const std::vector<uint8_t>& rgb, int width,
+                                   int height, int encode_width,
+                                   int encode_height, RgbEncodeDepth depth,
+                                   std::vector<uint8_t>& padded,
+                                   int* dst_stride);
 
 /*!
- * \brief Fills packed-RGB24 \c sws_scale source arrays (null-padded).
+ * \brief Fills packed-RGB \c sws_scale source arrays (null-padded).
  *
  * \a planes and \a strides must be \c AV_NUM_DATA_POINTERS long.
  */
-void fill_rgb24_sws_src(const uint8_t* src, int stride,
-                        const uint8_t* (&planes)[AV_NUM_DATA_POINTERS],
-                        int (&strides)[AV_NUM_DATA_POINTERS]);
+void fill_rgb_sws_src(const uint8_t* src, int stride,
+                      const uint8_t* (&planes)[AV_NUM_DATA_POINTERS],
+                      int (&strides)[AV_NUM_DATA_POINTERS]);
+
+/*!
+ * \brief Builds an RGB→YUV swscale context for \a dst_pix_fmt.
+ *
+ * Source format is RGB24 or RGB48 from \c rgb_encode_depth_for_pix_fmt.
+ */
+Status create_rgb_to_yuv_sws(int encode_width, int encode_height,
+                             AVPixelFormat dst_pix_fmt,
+                             const JobOutputVideoSignal& signal,
+                             SwsContext** out_sws);
+
+/*!
+ * \brief Extracts RGB at the depth for \a yuv, pads, and runs \c sws_scale.
+ */
+Status convert_frame_rgb_to_yuv(const Frame& frame, int width, int height,
+                                int encode_width, int encode_height,
+                                SwsContext* sws, AVFrame* yuv);
 
 /*!
  * \brief Sets color primaries, transfer, matrix, and range from \a signal.

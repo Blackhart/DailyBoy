@@ -5,6 +5,8 @@
 
 #include "video/video_writer.hpp"
 
+#include <cassert>
+
 #include "video/dnxhd_writer.hpp"
 #include "video/h264_writer.hpp"
 #include "video/mjpeg_writer.hpp"
@@ -24,7 +26,8 @@ std::unique_ptr<VideoWriter> make_video_writer(
     case JobOutputVideo::JobOutputVideoCodecValue::H264:
       return std::make_unique<H264Writer>();
   }
-  return std::make_unique<H264Writer>();
+  assert(false && "unknown JobOutputVideoCodecValue");
+  return nullptr;
 }
 
 }  // namespace dailyboy

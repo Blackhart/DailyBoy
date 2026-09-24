@@ -124,11 +124,11 @@ Versions and git tags are defined in `cmake/versions/`. All third-party deps are
 - [x265](https://bitbucket.org/multicoreware/x265_git) — H.265 encoder
 - [libaom](https://aomedia.googlesource.com/aom/) — AV1 encoder/decoder
 - [libheif](https://github.com/strukturag/libheif) — HEIF/HEIC
-- [FFmpeg](https://ffmpeg.org/) — video reading and writing (**MJPEG, DNxHD, ProRes, H.264, H.265, MOV, MP4**)
+- [FFmpeg](https://ffmpeg.org/) — video writing for dailies (**MJPEG, DNxHD, ProRes, H.264** into QuickTime **MOV**; bundled build also enables H.265/MP4 for deps, not exposed in the job YAML)
 - [OpenImageIO](https://openimageio.org/) — advanced image/video I/O (**EXR, TIFF, OCIO, JPEG, PNG, RAW, FFmpeg, TBB, HEIF, etc.**)
 
 #### Notes
-- FFmpeg is built with: **MJPEG, DNxHD, ProRes (prores_ks), H.264, H.265, MOV, MP4** support.
+- Job video outputs use FFmpeg encoders **MJPEG, DNxHD, ProRes (prores_ks), H.264** with muxer **`mov`** only. The bundled FFmpeg build also compiles **H.265** and the **mp4** muxer for dependency completeness; they are not selectable in the job file.
 - OpenImageIO is built with: **EXR, TIFF, OCIO, JPEG, PNG, RAW, FFmpeg, TBB, HEIF**, and more.
 
 ## Build, install, and test with CMake

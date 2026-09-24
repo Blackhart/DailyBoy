@@ -19,7 +19,6 @@ extern "C" {
 #include <dailyboy/log.hpp>
 #include <string>
 #include <variant>
-#include <vector>
 
 #include "error/video.hpp"
 #include "status.hpp"
@@ -78,8 +77,6 @@ AVPixelFormat prores_av_pix_fmt(
       return AV_PIX_FMT_YUV422P10;
     case Pix::Yuv444p10:
       return AV_PIX_FMT_YUV444P10;
-    case Pix::Yuva444p10:
-      return AV_PIX_FMT_YUVA444P10;
   }
   return AV_PIX_FMT_YUV422P10;
 }
@@ -92,8 +89,6 @@ const char* pix_fmt_name(
       return "yuv422p10";
     case Pix::Yuv444p10:
       return "yuv444p10";
-    case Pix::Yuva444p10:
-      return "yuva444p10";
   }
   return "yuv422p10";
 }
@@ -168,16 +163,6 @@ Status apply_vendor(AVCodecContext* codec,
   return Status::Ok();
 }
 
-Status apply_alpha_bits(AVCodecContext* codec,
-                        const JobOutputVideoProres& options) {
-  log_debug("encode: alpha_bits " + std::to_string(options.alpha_bits()));
-  if (av_opt_set_int(codec->priv_data, "alpha_bits", options.alpha_bits(), 0) <
-      0) {
-    return ffmpeg_error("failed to set prores alpha_bits.");
-  }
-  return Status::Ok();
-}
-
 Status apply_prores_codec_options(AVCodecContext* codec,
                                   const JobOutputVideoProres& options) {
   DAILYBOY_RETURN_IF_ERROR(apply_pix_fmt(codec, options));
@@ -186,7 +171,6 @@ Status apply_prores_codec_options(AVCodecContext* codec,
   DAILYBOY_RETURN_IF_ERROR(apply_bits_per_mb(codec, options));
   DAILYBOY_RETURN_IF_ERROR(apply_mbs_per_slice(codec, options));
   DAILYBOY_RETURN_IF_ERROR(apply_vendor(codec, options));
-  DAILYBOY_RETURN_IF_ERROR(apply_alpha_bits(codec, options));
   return Status::Ok();
 }
 
@@ -306,14 +290,9 @@ Status ProresWriter::open(const std::filesystem::path& path, int width,
                              av_error_string(err)));
   }
 
-  av_->sws = sws_getContext(encode_width_, encode_height_, AV_PIX_FMT_RGB24,
-                            encode_width_, encode_height_, av_->codec->pix_fmt,
-                            SWS_BILINEAR, nullptr, nullptr, nullptr);
-  if (av_->sws == nullptr) {
-    return fail(ffmpeg_error("sws_getContext failed."));
-  }
-  DAILYBOY_RETURN_IF_ERROR(
-      fail(apply_sws_video_signal(av_->sws, video.signal())));
+  DAILYBOY_RETURN_IF_ERROR(fail(create_rgb_to_yuv_sws(
+      encode_width_, encode_height_, av_->codec->pix_fmt, video.signal(),
+      &av_->sws)));
 
   av_->yuv = av_frame_alloc();
   if (av_->yuv == nullptr) {
@@ -360,22 +339,9 @@ Status ProresWriter::write(const Frame& frame) {
     return Status::User(std::string(USER_ERROR_ENCODE_3));
   }
 
-  std::vector<uint8_t> rgb;
-  DAILYBOY_RETURN_IF_ERROR(extract_rgb8(frame, rgb));
-  std::vector<uint8_t> padded;
-  int dst_stride = 0;
-  const uint8_t* src = rgb8_with_encode_pad(
-      rgb, width_, height_, encode_width_, encode_height_, padded, &dst_stride);
-
-  const uint8_t* planes[AV_NUM_DATA_POINTERS];
-  int strides[AV_NUM_DATA_POINTERS];
-  fill_rgb24_sws_src(src, dst_stride, planes, strides);
-  int err = av_frame_make_writable(av_->yuv);
-  if (err < 0) {
-    return ffmpeg_error("av_frame_make_writable: " + av_error_string(err));
-  }
-  sws_scale(av_->sws, planes, strides, 0, encode_height_, av_->yuv->data,
-            av_->yuv->linesize);
+  FfmpegLogCapture ffmpeg_logs;
+  DAILYBOY_RETURN_IF_ERROR(convert_frame_rgb_to_yuv(
+      frame, width_, height_, encode_width_, encode_height_, av_->sws, av_->yuv));
   av_->yuv->pts = pts_;
   DAILYBOY_RETURN_IF_ERROR(
       send_packet_loop(av_->format, av_->codec, av_->stream, av_->yuv));
@@ -392,13 +358,13 @@ Status ProresWriter::close() {
     audio_.reset();
     return Status::Ok();
   }
+  FfmpegLogCapture ffmpeg_logs;
   Status status =
       send_packet_loop(av_->format, av_->codec, av_->stream, nullptr);
   if (status.ok() && audio_) {
     status = audio_->flush_remaining_audio();
   }
   if (status.ok()) {
-    FfmpegLogCapture ffmpeg_logs;
     const int err = av_write_trailer(av_->format);
     if (err < 0) {
       status = ffmpeg_error("av_write_trailer: " + av_error_string(err));

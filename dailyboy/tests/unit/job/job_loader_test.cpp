@@ -6497,7 +6497,6 @@ TEST(JobLoader, LoadJob_OmittedProresOptions_UsesHqDefaults) {
   EXPECT_EQ(options.mbs_per_slice(),
             dailyboy::JobOutputVideoProres::kDefaultMbsPerSlice);
   EXPECT_EQ(options.vendor(), dailyboy::JobOutputVideoProres::kDefaultVendor);
-  EXPECT_EQ(options.alpha_bits(), 0);
   EXPECT_TRUE(options.faststart());
 }
 
@@ -6518,14 +6517,13 @@ TEST(JobLoader, LoadJob_ProresOptions_ParsesAllFields) {
             dailyboy::JobOutputVideoProres::JobOutputVideoProresProfileValue::
                 FourFourFourFour);
   EXPECT_EQ(options.pix_fmt(), dailyboy::JobOutputVideoProres::
-                                   JobOutputVideoProresPixFmtValue::Yuva444p10);
+                                   JobOutputVideoProresPixFmtValue::Yuv444p10);
   EXPECT_EQ(
       options.quant_mat(),
       dailyboy::JobOutputVideoProres::JobOutputVideoProresQuantMatValue::Hq);
   EXPECT_EQ(options.bits_per_mb(), 8000);
   EXPECT_EQ(options.mbs_per_slice(), 4);
   EXPECT_EQ(options.vendor(), "Lavc");
-  EXPECT_EQ(options.alpha_bits(), 16);
   EXPECT_FALSE(options.faststart());
 }
 
@@ -6590,9 +6588,9 @@ TEST(JobLoader, LoadJob_ProresVendorInvalid_ReturnsUserError) {
 }
 
 /*!
- * \brief Rejects ProRes alpha_bits on a 422 profile.
+ * \brief Rejects ProRes alpha_bits (alpha is not supported).
  */
-TEST(JobLoader, LoadJob_ProresAlphaBitsOnHq_ReturnsUserError) {
+TEST(JobLoader, LoadJob_ProresAlphaBits_ReturnsUserError) {
   // Prepare
   const std::filesystem::path yaml =
       write_prores_job("alpha_hq.yaml", "        alpha_bits: 8\n");
@@ -6604,6 +6602,26 @@ TEST(JobLoader, LoadJob_ProresAlphaBitsOnHq_ReturnsUserError) {
   ASSERT_FALSE(job.ok());
   EXPECT_EQ(job.status().code(), dailyboy::Status::Code::kUser);
   EXPECT_TRUE(job.status().message().find("alpha_bits") != std::string::npos)
+      << job.status().message();
+}
+
+/*!
+ * \brief Rejects ProRes yuva444p10 pix_fmt.
+ */
+TEST(JobLoader, LoadJob_ProresYuvaPixFmt_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_prores_job(
+      "yuva.yaml",
+      "        profile: 4444\n"
+      "        pix_fmt: yuva444p10\n");
+
+  // Test
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  ASSERT_FALSE(job.ok());
+  EXPECT_EQ(job.status().code(), dailyboy::Status::Code::kUser);
+  EXPECT_TRUE(job.status().message().find("pix_fmt") != std::string::npos)
       << job.status().message();
 }
 

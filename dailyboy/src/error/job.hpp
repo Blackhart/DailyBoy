@@ -731,12 +731,10 @@ inline constexpr std::string_view USER_ERROR_JOB_96 =
 
 /*!
  * \var USER_ERROR_JOB_97
- * \brief Message when ProRes \c alpha_bits is incompatible with profile or
- *        pix_fmt.
+ * \brief Message when ProRes \c alpha_bits is set (alpha is not supported).
  */
 inline constexpr std::string_view USER_ERROR_JOB_97 =
-    "output: alpha_bits must be 0 unless pix_fmt is yuva444p10 with profile "
-    "4444 or 4444xq.";
+    "output: ProRes alpha_bits is not supported (source images have no alpha).";
 
 /*!
  * \var USER_ERROR_JOB_98
