@@ -5,8 +5,8 @@ extern "C" {
 #include <libavformat/avformat.h>
 }
 
-#include <dailyboy/makeDaily.hpp>
 #include <array>
+#include <dailyboy/makeDaily.hpp>
 #include <filesystem>
 #include <fstream>
 #include <string>
