@@ -19,12 +19,12 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           ref: develop
-      - uses: docker/setup-buildx-action@v3
+      - uses: docker/setup-buildx-action@v4
       - name: Build Ubuntu base image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: docker/ubuntu
           file: docker/ubuntu/Dockerfile.ubuntu24.base
@@ -34,7 +34,7 @@ jobs:
           cache-to: type=gha,mode=max,scope=dailyboy-ci-ubuntu24-base
       - name: Export Ubuntu base image
         run: docker save ${{ env.CI_IMAGE_UBUNTU_BASE }} -o /tmp/dailyboy-ci-ubuntu24-base.tar
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: dailyboy-ci-ubuntu24-base-nightly
           path: /tmp/dailyboy-ci-ubuntu24-base.tar
@@ -46,10 +46,10 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           ref: develop
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         with:
           name: dailyboy-ci-ubuntu24-base-nightly
           path: /tmp
@@ -61,7 +61,7 @@ jobs:
         run: docker build -t ${{ env.CI_IMAGE_UBUNTU_CY2026 }} -f docker/ubuntu/Dockerfile.ubuntu24.cy2026 docker/ubuntu
       - name: Export Ubuntu CY2026 image
         run: docker save ${{ env.CI_IMAGE_UBUNTU_CY2026 }} -o /tmp/dailyboy-ci-ubuntu24-cy2026.tar
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: dailyboy-ci-ubuntu24-cy2026-nightly
           path: /tmp/dailyboy-ci-ubuntu24-cy2026.tar
@@ -73,17 +73,17 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 360
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           ref: develop
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         with:
           name: dailyboy-ci-ubuntu24-cy2026-nightly
           path: /tmp
       - name: Load Ubuntu CY2026 image
         run: docker load -i /tmp/dailyboy-ci-ubuntu24-cy2026.tar
       - name: Cache ccache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: .ccache
           key: ccache-ubuntu24-cy2026-nightly-${{ hashFiles('cmake/Versions.cmake', 'cmake/versions/**', 'cmake/deps/**', 'CMakePresets.json') }}-${{ github.sha }}
@@ -92,7 +92,7 @@ jobs:
             ccache-ubuntu24-cy2026-debug-
             ccache-cy2026-debug-
       - name: Cache CMake deps
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: build/docker/ubuntu24/CY2026/debug/_deps
           key: deps-ubuntu24-cy2026-debug-${{ hashFiles('cmake/Versions.cmake', 'cmake/versions/**', 'cmake/deps/**') }}
@@ -106,7 +106,7 @@ jobs:
       - name: Coverage reports
         run: DAILYBOY_CI_IMAGE=${{ env.CI_IMAGE_UBUNTU_CY2026 }} ./ci/linux/docker.sh ./ci/linux/coverage_upload.sh 2026
       - name: Upload coverage HTML
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: coverage-html-nightly
           path: build/docker/ubuntu24/CY2026/debug/coverage/
@@ -125,17 +125,17 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 360
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           ref: develop
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         with:
           name: dailyboy-ci-ubuntu24-cy2026-nightly
           path: /tmp
       - name: Load Ubuntu CY2026 image
         run: docker load -i /tmp/dailyboy-ci-ubuntu24-cy2026.tar
       - name: Cache ccache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: .ccache
           key: ccache-ubuntu24-cy2026-sanitize-${{ hashFiles('cmake/Versions.cmake', 'cmake/versions/**', 'cmake/deps/**', 'CMakePresets.json') }}-${{ github.sha }}
@@ -144,7 +144,7 @@ jobs:
             ccache-ubuntu24-cy2026-sanitize-
             ccache-cy2026-sanitize-
       - name: Cache CMake deps
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: build/docker/ubuntu24/CY2026/sanitize/_deps
           key: deps-ubuntu24-cy2026-sanitize-${{ hashFiles('cmake/Versions.cmake', 'cmake/versions/**', 'cmake/deps/**') }}
@@ -166,17 +166,17 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 360
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           ref: develop
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         with:
           name: dailyboy-ci-ubuntu24-cy2026-nightly
           path: /tmp
       - name: Load Ubuntu CY2026 image
         run: docker load -i /tmp/dailyboy-ci-ubuntu24-cy2026.tar
       - name: Cache ccache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: .ccache
           key: ccache-ubuntu24-cy2026-debug-${{ hashFiles('cmake/Versions.cmake', 'cmake/versions/**', 'cmake/deps/**', 'CMakePresets.json') }}-${{ github.sha }}
@@ -185,7 +185,7 @@ jobs:
             ccache-ubuntu24-cy2026-debug-
             ccache-cy2026-debug-
       - name: Cache CMake deps
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: build/docker/ubuntu24/CY2026/debug/_deps
           key: deps-ubuntu24-cy2026-debug-${{ hashFiles('cmake/Versions.cmake', 'cmake/versions/**', 'cmake/deps/**') }}
@@ -203,17 +203,17 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 360
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           ref: develop
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         with:
           name: dailyboy-ci-ubuntu24-cy2026-nightly
           path: /tmp
       - name: Load Ubuntu CY2026 image
         run: docker load -i /tmp/dailyboy-ci-ubuntu24-cy2026.tar
       - name: Cache ccache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: .ccache
           key: ccache-ubuntu24-cy2026-release-${{ hashFiles('cmake/Versions.cmake', 'cmake/versions/**', 'cmake/deps/**', 'CMakePresets.json') }}-${{ github.sha }}
@@ -222,7 +222,7 @@ jobs:
             ccache-ubuntu24-cy2026-release-
             ccache-cy2026-release-
       - name: Cache CMake deps
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: build/docker/ubuntu24/CY2026/release/_deps
           key: deps-ubuntu24-cy2026-release-${{ hashFiles('cmake/Versions.cmake', 'cmake/versions/**', 'cmake/deps/**') }}

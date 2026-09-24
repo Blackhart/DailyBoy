@@ -9,10 +9,11 @@
 #include "status.hpp"
 
 extern "C" {
+#include <libavutil/frame.h>
+
 struct AVCodecContext;
 struct AVDictionary;
 struct AVFormatContext;
-struct AVFrame;
 struct AVStream;
 struct SwsContext;
 }
@@ -77,6 +78,15 @@ const uint8_t* rgb8_with_encode_pad(const std::vector<uint8_t>& rgb, int width,
                                     int encode_height,
                                     std::vector<uint8_t>& padded,
                                     int* dst_stride);
+
+/*!
+ * \brief Fills packed-RGB24 \c sws_scale source arrays (null-padded).
+ *
+ * \a planes and \a strides must be \c AV_NUM_DATA_POINTERS long.
+ */
+void fill_rgb24_sws_src(const uint8_t* src, int stride,
+                        const uint8_t* (&planes)[AV_NUM_DATA_POINTERS],
+                        int (&strides)[AV_NUM_DATA_POINTERS]);
 
 /*!
  * \brief Sets color primaries, transfer, matrix, and range from \a signal.

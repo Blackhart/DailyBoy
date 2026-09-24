@@ -183,6 +183,17 @@ const uint8_t* rgb8_with_encode_pad(const std::vector<uint8_t>& rgb, int width,
   return padded.data();
 }
 
+void fill_rgb24_sws_src(const uint8_t* src, int stride,
+                        const uint8_t* (&planes)[AV_NUM_DATA_POINTERS],
+                        int (&strides)[AV_NUM_DATA_POINTERS]) {
+  for (int i = 0; i < AV_NUM_DATA_POINTERS; ++i) {
+    planes[i] = nullptr;
+    strides[i] = 0;
+  }
+  planes[0] = src;
+  strides[0] = stride;
+}
+
 void apply_video_signal(AVCodecContext* codec,
                         const JobOutputVideoSignal& signal) {
   codec->color_primaries = AVCOL_PRI_BT709;

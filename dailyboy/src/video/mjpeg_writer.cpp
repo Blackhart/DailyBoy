@@ -290,8 +290,9 @@ Status MjpegWriter::write(const Frame& frame) {
   const uint8_t* src = rgb8_with_encode_pad(
       rgb, width_, height_, encode_width_, encode_height_, padded, &dst_stride);
 
-  const uint8_t* planes[1] = {src};
-  const int strides[1] = {dst_stride};
+  const uint8_t* planes[AV_NUM_DATA_POINTERS];
+  int strides[AV_NUM_DATA_POINTERS];
+  fill_rgb24_sws_src(src, dst_stride, planes, strides);
   int err = av_frame_make_writable(av_->yuv);
   if (err < 0) {
     return ffmpeg_error("av_frame_make_writable: " + av_error_string(err));
