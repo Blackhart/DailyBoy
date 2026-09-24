@@ -79,8 +79,8 @@ void log_plan_audio_start(const JobPlan& plan, int fps, int start_sample) {
 void log_plan_audio_plate_range(const JobPlan& plan, int plate_frames,
                                 int fps) {
   log_debug("audio: plan " + plan.id() + " plates " +
-            std::to_string(plan.sequence().frame_start()) + "-" +
-            std::to_string(plan.sequence().frame_end()) + " (" +
+            std::to_string(plan.sequence().effective_frame_start()) + "-" +
+            std::to_string(plan.sequence().effective_frame_end()) + " (" +
             std::to_string(plate_frames) + " frames, " +
             format_seconds(static_cast<double>(plate_frames) / fps) + "s)");
 }
@@ -344,8 +344,7 @@ StatusOr<std::vector<int16_t>> load_and_fit_plan_audio(
       expand_path_tokens(audio.path(), subs, USER_ERROR_ENCODE_5));
   DAILYBOY_ASSIGN_OR_RETURN(std::vector<int16_t> pcm,
                             load_audio_file_as_pcm(path));
-  const int plate_frames =
-      plan.sequence().frame_end() - plan.sequence().frame_start() + 1;
+  const int plate_frames = plan.sequence().plate_frame_count();
   const int source_samples =
       static_cast<int>(pcm.size() / AudioPcmTimeline::kChannels);
   log_plan_audio_start(plan, fps, start_sample);
@@ -361,8 +360,7 @@ StatusOr<std::vector<int16_t>> load_and_fit_plan_audio(
 StatusOr<std::vector<int16_t>> load_plan_audio_or_silence(
     const JobPlan& plan, int fps, int start_sample,
     const std::map<std::string, JobMetadataSubstitutionValue>& subs) {
-  const int frames =
-      plan.sequence().frame_end() - plan.sequence().frame_start() + 1;
+  const int frames = plan.sequence().plate_frame_count();
   const int want = samples_for_frame_count(frames, fps);
   if (!plan.audio().has_value()) {
     log_plan_audio_start(plan, fps, start_sample);

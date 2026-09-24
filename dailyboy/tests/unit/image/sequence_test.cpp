@@ -148,6 +148,34 @@ TEST(Sequence, Open_FrameMapTokenInPath_ReturnsIoUserError6) {
 }
 
 /*!
+ * \brief Opens with head and tail handles and iterates the effective range.
+ */
+TEST(Sequence, Open_HeadAndTailHandles_ExpandsEffectiveRange) {
+  // Prepare
+  dailyboy::JobSequence job;
+  job.set_path("/tmp/plate.%04d.png");
+  job.set_frame_start(1001);
+  job.set_frame_end(1003);
+  job.set_handle_head(2);
+  job.set_handle_tail(1);
+
+  // Test
+  dailyboy::StatusOr<dailyboy::Sequence> seq = dailyboy::Sequence::open(job);
+
+  // Assert
+  ASSERT_TRUE(seq.ok()) << seq.status().message();
+  EXPECT_EQ(seq.value().frame_start(), 999);
+  EXPECT_EQ(seq.value().frame_end(), 1004);
+  EXPECT_EQ(seq.value().size(), 6u);
+  int expected = 999;
+  for (auto it = seq.value().begin(); it != seq.value().end(); ++it) {
+    EXPECT_EQ(it.frame(), expected);
+    ++expected;
+  }
+  EXPECT_EQ(expected, 1005);
+}
+
+/*!
  * \brief Loads existing PNG frames and reads width, height, and channel count.
  */
 TEST(Sequence, Load_ExistingPngFrames_ReadsImageSpec) {

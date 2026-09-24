@@ -10,10 +10,11 @@
   - [3.3 Frame map value (dictionary)](#substitutions-frame-map)
   - [3.4 Automatic tokens (slate / burn-in text)](#metadata-automatic-tokens)
 - [4. `plans` (shot list)](#section-4-plans)
-  - [4.1 `id`](#plans-id)
-  - [4.2 `input_colorspace`](#plans-input-colorspace)
-  - [4.3 `sequence`](#plans-sequence)
-  - [4.4 `audio`](#plans-audio)
+  - [4.1 `id` (shot identifier)](#plans-id)
+  - [4.2 `input_colorspace` (source color)](#plans-input-colorspace)
+  - [4.3 `sequence` (image sequence)](#plans-sequence)
+    - [4.3.1 `handles` (optional head/tail frames)](#plans-sequence)
+  - [4.4 `audio` (optional guide track)](#plans-audio)
 - [5. `color` (OpenColorIO)](#section-5-color)
 - [6. `layout` (page layout)](#section-6-layout)
   - [6.1 `canvas`](#layout-canvas)
@@ -171,81 +172,81 @@ DailyBoy provides certain automatic tokens that can be used in templates for sla
 
 ## 4. `plans` (shot list)
 
-This section defines the input shot(s) to be processed. Currently, only one shot is supported per job (one list entry).
+The `plans` section defines which shot(s) will be processed in this job. Currently, one plan (shot) per job is supported, specified as a single item in a YAML list.
 
-Each plan requires a unique name, the colorspace of the images, and the file pattern and frame range specifying where the images are located.
+Each plan is required to specify:
+- a unique identifier (`id`)
+- the colorspace of its images (`input_colorspace`)
+- the image sequence location and range (`sequence`)
+
+You may also add audio and handles for more advanced cases.
 
 <a id="plans-id"></a>
 
 ### 4.1 `id`
 
-| Field | Required | Type               | Description |
-| ----- | -------- | ------------------ | ----------- |
-| `id`  | yes      | string (non-empty) | Unique identifier for the shot. |
+| Field | Required | Type               | Description                                 |
+| ----- | -------- | ------------------ | ------------------------------------------- |
+| `id`  | yes      | string (non-empty) | Unique, non-empty identifier for this shot. |
 
-The value of `id` is used as `{plan_id}`. This must not be empty.
+The `id` is required, must not be empty, and is used for `{plan_id}` substitution tokens.
 
 <a id="plans-input-colorspace"></a>
 
 ### 4.2 `input_colorspace`
 
-| Field              | Required | Type                                     | Description |
-| ------------------ | -------- | ---------------------------------------- | ----------- |
-| `input_colorspace` | yes      | string (non-empty, OCIO colorspace name) | The colorspace of the image files, as defined in your OCIO config. |
+| Field              | Required | Type                                     | Description                                                       |
+| ------------------ | -------- | ---------------------------------------- | ----------------------------------------------------------------- |
+| `input_colorspace` | yes      | string (OCIO colorspace name, non-empty) | Plate image colorspace as defined in your OCIO config.            |
 
-The value must exactly match a colorspace defined in your OCIO config. For example: `ACEScg`, `Linear Rec.709 (sRGB)`, or a camera-specific space.
+This must exactly match one of the colorspaces in your OCIO configuration (e.g. `ACEScg`, `Linear Rec.709 (sRGB)`, `AlexaV3LogC`).
 
 <a id="plans-sequence"></a>
 
 ### 4.3 `sequence`
 
-| Sub-field     | Required | Type               | Description |
-| ------------- | -------- | ------------------ | ----------- |
-| `path`        | yes      | string (non-empty) | Pattern for locating the image sequence. |
-| `frame_start` | yes      | integer            | The first frame to include. |
-| `frame_end`   | yes      | integer            | The last frame to include. |
+| Sub-field     | Required | Type               | Description                                                 |
+| ------------- | -------- | ------------------ | ----------------------------------------------------------- |
+| `path`        | yes      | string (non-empty) | File pattern for the image sequence.                        |
+| `frame_start` | yes      | integer            | First hero frame (inclusive, used for overlays/tokens).     |
+| `frame_end`   | yes      | integer            | Last hero frame (inclusive).                                |
+| `handles`     | no       | object             | Optional extra source frames before/after hero range.       |
 
-- `path` specifies the sequence pattern for the image files. You can use patterns like `%04d`, `####`, `@@@@`, `$F4`, as well as explicit ranges (e.g., `file.1001-1050.exr`). Refer to the [fileseq documentation](https://github.com/shotgunsoftware/fileseq) for more pattern details. Substitutions (such as `{dailies_root}`) can also be included in the path.
-- `frame_start` and `frame_end` define the inclusive range of frames to process.
+**Sequence Paths:**
+- Patterns (`%04d`, `####`, `@@@@`, `$F4`, or explicit ranges like `file.1001-1050.exr`) are supported.
+- You can embed substitutions like `{dailies_root}` in the path.
+- `frame_start` and `frame_end` are the main (hero) range. Slate/burn-in tokens `{frame_start}` and `{frame_end}` use these values.
 
-Example:
+**Handles:** (advanced)
+Optional `handles` allow including additional plates before the first and/or after the last hero frame.
 
-```yaml
-plans:
-  - id: sh010_bg
-    input_colorspace: "ACEScg"
-    sequence:
-      path: /shots/sh010/renders/v003/bg.%04d.png
-      frame_start: 1001
-      frame_end: 1048
-```
+#### 4.3.1 Handles structure
 
-Explanation:
+| `handles` sub-field | Required | Type          | Default | Description                                                                            |
+| ------------------- | -------- | ------------- | ------- | -------------------------------------------------------------------------------------- |
+| `head`              | no       | integer ≥ 0   | `0`     | Frames before `frame_start` to include (`frame_start - head` ... `frame_start - 1`).   |
+| `tail`              | no       | integer ≥ 0   | `0`     | Frames after `frame_end` to include (`frame_end + 1` ... `frame_end + tail`).          |
 
-This example defines a `plans` block containing a single entry (a shot/plan).
-- `id: sh010_bg`: A unique identifier for the shot (used, for example, in file naming or overlays).
-- `input_colorspace: "ACEScg"`: Specifies that the source images are in the ACEScg colorspace, as defined by your OCIO configuration.
-- `sequence`: Details how to find the image files for this shot:
-  - `path`: The file pattern DailyBoy should use to find the images (here, `/shots/sh010/renders/v003/bg.%04d.png`, where `%04d` is replaced by the four-digit frame number).
-  - `frame_start`: The first frame to process (here, 1001).
-  - `frame_end`: The last frame to process (here, 1048).
-
-This means: “For the shot named `sh010_bg`, process images `/shots/sh010/renders/v003/bg.1001.png` through `/shots/sh010/renders/v003/bg.1048.png`, interpreting the files as ACEScg.”
+- If handles are omitted, the job processes only the hero range.
+- If handles are set, **the processed range becomes** `frame_start - handles.head` through `frame_end + handles.tail`.
+- If any frame in this full range is missing, that is a hard error.
 
 <a id="plans-audio"></a>
 
 ### 4.4 `audio`
 
-| Sub-field | Required | Type               | Description |
-| --------- | -------- | ------------------ | ----------- |
-| `path`    | yes      | string (non-empty) | Guide-track file for this plan (WAV PCM or AAC in `.wav` / `.aac` / `.m4a` / audio-only `.mov`). Metadata tokens allowed. |
+| Sub-field | Required | Type               | Description                                                                                                            |
+| --------- | -------- | ------------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| `path`    | yes      | string (non-empty) | Path to a guide audio track (WAV PCM, AAC in `.wav` / `.aac` / `.m4a`, or audio-only `.mov`). Metadata tokens allowed.  |
 
-Optional. When present on at least one plan, every enabled MOV gets the same AAC-LC stereo 48 kHz guide track at a fixed **192 kbps**:
+**Audio is optional.**  
+If present for any plan, _all_ generated MOVs for this job include a shared AAC-LC stereo 48 kHz guide track at **192 kbps**.  
+Audio behavior per plan:
+1. **Slate duration**: MOVs always begin with silence for `layout.slate.duration_frames`, regardless of audio.
+2. **Guide track matching plate range**: For each plan, the guide audio is loaded, resampled to 48 kHz stereo, and trimmed/padded to match the *processed plate range* (`frame_end - frame_start + 1 + handles.head + handles.tail`), then appended to the shared output audio stream.
+3. **Missing/omitted audio**: If `audio.path` is omitted on a plan, silence fills its entire range.
 
-1. Silence for `layout.slate.duration_frames` (no speech during the slate).
-2. For each plan in order: load `audio.path` (or silence if omitted), resample to 48 kHz stereo, then trim or pad silence to `(frame_end - frame_start + 1) / fps` of that plan’s plates.
-
-Example:
+#### Example: full plans section
 
 ```yaml
 plans:
@@ -255,9 +256,21 @@ plans:
       path: /shots/sh010/renders/v003/bg.%04d.png
       frame_start: 1001
       frame_end: 1048
+      handles:
+        head: 8
+        tail: 8
     audio:
       path: "{dailies_root}/audio/sh010_guide.wav"
 ```
+
+**What this does:**
+
+- Defines one shot, referenced as `sh010_bg`.
+- Expects input images `/shots/sh010/renders/v003/bg.993.png` through `/shots/sh010/renders/v003/bg.1056.png` (`frame_start` 1001, `frame_end` 1048, `handles` 8 each side).
+- Treats all images as ACEScg for color conversion.
+- If supplied, guide audio is synchronized to the full plate range (including handles) and silence is enforced over the slate.
+
+The hero range for overlays/burn-ins is always 1001–1048, even though handles extend image/audio processing before/after this range.
 
 ---
 
@@ -415,7 +428,7 @@ Each entry:
 
 ### 6.6 `slate` (optional)
 
-Defines a title card prepended to each enabled movie and image sequence. Omit the whole block to skip the slate. Sequence files use frame numbers immediately before `plans[].sequence.frame_start`; plate files keep source numbers.
+Defines a title card prepended to each enabled movie and image sequence. Omit the whole block to skip the slate. Sequence files use frame numbers immediately before the first processed plate (`plans[].sequence.frame_start - plans[].sequence.handles.head`, or `frame_start` when handles are omitted); plate files keep source numbers.
 
 | Field             | Required | Type             | Description                  |
 | ----------------- | -------- | ---------------- | ---------------------------- |

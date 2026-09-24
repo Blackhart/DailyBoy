@@ -48,7 +48,7 @@ OverlayTokenContext slate_tokens(const Job& job) {
 Status write_slate_copies(Outputs& out, const Frame& canvas, const Job& job,
                           int duration) {
   const int start =
-      job.plans().plans().front().sequence().frame_start() - duration;
+      job.plans().plans().front().sequence().effective_frame_start() - duration;
   for (int i = 0; i < duration; ++i) {
     const int frame = start + i;
     log_debug_banner("slate frame " + std::to_string(frame));

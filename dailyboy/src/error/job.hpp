@@ -751,6 +751,13 @@ inline constexpr std::string_view USER_ERROR_JOB_99 =
     "output: mbs_per_slice must be an integer in [1, 8].";
 
 /*!
+ * \var USER_ERROR_JOB_100
+ * \brief Message when \c plans[].sequence.handles.head or \c tail is negative.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_100 =
+    "plans[].sequence.handles: head and tail must be integers >= 0.";
+
+/*!
  * \var INTERNAL_ERROR_JOB_1
  * \brief Message when schema validation is called with an empty path.
  */

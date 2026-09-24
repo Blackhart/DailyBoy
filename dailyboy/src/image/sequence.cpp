@@ -83,8 +83,8 @@ StatusOr<Sequence> Sequence::open(
 
   Sequence out;
   out.pattern_ = std::move(pattern);
-  out.frame_start_ = sequence.frame_start();
-  out.frame_end_ = sequence.frame_end();
+  out.frame_start_ = sequence.effective_frame_start();
+  out.frame_end_ = sequence.effective_frame_end();
   return out;
 }
 
