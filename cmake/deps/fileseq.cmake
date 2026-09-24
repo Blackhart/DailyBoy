@@ -5,30 +5,57 @@
 # enable_testing(), and find_package(GTest), which would pollute the DailyBoy tree.
 #
 # Also used as script mode (cmake -P):
-#   - PATCH: -DFILESEQ_CMAKELISTS=... (WIN32 static OUTPUT_NAME)
+#   - PATCH: -DFILESEQ_CMAKELISTS=... (WIN32 OUTPUT_NAME + MSVC warning flags)
 #   - INSTALL: -DINSTALL_PREFIX=... -DBINARY_DIR=... -DSOURCE_DIR=...
 
 if(CMAKE_SCRIPT_MODE_FILE)
     cmake_minimum_required(VERSION 3.28)
 
-    # WIN32 patch: static+shared both use OUTPUT_NAME fileseq → duplicate fileseq.lib.
+    # WIN32 patch: OUTPUT_NAME clash + GCC-only warning flags under MSVC.
     if(FILESEQ_CMAKELISTS)
         if(NOT EXISTS "${FILESEQ_CMAKELISTS}")
             message(FATAL_ERROR "Missing ${FILESEQ_CMAKELISTS}")
         endif()
         file(READ "${FILESEQ_CMAKELISTS}" _content)
-        if(_content MATCHES "OUTPUT_NAME fileseq_static")
-            return()
+        set(_patched "${_content}")
+
+        if(NOT _patched MATCHES "OUTPUT_NAME fileseq_static")
+            set(_before "${_patched}")
+            set(_needle
+                "set_target_properties(fileseq_static PROPERTIES OUTPUT_NAME fileseq)"
+            )
+            set(_replacement
+                "set_target_properties(fileseq_static PROPERTIES OUTPUT_NAME fileseq_static)"
+            )
+            string(REPLACE "${_needle}" "${_replacement}" _patched "${_patched}")
+            if(_patched STREQUAL _before)
+                message(FATAL_ERROR "fileseq: could not patch static OUTPUT_NAME")
+            endif()
         endif()
-        set(_needle "set_target_properties(fileseq_static PROPERTIES OUTPUT_NAME fileseq)")
-        set(_replacement
-            "set_target_properties(fileseq_static PROPERTIES OUTPUT_NAME fileseq_static)"
-        )
-        string(REPLACE "${_needle}" "${_replacement}" _patched "${_content}")
-        if(_patched STREQUAL _content)
-            message(FATAL_ERROR "fileseq: could not patch static OUTPUT_NAME")
+
+        # Unguarded GCC flags break MSVC (cl D8021 on /Wextra). Skip if already guarded.
+        if(NOT _patched MATCHES "if\\(MSVC\\)[^\n]*\n  add_compile_options\\(/W4\\)")
+            set(_before "${_patched}")
+            set(_warnings_needle
+                "# Compiler warnings\nadd_compile_options(-Wall -Wextra -Wpedantic)"
+            )
+            set(_warnings_replacement
+                "# Compiler warnings\nif(MSVC)\n  add_compile_options(/W4)\nelse()\n  add_compile_options(-Wall -Wextra -Wpedantic)\nendif()"
+            )
+            string(REPLACE
+                "${_warnings_needle}"
+                "${_warnings_replacement}"
+                _patched
+                "${_patched}"
+            )
+            if(_patched STREQUAL _before)
+                message(FATAL_ERROR "fileseq: could not patch MSVC warning flags")
+            endif()
         endif()
-        file(WRITE "${FILESEQ_CMAKELISTS}" "${_patched}")
+
+        if(NOT _patched STREQUAL _content)
+            file(WRITE "${FILESEQ_CMAKELISTS}" "${_patched}")
+        endif()
         return()
     endif()
 
@@ -78,6 +105,31 @@ if(CMAKE_SCRIPT_MODE_FILE)
         endif()
     endif()
 
+    # WIN32: gofileseq does not merge antlr4 into the static archive (Unix/Apple only).
+    if(WIN32)
+        set(_antlr_candidates
+            "${BINARY_DIR}/dist/antlr4-runtime-static.lib"
+            "${SOURCE_DIR}/cpp/dist/antlr4-runtime-static.lib"
+            "${SOURCE_DIR}/dist/antlr4-runtime-static.lib"
+            "${BINARY_DIR}/ext/antlr4/runtime/antlr4-runtime-static.lib"
+            "${BINARY_DIR}/ext/antlr4/runtime/dist/antlr4-runtime-static.lib"
+        )
+        set(_antlr_lib "")
+        foreach(_cand IN LISTS _antlr_candidates)
+            if(EXISTS "${_cand}")
+                set(_antlr_lib "${_cand}")
+                break()
+            endif()
+        endforeach()
+        if(_antlr_lib STREQUAL "")
+            message(
+                FATAL_ERROR
+                "antlr4-runtime-static.lib not found under ${BINARY_DIR} or ${SOURCE_DIR}"
+            )
+        endif()
+        file(COPY "${_antlr_lib}" DESTINATION "${INSTALL_PREFIX}/lib")
+    endif()
+
     set(_headers fileseq.h sequence.h frameset.h pad.h error.h)
     foreach(_hdr IN LISTS _headers)
         file(COPY "${_header_dir}/${_hdr}" DESTINATION "${INSTALL_PREFIX}/include/fileseq")
@@ -100,7 +152,14 @@ dailyboy_ep_cmake_args(_dailyboy_fileseq_ep_cmake_args "${_dailyboy_fileseq_inst
 # DailyBoy only consumes the static archive; shared is unused.
 list(APPEND _dailyboy_fileseq_ep_cmake_args -DBUILD_SHARED_LIBS=OFF)
 
+set(_dailyboy_fileseq_byproducts "${_dailyboy_fileseq_lib}")
 if(WIN32)
+    # antlr4 defaults WITH_STATIC_CRT=ON (/MT); DailyBoy uses /MD via MSVC_RUNTIME_LIBRARY.
+    list(APPEND _dailyboy_fileseq_ep_cmake_args -DWITH_STATIC_CRT=OFF)
+    set(_dailyboy_fileseq_antlr_lib
+        "${_dailyboy_fileseq_install}/lib/antlr4-runtime-static.lib"
+    )
+    list(APPEND _dailyboy_fileseq_byproducts "${_dailyboy_fileseq_antlr_lib}")
     set(_dailyboy_fileseq_patch
         PATCH_COMMAND
             ${CMAKE_COMMAND}
@@ -108,6 +167,7 @@ if(WIN32)
             -P ${CMAKE_CURRENT_LIST_FILE}
     )
 else()
+    set(_dailyboy_fileseq_antlr_lib "")
     set(_dailyboy_fileseq_patch "")
 endif()
 
@@ -128,7 +188,7 @@ ExternalProject_Add(
         -DBINARY_DIR=<BINARY_DIR>
         -DSOURCE_DIR=<SOURCE_DIR>
         -P ${CMAKE_CURRENT_LIST_FILE}
-    BUILD_BYPRODUCTS "${_dailyboy_fileseq_lib}"
+    BUILD_BYPRODUCTS ${_dailyboy_fileseq_byproducts}
     USES_TERMINAL_BUILD TRUE
 )
 
@@ -141,10 +201,19 @@ set_target_properties(
         INTERFACE_INCLUDE_DIRECTORIES "${_dailyboy_fileseq_install}/include"
         INTERFACE_COMPILE_FEATURES cxx_std_14
 )
+if(WIN32)
+    set_property(
+        TARGET fileseq::fileseq
+        APPEND
+        PROPERTY INTERFACE_LINK_LIBRARIES "${_dailyboy_fileseq_antlr_lib}"
+    )
+endif()
 
 message(STATUS "deps: libfileseq ${DAILYBOY_FILESEQ_GIT_TAG} (ExternalProject)")
 
 unset(_dailyboy_fileseq_install)
 unset(_dailyboy_fileseq_lib)
+unset(_dailyboy_fileseq_antlr_lib)
+unset(_dailyboy_fileseq_byproducts)
 unset(_dailyboy_fileseq_ep_cmake_args)
 unset(_dailyboy_fileseq_patch)
