@@ -23,10 +23,35 @@ class JobSequence {
   int frame_end() const { return frame_end_; }
   void set_frame_end(int frame_end) { frame_end_ = frame_end; }
 
+  int handle_head() const { return handle_head_; }
+  void set_handle_head(int handle_head) { handle_head_ = handle_head; }
+
+  int handle_tail() const { return handle_tail_; }
+  void set_handle_tail(int handle_tail) { handle_tail_ = handle_tail; }
+
+  /*!
+   * \brief First frame to process: \c frame_start - \c handle_head.
+   */
+  int effective_frame_start() const { return frame_start_ - handle_head_; }
+
+  /*!
+   * \brief Last frame to process: \c frame_end + \c handle_tail.
+   */
+  int effective_frame_end() const { return frame_end_ + handle_tail_; }
+
+  /*!
+   * \brief Inclusive plate count including handles.
+   */
+  int plate_frame_count() const {
+    return effective_frame_end() - effective_frame_start() + 1;
+  }
+
  private:
   std::string path_;
   int frame_start_ = 0;
   int frame_end_ = 0;
+  int handle_head_ = 0;
+  int handle_tail_ = 0;
 };
 
 /*!

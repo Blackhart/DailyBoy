@@ -7111,3 +7111,89 @@ TEST(JobLoader, ParseBurnIn_OmittedBox_HasNoBox) {
   EXPECT_FALSE(
       job.value().layout().burn_ins().burn_ins().front().box().has_value());
 }
+
+/*!
+ * \brief Loads sequence handles and stores head and tail on the plan.
+ */
+TEST(JobLoader, LoadJob_SequenceHandles_StoresHeadAndTail) {
+  // Prepare
+  const char* plans_yaml =
+      "plans:\n"
+      "  - id: plate\n"
+      "    input_colorspace: ACES - ACEScg\n"
+      "    sequence:\n"
+      "      path: /tmp/plate.%04d.png\n"
+      "      frame_start: 1001\n"
+      "      frame_end: 1003\n"
+      "      handles:\n"
+      "        head: 8\n"
+      "        tail: 4\n";
+  const std::filesystem::path yaml =
+      write_contract_job("sequence_handles.yaml", {.plans_yaml = plans_yaml});
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  ASSERT_TRUE(schema.ok()) << schema.message();
+  ASSERT_TRUE(job.ok()) << job.status().message();
+  const dailyboy::JobSequence& sequence =
+      job.value().plans().plans().front().sequence();
+  EXPECT_EQ(sequence.handle_head(), 8);
+  EXPECT_EQ(sequence.handle_tail(), 4);
+  EXPECT_EQ(sequence.effective_frame_start(), 993);
+  EXPECT_EQ(sequence.effective_frame_end(), 1007);
+  EXPECT_EQ(sequence.plate_frame_count(), 15);
+}
+
+/*!
+ * \brief Omits sequence handles and defaults head and tail to zero.
+ */
+TEST(JobLoader, LoadJob_OmittedSequenceHandles_DefaultsToZero) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_contract_job("omitted_sequence_handles.yaml");
+
+  // Test
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  ASSERT_TRUE(job.ok()) << job.status().message();
+  const dailyboy::JobSequence& sequence =
+      job.value().plans().plans().front().sequence();
+  EXPECT_EQ(sequence.handle_head(), 0);
+  EXPECT_EQ(sequence.handle_tail(), 0);
+  EXPECT_EQ(sequence.effective_frame_start(), sequence.frame_start());
+  EXPECT_EQ(sequence.effective_frame_end(), sequence.frame_end());
+}
+
+/*!
+ * \brief Rejects a negative sequence handle head via schema and parse.
+ */
+TEST(JobLoader, LoadJob_NegativeHandleHead_ReturnsUserError) {
+  // Prepare
+  const char* plans_yaml =
+      "plans:\n"
+      "  - id: plate\n"
+      "    input_colorspace: ACES - ACEScg\n"
+      "    sequence:\n"
+      "      path: /tmp/plate.%04d.png\n"
+      "      frame_start: 1001\n"
+      "      frame_end: 1003\n"
+      "      handles:\n"
+      "        head: -1\n";
+  const std::filesystem::path yaml = write_contract_job(
+      "negative_handle_head.yaml", {.plans_yaml = plans_yaml});
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  EXPECT_FALSE(schema.ok()) << schema.message();
+  ASSERT_FALSE(job.ok());
+  EXPECT_EQ(job.status().code(), dailyboy::Status::Code::kUser);
+  EXPECT_TRUE(job.status().message().find("handles") != std::string::npos)
+      << job.status().message();
+}

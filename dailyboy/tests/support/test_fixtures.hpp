@@ -95,6 +95,47 @@ inline bool write_plate_png_sequence(const std::filesystem::path& dir,
 }
 
 /*!
+ * \brief Writes one 8x8 RGB PNG plate at \a frame under \a dir.
+ */
+inline bool write_plate_png_frame(const std::filesystem::path& dir, int frame,
+                                  const std::array<float, 3>& rgb,
+                                  std::string* error, int width = kPlateWidth,
+                                  int height = kPlateHeight) {
+  std::error_code ec;
+  std::filesystem::create_directories(dir, ec);
+  if (ec) {
+    if (error != nullptr) {
+      *error = ec.message();
+    }
+    return false;
+  }
+  try {
+    OIIO::ImageSpec spec(width, height, 3, OIIO::TypeDesc::UINT8);
+    OIIO::ImageBuf buf(spec);
+    const float values[3] = {rgb[0], rgb[1], rgb[2]};
+    if (!OIIO::ImageBufAlgo::fill(buf, values)) {
+      if (error != nullptr) {
+        *error = buf.geterror();
+      }
+      return false;
+    }
+    const std::string path = plate_frame_path(dir, frame).string();
+    if (!buf.write(path)) {
+      if (error != nullptr) {
+        *error = buf.geterror();
+      }
+      return false;
+    }
+  } catch (const std::exception& ex) {
+    if (error != nullptr) {
+      *error = ex.what();
+    }
+    return false;
+  }
+  return true;
+}
+
+/*!
  * \brief Writes a schema-valid job YAML whose sequence.path is the plate under \a dir.
  *
  * \a output_mov is written as \c output.videos[].path for the single

@@ -13,10 +13,12 @@
 namespace dailyboy {
 
 /*!
- * \brief Resolved input sequence: cursor over \c [frame_start, frame_end].
+ * \brief Resolved input sequence: cursor over the effective frame range.
  *
  * Opens a \c JobSequence pattern (string substitutions expanded, frame maps
- * rejected). The iterator walks frame numbers and paths without I/O;
+ * rejected). The inclusive range is \c [effective_frame_start,
+ * effective_frame_end] (YAML \c frame_start/\c frame_end plus optional
+ * handles). The iterator walks frame numbers and paths without I/O;
  * \c load() reads an \c ImageBuf. Direct \c path(frame) / \c load(frame)
  * seek without iterating.
  */
@@ -42,8 +44,9 @@ class Sequence {
   Sequence() = default;
 
   /*!
-   * \brief Parses the job sequence pattern and inclusive frame range.
-   * \param sequence Path pattern plus \c frame_start / \c frame_end.
+   * \brief Parses the job sequence pattern and inclusive effective frame range.
+   * \param sequence Path pattern plus \c frame_start / \c frame_end and
+   *        optional handles.
    * \param substitutions String tokens expanded in \c sequence.path; frame
    *        maps in that path yield a user error.
    * \return Opened sequence, or user status on empty/invalid pattern, inverted

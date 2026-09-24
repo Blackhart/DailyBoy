@@ -901,7 +901,26 @@
               "description": "Input file sequence (ShotGrid fileseq / libfileseq). Padding: #, @, %04d, $F4; ranges in path or via frame_start/frame_end. MVP: typically .png."
             },
             "frame_start": { "type": "integer" },
-            "frame_end": { "type": "integer" }
+            "frame_end": { "type": "integer" },
+            "handles": {
+              "type": "object",
+              "additionalProperties": false,
+              "description": "Optional source frames before frame_start (head) and after frame_end (tail) for timeline padding.",
+              "properties": {
+                "head": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "default": 0,
+                  "description": "Frames before frame_start to include (frame_start - head .. frame_start - 1)."
+                },
+                "tail": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "default": 0,
+                  "description": "Frames after frame_end to include (frame_end + 1 .. frame_end + tail)."
+                }
+              }
+            }
           }
         },
         "audio": { "$ref": "#/$defs/planAudio" }

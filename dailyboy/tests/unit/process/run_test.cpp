@@ -6,6 +6,7 @@ extern "C" {
 }
 
 #include <dailyboy/makeDaily.hpp>
+#include <array>
 #include <filesystem>
 #include <fstream>
 #include <string>
@@ -120,7 +121,8 @@ bool write_two_video_job(const std::filesystem::path& yaml_path,
 bool write_output_job_yaml(const std::filesystem::path& yaml_path,
                            const std::filesystem::path& plate_dir,
                            const std::string& output_yaml, std::string* error,
-                           int slate_duration_frames = 0) {
+                           int slate_duration_frames = 0, int handle_head = 0,
+                           int handle_tail = 0) {
   const std::string seq =
       dailyboy::test::plate_pattern_path(plate_dir).string();
   std::ofstream out(yaml_path);
@@ -150,6 +152,11 @@ bool write_output_job_yaml(const std::filesystem::path& yaml_path,
       << "      path: \"" << seq << "\"\n"
       << "      frame_start: " << dailyboy::test::kPlateFrameStart << "\n"
       << "      frame_end: " << dailyboy::test::kPlateFrameEnd << "\n";
+  if (handle_head > 0 || handle_tail > 0) {
+    out << "      handles:\n"
+        << "        head: " << handle_head << "\n"
+        << "        tail: " << handle_tail << "\n";
+  }
   if (!out) {
     if (error != nullptr) {
       *error = "write failed: " + yaml_path.string();
@@ -583,6 +590,67 @@ TEST(RunJob, RunJob_PresentSlate_PrefixesMovieAndSequence) {
       std::filesystem::exists(dailyboy::test::plate_frame_path(seq_dir, 998)));
   EXPECT_FALSE(
       std::filesystem::exists(dailyboy::test::plate_frame_path(seq_dir, 1004)));
+}
+
+/*!
+ * \brief Writes head/tail handle plates and prefixes slate before the head.
+ */
+TEST(RunJob, RunJob_SequenceHandles_WritesHandlesAndSlateBeforeHead) {
+  // Prepare
+  const std::filesystem::path dir =
+      std::filesystem::path(DAILYBOY_TEST_BINARY_DIR) /
+      "run_job_handles_fixtures";
+  std::filesystem::remove_all(dir);
+  std::filesystem::create_directories(dir);
+  std::string error;
+  ASSERT_TRUE(dailyboy::test::write_plate_png_sequence(dir, &error)) << error;
+  const std::array<float, 3> handle_rgb = {{0.5f, 0.5f, 0.5f}};
+  ASSERT_TRUE(
+      dailyboy::test::write_plate_png_frame(dir, 1000, handle_rgb, &error))
+      << error;
+  ASSERT_TRUE(
+      dailyboy::test::write_plate_png_frame(dir, 1004, handle_rgb, &error))
+      << error;
+  const std::filesystem::path seq_dir = dir / "out";
+  const std::filesystem::path yaml = dir / "job.yaml";
+  ASSERT_TRUE(write_output_job_yaml(yaml, dir,
+                                    "  videos: []\n"
+                                    "  image_sequences:\n"
+                                    "    - id: archive\n"
+                                    "      enabled: true\n"
+                                    "      display_view:\n"
+                                    "        display: \"passthrough\"\n"
+                                    "        view: \"passthrough\"\n"
+                                    "      path_pattern: \"" +
+                                        (seq_dir / "plate.%04d.png").string() +
+                                        "\"\n",
+                                    &error, 2, 1, 1))
+      << error;
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  ASSERT_TRUE(schema.ok()) << schema.message();
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+  ASSERT_TRUE(job.ok()) << job.status().message();
+  EXPECT_EQ(job.value().plans().plans().front().sequence().handle_head(), 1);
+  EXPECT_EQ(job.value().plans().plans().front().sequence().handle_tail(), 1);
+  dailyboy::Status status = dailyboy::run_job(job.value());
+  ASSERT_TRUE(status.ok()) << status.message();
+
+  // Assert
+  EXPECT_TRUE(
+      std::filesystem::exists(dailyboy::test::plate_frame_path(seq_dir, 998)));
+  EXPECT_TRUE(
+      std::filesystem::exists(dailyboy::test::plate_frame_path(seq_dir, 999)));
+  for (int frame = 1000; frame <= 1004; ++frame) {
+    EXPECT_TRUE(std::filesystem::exists(
+        dailyboy::test::plate_frame_path(seq_dir, frame)))
+        << frame;
+  }
+  EXPECT_FALSE(
+      std::filesystem::exists(dailyboy::test::plate_frame_path(seq_dir, 997)));
+  EXPECT_FALSE(
+      std::filesystem::exists(dailyboy::test::plate_frame_path(seq_dir, 1005)));
 }
 
 /*!

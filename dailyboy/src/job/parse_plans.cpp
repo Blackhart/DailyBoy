@@ -6,12 +6,58 @@
 #include "job/parse_plans.hpp"
 
 #include <optional>
+#include <string>
 
+#include "error/job.hpp"
 #include "job/yaml_read.hpp"
 
 namespace dailyboy {
 
 namespace {
+
+StatusOr<int> read_handle_count(const YAML::Node& node,
+                                const std::string& loc) {
+  DAILYBOY_ASSIGN_OR_RETURN(int value,
+                            read_yaml_integer(node, USER_ERROR_JOB_100, loc));
+  if (value < 0) {
+    return Status::User(
+        with_job_error(USER_ERROR_JOB_100,
+                       loc + " (got integer " + std::to_string(value) + ")."));
+  }
+  return value;
+}
+
+/*!
+ * \brief Parses optional \c sequence.handles (object; head/tail default to 0).
+ */
+Status parse_sequence_handles(const YAML::Node& node, const std::string& field,
+                              JobSequence& sequence) {
+  if (!node || node.IsNull()) {
+    return Status::Ok();
+  }
+  if (!node.IsMap()) {
+    return Status::User(with_job_error(
+        USER_ERROR_JOB_100, field + " is " + describe_yaml_value(node) + "."));
+  }
+  for (const auto& kv : node) {
+    const std::string key = kv.first.as<std::string>();
+    if (key != "head" && key != "tail") {
+      return Status::User(
+          with_job_error(USER_ERROR_JOB_40, field + "." + key + "."));
+    }
+  }
+  if (node["head"]) {
+    DAILYBOY_ASSIGN_OR_RETURN(int head,
+                              read_handle_count(node["head"], field + ".head"));
+    sequence.set_handle_head(head);
+  }
+  if (node["tail"]) {
+    DAILYBOY_ASSIGN_OR_RETURN(int tail,
+                              read_handle_count(node["tail"], field + ".tail"));
+    sequence.set_handle_tail(tail);
+  }
+  return Status::Ok();
+}
 
 StatusOr<std::optional<JobPlanAudio>> parse_plan_audio(
     const YAML::Node& node, const std::string& field) {
@@ -58,6 +104,8 @@ StatusOr<JobPlans> parse_plans(const YAML::Node& node) {
     sequence.set_path(std::move(path));
     sequence.set_frame_start(frame_start);
     sequence.set_frame_end(frame_end);
+    DAILYBOY_RETURN_IF_ERROR(parse_sequence_handles(
+        sequence_map["handles"], base + ".sequence.handles", sequence));
     DAILYBOY_ASSIGN_OR_RETURN(std::optional<JobPlanAudio> audio,
                               parse_plan_audio(map["audio"], base + ".audio"));
     plan.set_id(std::move(id));

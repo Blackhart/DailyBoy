@@ -194,6 +194,38 @@ TEST(AudioPcmTimeline, Build_LongWav_TrimsToPlateDuration) {
 }
 
 /*!
+ * \brief Pads plan audio to the effective plate duration including handles.
+ */
+TEST(AudioPcmTimeline, Build_HandlesOnSequence_UsesEffectivePlateDuration) {
+  // Prepare
+  const std::filesystem::path dir =
+      std::filesystem::path(DAILYBOY_TEST_BINARY_DIR) / "audio_handles";
+  std::filesystem::remove_all(dir);
+  std::filesystem::create_directories(dir);
+  const int fps = 24;
+  const int hero_frames = 2;
+  const int head = 1;
+  const int tail = 2;
+  const int plates = hero_frames + head + tail;
+  const auto wav = write_stereo_wav(dir / "short.wav", 100, 8000);
+  dailyboy::JobPlan plan =
+      make_plan("a", 1001, 1001 + hero_frames - 1, wav.string());
+  plan.sequence().set_handle_head(head);
+  plan.sequence().set_handle_tail(tail);
+  dailyboy::Job job = make_job({std::move(plan)}, 0);
+
+  // Test
+  dailyboy::StatusOr<std::shared_ptr<const dailyboy::AudioPcmTimeline>> built =
+      dailyboy::build_job_audio_timeline(job, fps);
+
+  // Assert
+  ASSERT_TRUE(built.ok()) << built.status().message();
+  ASSERT_TRUE(built.value());
+  const int want = plates * dailyboy::AudioPcmTimeline::kSampleRate / fps;
+  EXPECT_EQ(built.value()->sample_count(), want);
+}
+
+/*!
  * \brief Omits an audio stream when no plan declares audio.
  */
 TEST(H264Writer, Open_NoPlanAudio_WritesVideoOnlyMov) {
