@@ -51,7 +51,7 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/download-artifact@v6
+      - uses: actions/download-artifact@v7
         with:
           name: dailyboy-ci-ubuntu24-base
           path: /tmp
@@ -74,7 +74,7 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/download-artifact@v6
+      - uses: actions/download-artifact@v7
         with:
           name: dailyboy-ci-ubuntu24-base
           path: /tmp
@@ -97,7 +97,7 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/download-artifact@v6
+      - uses: actions/download-artifact@v7
         with:
           name: dailyboy-ci-ubuntu24-base
           path: /tmp
@@ -120,7 +120,7 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/download-artifact@v6
+      - uses: actions/download-artifact@v7
         with:
           name: dailyboy-ci-ubuntu24-cy2026
           path: /tmp
@@ -136,7 +136,7 @@ jobs:
     timeout-minutes: 360
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/download-artifact@v6
+      - uses: actions/download-artifact@v7
         with:
           name: dailyboy-ci-ubuntu24-cy2026
           path: /tmp
@@ -172,7 +172,7 @@ jobs:
           path: build/docker/ubuntu24/CY2026/debug/coverage/
           if-no-files-found: warn
       - name: Upload to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v7
         with:
           files: build/docker/ubuntu24/CY2026/debug/coverage/coverage.info,build/docker/ubuntu24/CY2026/debug/coverage/coverage.xml
           flags: unittests-cy2026
@@ -187,7 +187,7 @@ jobs:
     timeout-minutes: 360
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/download-artifact@v6
+      - uses: actions/download-artifact@v7
         with:
           name: dailyboy-ci-ubuntu24-cy2025
           path: /tmp
@@ -222,7 +222,7 @@ jobs:
     timeout-minutes: 360
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/download-artifact@v6
+      - uses: actions/download-artifact@v7
         with:
           name: dailyboy-ci-ubuntu24-cy2024
           path: /tmp
@@ -281,7 +281,7 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/download-artifact@v6
+      - uses: actions/download-artifact@v7
         with:
           name: dailyboy-ci-rocky9-base
           path: /tmp
@@ -304,7 +304,7 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/download-artifact@v6
+      - uses: actions/download-artifact@v7
         with:
           name: dailyboy-ci-rocky9-base
           path: /tmp
@@ -327,7 +327,7 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/download-artifact@v6
+      - uses: actions/download-artifact@v7
         with:
           name: dailyboy-ci-rocky9-base
           path: /tmp
@@ -352,7 +352,7 @@ jobs:
       DAILYBOY_BUILD_ROOT: docker/rocky9/
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/download-artifact@v6
+      - uses: actions/download-artifact@v7
         with:
           name: dailyboy-ci-rocky9-cy2026
           path: /tmp
@@ -387,7 +387,7 @@ jobs:
       DAILYBOY_BUILD_ROOT: docker/rocky9/
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/download-artifact@v6
+      - uses: actions/download-artifact@v7
         with:
           name: dailyboy-ci-rocky9-cy2025
           path: /tmp
@@ -422,7 +422,7 @@ jobs:
       DAILYBOY_BUILD_ROOT: docker/rocky9/
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/download-artifact@v6
+      - uses: actions/download-artifact@v7
         with:
           name: dailyboy-ci-rocky9-cy2024
           path: /tmp
