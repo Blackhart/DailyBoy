@@ -36,7 +36,7 @@ jobs:
           cache-to: type=gha,mode=max,scope=dailyboy-ci-ubuntu24-base
       - name: Export Ubuntu base image
         run: docker save ${{ env.CI_IMAGE_UBUNTU_BASE }} -o /tmp/dailyboy-ci-ubuntu24-base.tar
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v6
         with:
           name: dailyboy-ci-ubuntu24-base-nightly
           path: /tmp/dailyboy-ci-ubuntu24-base.tar
@@ -51,7 +51,7 @@ jobs:
       - uses: actions/checkout@v6
         with:
           ref: ${{ env.NIGHTLY_REF }}
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v6
         with:
           name: dailyboy-ci-ubuntu24-base-nightly
           path: /tmp
@@ -63,7 +63,7 @@ jobs:
         run: docker build -t ${{ env.CI_IMAGE_UBUNTU_CY2026 }} -f docker/ubuntu/Dockerfile.ubuntu24.cy2026 docker/ubuntu
       - name: Export Ubuntu CY2026 image
         run: docker save ${{ env.CI_IMAGE_UBUNTU_CY2026 }} -o /tmp/dailyboy-ci-ubuntu24-cy2026.tar
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v6
         with:
           name: dailyboy-ci-ubuntu24-cy2026-nightly
           path: /tmp/dailyboy-ci-ubuntu24-cy2026.tar
@@ -78,7 +78,7 @@ jobs:
       - uses: actions/checkout@v6
         with:
           ref: ${{ env.NIGHTLY_REF }}
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v6
         with:
           name: dailyboy-ci-ubuntu24-cy2026-nightly
           path: /tmp
@@ -108,7 +108,7 @@ jobs:
       - name: Coverage reports
         run: DAILYBOY_CI_IMAGE=${{ env.CI_IMAGE_UBUNTU_CY2026 }} ./ci/linux/docker.sh ./ci/linux/coverage_upload.sh 2026
       - name: Upload coverage HTML
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: coverage-html-nightly
           path: build/docker/ubuntu24/CY2026/debug/coverage/
@@ -130,7 +130,7 @@ jobs:
       - uses: actions/checkout@v6
         with:
           ref: ${{ env.NIGHTLY_REF }}
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v6
         with:
           name: dailyboy-ci-ubuntu24-cy2026-nightly
           path: /tmp
@@ -171,7 +171,7 @@ jobs:
       - uses: actions/checkout@v6
         with:
           ref: ${{ env.NIGHTLY_REF }}
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v6
         with:
           name: dailyboy-ci-ubuntu24-cy2026-nightly
           path: /tmp
@@ -208,7 +208,7 @@ jobs:
       - uses: actions/checkout@v6
         with:
           ref: ${{ env.NIGHTLY_REF }}
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v6
         with:
           name: dailyboy-ci-ubuntu24-cy2026-nightly
           path: /tmp

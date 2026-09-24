@@ -38,7 +38,7 @@ jobs:
           cache-to: type=gha,mode=max,scope=dailyboy-ci-ubuntu24-base
       - name: Export Ubuntu base image
         run: docker save ${{ env.CI_IMAGE_UBUNTU_BASE }} -o /tmp/dailyboy-ci-ubuntu24-base.tar
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v6
         with:
           name: dailyboy-ci-ubuntu24-base
           path: /tmp/dailyboy-ci-ubuntu24-base.tar
@@ -51,7 +51,7 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v6
         with:
           name: dailyboy-ci-ubuntu24-base
           path: /tmp
@@ -61,7 +61,7 @@ jobs:
         run: docker build -t ${{ env.CI_IMAGE_UBUNTU_CY2026 }} -f docker/ubuntu/Dockerfile.ubuntu24.cy2026 docker/ubuntu
       - name: Export Ubuntu CY2026 image
         run: docker save ${{ env.CI_IMAGE_UBUNTU_CY2026 }} -o /tmp/dailyboy-ci-ubuntu24-cy2026.tar
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v6
         with:
           name: dailyboy-ci-ubuntu24-cy2026
           path: /tmp/dailyboy-ci-ubuntu24-cy2026.tar
@@ -74,7 +74,7 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v6
         with:
           name: dailyboy-ci-ubuntu24-base
           path: /tmp
@@ -84,7 +84,7 @@ jobs:
         run: docker build -t ${{ env.CI_IMAGE_UBUNTU_CY2025 }} -f docker/ubuntu/Dockerfile.ubuntu24.cy2025 docker/ubuntu
       - name: Export Ubuntu CY2025 image
         run: docker save ${{ env.CI_IMAGE_UBUNTU_CY2025 }} -o /tmp/dailyboy-ci-ubuntu24-cy2025.tar
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v6
         with:
           name: dailyboy-ci-ubuntu24-cy2025
           path: /tmp/dailyboy-ci-ubuntu24-cy2025.tar
@@ -97,7 +97,7 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v6
         with:
           name: dailyboy-ci-ubuntu24-base
           path: /tmp
@@ -107,7 +107,7 @@ jobs:
         run: docker build -t ${{ env.CI_IMAGE_UBUNTU_CY2024 }} -f docker/ubuntu/Dockerfile.ubuntu24.cy2024 docker/ubuntu
       - name: Export Ubuntu CY2024 image
         run: docker save ${{ env.CI_IMAGE_UBUNTU_CY2024 }} -o /tmp/dailyboy-ci-ubuntu24-cy2024.tar
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v6
         with:
           name: dailyboy-ci-ubuntu24-cy2024
           path: /tmp/dailyboy-ci-ubuntu24-cy2024.tar
@@ -120,7 +120,7 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v6
         with:
           name: dailyboy-ci-ubuntu24-cy2026
           path: /tmp
@@ -136,7 +136,7 @@ jobs:
     timeout-minutes: 360
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v6
         with:
           name: dailyboy-ci-ubuntu24-cy2026
           path: /tmp
@@ -166,7 +166,7 @@ jobs:
       - name: Coverage reports
         run: DAILYBOY_CI_IMAGE=${{ env.CI_IMAGE_UBUNTU_CY2026 }} ./ci/linux/docker.sh ./ci/linux/coverage_upload.sh 2026
       - name: Upload coverage HTML
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: coverage-html-cy2026
           path: build/docker/ubuntu24/CY2026/debug/coverage/
@@ -187,7 +187,7 @@ jobs:
     timeout-minutes: 360
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v6
         with:
           name: dailyboy-ci-ubuntu24-cy2025
           path: /tmp
@@ -222,7 +222,7 @@ jobs:
     timeout-minutes: 360
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v6
         with:
           name: dailyboy-ci-ubuntu24-cy2024
           path: /tmp
@@ -268,7 +268,7 @@ jobs:
           cache-to: type=gha,mode=max,scope=dailyboy-ci-rocky9-base
       - name: Export Rocky base image
         run: docker save ${{ env.CI_IMAGE_ROCKY_BASE }} -o /tmp/dailyboy-ci-rocky9-base.tar
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v6
         with:
           name: dailyboy-ci-rocky9-base
           path: /tmp/dailyboy-ci-rocky9-base.tar
@@ -281,7 +281,7 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v6
         with:
           name: dailyboy-ci-rocky9-base
           path: /tmp
@@ -291,7 +291,7 @@ jobs:
         run: docker build -t ${{ env.CI_IMAGE_ROCKY_CY2026 }} -f docker/rocky/Dockerfile.rocky9.cy2026 docker/rocky
       - name: Export Rocky CY2026 image
         run: docker save ${{ env.CI_IMAGE_ROCKY_CY2026 }} -o /tmp/dailyboy-ci-rocky9-cy2026.tar
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v6
         with:
           name: dailyboy-ci-rocky9-cy2026
           path: /tmp/dailyboy-ci-rocky9-cy2026.tar
@@ -304,7 +304,7 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v6
         with:
           name: dailyboy-ci-rocky9-base
           path: /tmp
@@ -314,7 +314,7 @@ jobs:
         run: docker build -t ${{ env.CI_IMAGE_ROCKY_CY2025 }} -f docker/rocky/Dockerfile.rocky9.cy2025 docker/rocky
       - name: Export Rocky CY2025 image
         run: docker save ${{ env.CI_IMAGE_ROCKY_CY2025 }} -o /tmp/dailyboy-ci-rocky9-cy2025.tar
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v6
         with:
           name: dailyboy-ci-rocky9-cy2025
           path: /tmp/dailyboy-ci-rocky9-cy2025.tar
@@ -327,7 +327,7 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v6
         with:
           name: dailyboy-ci-rocky9-base
           path: /tmp
@@ -337,7 +337,7 @@ jobs:
         run: docker build -t ${{ env.CI_IMAGE_ROCKY_CY2024 }} -f docker/rocky/Dockerfile.rocky9.cy2024 docker/rocky
       - name: Export Rocky CY2024 image
         run: docker save ${{ env.CI_IMAGE_ROCKY_CY2024 }} -o /tmp/dailyboy-ci-rocky9-cy2024.tar
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v6
         with:
           name: dailyboy-ci-rocky9-cy2024
           path: /tmp/dailyboy-ci-rocky9-cy2024.tar
@@ -352,7 +352,7 @@ jobs:
       DAILYBOY_BUILD_ROOT: docker/rocky9/
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v6
         with:
           name: dailyboy-ci-rocky9-cy2026
           path: /tmp
@@ -387,7 +387,7 @@ jobs:
       DAILYBOY_BUILD_ROOT: docker/rocky9/
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v6
         with:
           name: dailyboy-ci-rocky9-cy2025
           path: /tmp
@@ -422,7 +422,7 @@ jobs:
       DAILYBOY_BUILD_ROOT: docker/rocky9/
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v6
         with:
           name: dailyboy-ci-rocky9-cy2024
           path: /tmp

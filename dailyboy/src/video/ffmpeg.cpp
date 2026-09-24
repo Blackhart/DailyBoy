@@ -38,6 +38,15 @@ namespace {
 std::mutex g_ffmpeg_log_mu;
 std::string* g_ffmpeg_log_sink = nullptr;
 
+// AVFrame docs: swscale may read 16 bytes past planes; prefer 32-byte linesizes.
+constexpr int kSwsRgbStrideAlign = 32;
+constexpr int kSwsSimdOverread = 64;
+
+int sws_rgb24_stride(int encode_width) {
+  return (encode_width * 3 + kSwsRgbStrideAlign - 1) &
+         ~(kSwsRgbStrideAlign - 1);
+}
+
 void capture_av_log(void* ptr, int level, const char* fmt, va_list vl) {
   if (level > AV_LOG_ERROR) {
     return;
@@ -166,13 +175,11 @@ const uint8_t* rgb8_with_encode_pad(const std::vector<uint8_t>& rgb, int width,
                                     int encode_height,
                                     std::vector<uint8_t>& padded,
                                     int* dst_stride) {
-  *dst_stride = encode_width * 3;
-  if (encode_width == width && encode_height == height) {
-    return rgb.data();
-  }
+  *dst_stride = sws_rgb24_stride(encode_width);
   const int src_stride = width * 3;
   padded.assign(static_cast<std::size_t>(*dst_stride) *
-                    static_cast<std::size_t>(encode_height),
+                        static_cast<std::size_t>(encode_height) +
+                    kSwsSimdOverread,
                 0);
   for (int y = 0; y < height; ++y) {
     std::copy(

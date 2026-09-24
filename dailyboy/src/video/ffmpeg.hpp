@@ -69,9 +69,13 @@ Status send_packet_loop(AVFormatContext* format, AVCodecContext* codec,
 Status extract_rgb8(const Frame& frame, std::vector<uint8_t>& rgb);
 
 /*!
- * \brief Copies RGB8 into \a padded when the encoder size is larger.
+ * \brief Stages RGB8 for \c sws_scale with aligned stride and SIMD overread.
  *
- * \return Pointer to \a rgb or \a padded. \a dst_stride is encode width × 3.
+ * Always copies into \a padded (never returns \a rgb). Stride is 32-byte
+ * aligned; allocation includes trailing bytes past the last row so swscale
+ * SIMD may safely read beyond the planes (see AVFrame data docs).
+ *
+ * \return Pointer to \a padded. \a dst_stride is the padded row stride.
  */
 const uint8_t* rgb8_with_encode_pad(const std::vector<uint8_t>& rgb, int width,
                                     int height, int encode_width,
