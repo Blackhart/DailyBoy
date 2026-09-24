@@ -180,6 +180,8 @@ if(DAILYBOY_EXPORT_COMPILE_COMMANDS)
 endif()
 
 if(MSVC)
+    # fmt (via OIIO/OCIO) requires UTF-8 source/execution charset on MSVC.
+    add_compile_options(/utf-8)
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /Zi")
     set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} /Zi")
 else()
@@ -313,6 +315,9 @@ function(dailyboy_ep_cmake_args out_var install_prefix)
         else()
             list(APPEND _args -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreadedDLL)
         endif()
+        # Bundled deps (OIIO fmt, etc.) need /utf-8; ExternalProject does not
+        # inherit add_compile_options from the parent.
+        list(APPEND _args "-DCMAKE_C_FLAGS=/utf-8" "-DCMAKE_CXX_FLAGS=/utf-8")
     endif()
     if(CMAKE_CXX_COMPILER)
         list(APPEND _args "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}")
