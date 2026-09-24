@@ -290,9 +290,9 @@ Status ProresWriter::open(const std::filesystem::path& path, int width,
                              av_error_string(err)));
   }
 
-  DAILYBOY_RETURN_IF_ERROR(fail(create_rgb_to_yuv_sws(
-      encode_width_, encode_height_, av_->codec->pix_fmt, video.signal(),
-      &av_->sws)));
+  DAILYBOY_RETURN_IF_ERROR(fail(
+      create_rgb_to_yuv_sws(encode_width_, encode_height_, av_->codec->pix_fmt,
+                            video.signal(), &av_->sws)));
 
   av_->yuv = av_frame_alloc();
   if (av_->yuv == nullptr) {
@@ -340,8 +340,9 @@ Status ProresWriter::write(const Frame& frame) {
   }
 
   FfmpegLogCapture ffmpeg_logs;
-  DAILYBOY_RETURN_IF_ERROR(convert_frame_rgb_to_yuv(
-      frame, width_, height_, encode_width_, encode_height_, av_->sws, av_->yuv));
+  DAILYBOY_RETURN_IF_ERROR(
+      convert_frame_rgb_to_yuv(frame, width_, height_, encode_width_,
+                               encode_height_, av_->sws, av_->yuv));
   av_->yuv->pts = pts_;
   DAILYBOY_RETURN_IF_ERROR(
       send_packet_loop(av_->format, av_->codec, av_->stream, av_->yuv));

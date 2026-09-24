@@ -1,6 +1,6 @@
-#include "video/ffmpeg.hpp"
-
 #include <gtest/gtest.h>
+
+#include "video/ffmpeg.hpp"
 
 extern "C" {
 #include <libavutil/pixfmt.h>

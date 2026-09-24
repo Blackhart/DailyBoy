@@ -6610,10 +6610,10 @@ TEST(JobLoader, LoadJob_ProresAlphaBits_ReturnsUserError) {
  */
 TEST(JobLoader, LoadJob_ProresYuvaPixFmt_ReturnsUserError) {
   // Prepare
-  const std::filesystem::path yaml = write_prores_job(
-      "yuva.yaml",
-      "        profile: 4444\n"
-      "        pix_fmt: yuva444p10\n");
+  const std::filesystem::path yaml =
+      write_prores_job("yuva.yaml",
+                       "        profile: 4444\n"
+                       "        pix_fmt: yuva444p10\n");
 
   // Test
   dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);

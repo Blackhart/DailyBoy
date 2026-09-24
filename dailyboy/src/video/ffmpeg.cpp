@@ -180,8 +180,7 @@ RgbEncodeDepth rgb_encode_depth_for_pix_fmt(AVPixelFormat pix_fmt) {
 }
 
 AVPixelFormat sws_rgb_pix_fmt(RgbEncodeDepth depth) {
-  return depth == RgbEncodeDepth::Bits16 ? AV_PIX_FMT_RGB48
-                                         : AV_PIX_FMT_RGB24;
+  return depth == RgbEncodeDepth::Bits16 ? AV_PIX_FMT_RGB48 : AV_PIX_FMT_RGB24;
 }
 
 int rgb_bytes_per_pixel(RgbEncodeDepth depth) {
@@ -273,8 +272,8 @@ Status convert_frame_rgb_to_yuv(const Frame& frame, int width, int height,
   if (err < 0) {
     return ffmpeg_error("av_frame_make_writable: " + av_error_string(err));
   }
-  const int scaled =
-      sws_scale(sws, planes, strides, 0, encode_height, yuv->data, yuv->linesize);
+  const int scaled = sws_scale(sws, planes, strides, 0, encode_height,
+                               yuv->data, yuv->linesize);
   if (scaled != encode_height) {
     return ffmpeg_error("sws_scale failed.");
   }
