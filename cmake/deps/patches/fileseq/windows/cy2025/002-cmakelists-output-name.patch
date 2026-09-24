@@ -1,0 +1,11 @@
+--- a/cpp/CMakeLists.txt
++++ b/cpp/CMakeLists.txt
+@@ -78,7 +78,7 @@
+ # Create static library
+ add_library(fileseq_static STATIC ${LIB_SOURCES} ${PARSER_SOURCES})
+ target_compile_features(fileseq_static PUBLIC cxx_std_14)
+-set_target_properties(fileseq_static PROPERTIES OUTPUT_NAME fileseq)
++set_target_properties(fileseq_static PROPERTIES OUTPUT_NAME fileseq_static)
+ 
+ # Link static library against vendored ANTLR4 runtime (static)
+ target_link_libraries(fileseq_static antlr4_static)
