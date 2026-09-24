@@ -315,7 +315,6 @@ class JobOutputVideoProres {
   enum class JobOutputVideoProresPixFmtValue : std::uint8_t {
     Yuv422p10 = 0,
     Yuv444p10 = 1,
-    Yuva444p10 = 2,
   };
 
   /*!
@@ -358,9 +357,6 @@ class JobOutputVideoProres {
   const std::string& vendor() const { return vendor_; }
   void set_vendor(std::string vendor) { vendor_ = std::move(vendor); }
 
-  int alpha_bits() const { return alpha_bits_; }
-  void set_alpha_bits(int alpha_bits) { alpha_bits_ = alpha_bits; }
-
   bool faststart() const { return faststart_; }
   void set_faststart(bool faststart) { faststart_ = faststart; }
 
@@ -374,7 +370,6 @@ class JobOutputVideoProres {
   int bits_per_mb_ = 0;
   int mbs_per_slice_ = kDefaultMbsPerSlice;
   std::string vendor_ = kDefaultVendor;
-  int alpha_bits_ = 0;
   bool faststart_ = true;
 };
 

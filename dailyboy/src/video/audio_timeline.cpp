@@ -234,17 +234,26 @@ Status append_decoded_frame(std::vector<int16_t>& pcm, SwrContext* swr,
 
 Status receive_and_append_frames(AVCodecContext* decoder, SwrContext* swr,
                                  AVFrame* frame, std::vector<int16_t>& pcm) {
-  while (avcodec_receive_frame(decoder, frame) >= 0) {
+  while (true) {
+    const int err = avcodec_receive_frame(decoder, frame);
+    if (err == AVERROR(EAGAIN) || err == AVERROR_EOF) {
+      return Status::Ok();
+    }
+    if (err < 0) {
+      return Status::User(std::string(USER_ERROR_ENCODE_5) + " " +
+                          av_error_string(err));
+    }
     DAILYBOY_RETURN_IF_ERROR(append_decoded_frame(pcm, swr, frame));
   }
-  return Status::Ok();
 }
 
 Status decode_one_packet(AVCodecContext* decoder, AVPacket* packet,
                          SwrContext* swr, AVFrame* frame,
                          std::vector<int16_t>& pcm) {
-  if (avcodec_send_packet(decoder, packet) < 0) {
-    return Status::Ok();
+  const int err = avcodec_send_packet(decoder, packet);
+  if (err < 0) {
+    return Status::User(std::string(USER_ERROR_ENCODE_5) + " " +
+                        av_error_string(err));
   }
   return receive_and_append_frames(decoder, swr, frame, pcm);
 }

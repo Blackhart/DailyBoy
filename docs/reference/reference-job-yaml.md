@@ -25,6 +25,7 @@
 - [7. `output`](#section-7-output)
   - [7.1 `output` object structure](#output-structure)
   - [7.2 `videos[]` entries](#output-videos)
+  - [7.2.0 `signal`](#output-signal)
   - [7.2.1 `codec_options` for `h264`](#output-codec-options)
   - [7.2.2 `codec_options` for `mjpeg`](#output-codec-options-mjpeg)
   - [7.2.3 `codec_options` for `dnxhd`](#output-codec-options-dnxhd)
@@ -239,7 +240,7 @@ This means: “For the shot named `sh010_bg`, process images `/shots/sh010/rende
 | --------- | -------- | ------------------ | ----------- |
 | `path`    | yes      | string (non-empty) | Guide-track file for this plan (WAV PCM or AAC in `.wav` / `.aac` / `.m4a` / audio-only `.mov`). Metadata tokens allowed. |
 
-Optional. When present on at least one plan, every enabled MOV gets the same AAC-LC stereo 48 kHz guide track:
+Optional. When present on at least one plan, every enabled MOV gets the same AAC-LC stereo 48 kHz guide track at a fixed **192 kbps**:
 
 1. Silence for `layout.slate.duration_frames` (no speech during the slate).
 2. For each plan in order: load `audio.path` (or silence if omitted), resample to 48 kHz stereo, then trim or pad silence to `(frame_end - frame_start + 1) / fps` of that plan’s plates.
@@ -512,13 +513,28 @@ Each entry specifies one movie output.
 | `id`            | yes      | string (non-empty)            | —                  | Unique identifier for this movie|
 | `enabled`       | yes      | boolean                       | —                  | Whether to write this output    |
 | `display_view`  | yes      | object (`display`, `view`)    | —                  | OCIO DisplayView for review     |
-| `signal`        | yes      | object (range/matrix/…)       | —                  | Encode color tags + YCbCr matrix|
-| `path`          | yes      | string (non-empty)            | —                  | Output file path                |
+| `signal`        | yes      | object — see [§7.2.0](#output-signal) | —                  | Encode color tags + YCbCr matrix|
+| `path`          | yes      | string (non-empty)            | —                  | Output file path (QuickTime `.mov`; muxer is always `mov`) |
 | `fps`           | no       | integer ≥ 1                   | `24`               | Frames per second               |
 | `codec`         | yes      | `h264`, `mjpeg`, `dnxhd`, `prores` | —                  | Output codec                    |
 | `codec_options` | no       | object                        | codec defaults     | Codec parameters (optional)     |
 
 See the documentation for details regarding available `codec_options` per codec.
+
+<a id="output-signal"></a>
+
+#### 7.2.0 `signal`
+
+Required on every `videos[]` entry. Tags written into the bitstream / container and the RGB→YCbCr matrix used by swscale. Only BT.709 is supported today.
+
+| Field        | Required | Values     | Description |
+| ------------ | -------- | ---------- | ----------- |
+| `range`      | yes      | `tv`, `pc` | Limited (`tv`) or full (`pc`) luma/chroma range |
+| `matrix`     | yes      | `bt709`    | YCbCr matrix (AVCOL_SPC) and swscale RGB→YUV matrix |
+| `primaries`  | yes      | `bt709`    | Color primaries metadata |
+| `transfer`   | yes      | `bt709`    | Transfer characteristic metadata |
+
+`display_view` selects the OCIO DisplayView that produces the review RGB sent to the encoder; `signal` describes how that RGB is tagged and converted to YCbCr. They are independent fields.
 
 <a id="output-codec-options"></a>
 
@@ -572,20 +588,19 @@ Optional. If not specified, defaults are used.
 
 #### 7.2.4 `codec_options` for `prores`
 
-Optional. If not specified, defaults are used. Encoding uses FFmpeg `prores_ks`.
+Optional. If not specified, defaults are used. Encoding uses FFmpeg `prores_ks`. Source images have no alpha plane; `yuva444p10` / `alpha_bits` are not accepted.
 
-- Profiles `proxy` / `lt` / `standard` / `hq` require `pix_fmt: yuv422p10` and `alpha_bits: 0`.
-- Profiles `4444` / `4444xq` use `yuv444p10` by default, or `yuva444p10` with `alpha_bits` 8 or 16.
+- Profiles `proxy` / `lt` / `standard` / `hq` require `pix_fmt: yuv422p10`.
+- Profiles `4444` / `4444xq` use `yuv444p10`.
 
 | Field           | Required | Values                                                          | Default      | Description                                      |
 | --------------- | -------- | --------------------------------------------------------------- | ------------ | ------------------------------------------------ |
 | `profile`       | no       | `proxy`, `lt`, `standard`, `hq`, `4444`, `4444xq`               | `hq`         | ProRes profile (YAML `4444` may be unquoted) |
-| `pix_fmt`       | no       | `yuv422p10`, `yuv444p10`, `yuva444p10`                          | by profile   | Pixel format (10-bit)                            |
+| `pix_fmt`       | no       | `yuv422p10`, `yuv444p10`                                        | by profile   | Pixel format (10-bit); float ImageBuf → RGB48 → YUV |
 | `quant_mat`     | no       | `auto`, `proxy`, `lt`, `standard`, `hq`, `default`              | `auto`       | Quantization matrix                              |
 | `bits_per_mb`   | no       | integer 0–8192                                                  | `0`          | Bits per macroblock (`0` = encoder default)      |
 | `mbs_per_slice` | no       | integer 1–8                                                     | `8`          | Macroblocks per slice                            |
 | `vendor`        | no       | exactly 4 ASCII characters                                      | `apl0`       | ProRes vendor ID in the bitstream                |
-| `alpha_bits`    | no       | `0`, `8`, `16`                                                  | `0`          | Alpha plane depth (`yuva444p10` only)            |
 | `faststart`     | no       | `true`, `false`                                                 | `true`       | Store moov atom at file head                     |
 
 <a id="output-image-sequences"></a>
@@ -671,6 +686,11 @@ output:
       display_view:
         display: "Rec.1886 Rec.709 - Display"
         view: "ACES 2.0 - SDR 100 nits (Rec.709)"
+      signal:
+        range: tv
+        matrix: bt709
+        primaries: bt709
+        transfer: bt709
       path: /out/sh010_review.mov
       fps: 24
       codec: h264
@@ -683,7 +703,6 @@ output:
         profile: high
         level: 4.1
         faststart: true
-        color_range: tv
   image_sequences:
     - id: archive_acescg
       enabled: true
@@ -759,6 +778,11 @@ output:
       display_view:
         display: "Rec.1886 Rec.709 - Display"
         view: "ACES 2.0 - SDR 100 nits (Rec.709)"
+      signal:
+        range: tv
+        matrix: bt709
+        primaries: bt709
+        transfer: bt709
       path: "{dailies_root}/review.mov"   # CHANGE_ME
       fps: 24
       codec: h264

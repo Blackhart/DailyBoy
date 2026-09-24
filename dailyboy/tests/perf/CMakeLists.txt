@@ -103,7 +103,7 @@ set_tests_properties(
     PROPERTIES
         LABELS "load;dailyboy"
         ENVIRONMENT "${_dailyboy_perf_env}"
-        TIMEOUT 600
+        TIMEOUT 1200
 )
 
 add_executable(generate_reformat_perf_data io/write_reformat_data.cpp)

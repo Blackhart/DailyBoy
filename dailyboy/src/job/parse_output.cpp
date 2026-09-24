@@ -386,7 +386,7 @@ bool prores_pix_fmt_ok(
     JobOutputVideoProres::JobOutputVideoProresPixFmtValue pix_fmt) {
   using Pix = JobOutputVideoProres::JobOutputVideoProresPixFmtValue;
   if (prores_is_444(profile)) {
-    return pix_fmt == Pix::Yuv444p10 || pix_fmt == Pix::Yuva444p10;
+    return pix_fmt == Pix::Yuv444p10;
   }
   return pix_fmt == Pix::Yuv422p10;
 }
@@ -452,9 +452,6 @@ StatusOr<JobOutputVideoProres> parse_prores(const YAML::Node& node,
     } else if (pix_fmt == "yuv444p10") {
       prores.set_pix_fmt(
           JobOutputVideoProres::JobOutputVideoProresPixFmtValue::Yuv444p10);
-    } else if (pix_fmt == "yuva444p10") {
-      prores.set_pix_fmt(
-          JobOutputVideoProres::JobOutputVideoProresPixFmtValue::Yuva444p10);
     } else {
       return Status::User(with_job_error(
           USER_ERROR_JOB_25, field + ".pix_fmt '" + pix_fmt + "'."));
@@ -519,23 +516,9 @@ StatusOr<JobOutputVideoProres> parse_prores(const YAML::Node& node,
   }
   prores.set_vendor(std::move(vendor));
 
-  DAILYBOY_ASSIGN_OR_RETURN(int alpha_bits,
-                            as_optional<int>(map, "alpha_bits", 0, field));
-  if (alpha_bits != 0 && alpha_bits != 8 && alpha_bits != 16) {
-    return Status::User(with_job_error(
-        USER_ERROR_JOB_25,
-        field + ".alpha_bits '" + std::to_string(alpha_bits) + "'."));
-  }
-  using Pix = JobOutputVideoProres::JobOutputVideoProresPixFmtValue;
-  const bool alpha_allowed =
-      prores_is_444(prores.profile()) && prores.pix_fmt() == Pix::Yuva444p10;
-  if (alpha_bits != 0 && !alpha_allowed) {
+  if (map["alpha_bits"]) {
     return Status::User(with_job_error(USER_ERROR_JOB_97, field + "."));
   }
-  if (prores.pix_fmt() == Pix::Yuva444p10 && alpha_bits == 0) {
-    return Status::User(with_job_error(USER_ERROR_JOB_97, field + "."));
-  }
-  prores.set_alpha_bits(alpha_bits);
 
   DAILYBOY_ASSIGN_OR_RETURN(bool faststart,
                             as_optional<bool>(map, "faststart", true, field));

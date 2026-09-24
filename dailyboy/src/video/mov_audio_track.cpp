@@ -10,6 +10,7 @@ extern "C" {
 #include <libavformat/avformat.h>
 #include <libavutil/channel_layout.h>
 #include <libavutil/frame.h>
+#include <libavutil/mathematics.h>
 }
 
 #include <cstring>
@@ -162,7 +163,8 @@ Status MovAudioTrack::write_audio_up_to_video_pts(int64_t video_pts) {
     return Status::Ok();
   }
   const int frame_size = aac_frame_size(codec_);
-  const int64_t target = (video_pts + 1) * AudioPcmTimeline::kSampleRate / fps_;
+  const int64_t target = av_rescale_rnd(
+      video_pts + 1, AudioPcmTimeline::kSampleRate, fps_, AV_ROUND_NEAR_INF);
   const int64_t available = timeline_->sample_count();
   while (next_sample_ + frame_size <= target &&
          next_sample_ + frame_size <= available) {

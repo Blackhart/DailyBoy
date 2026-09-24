@@ -26,12 +26,11 @@ output:
       codec: prores
       codec_options:
         profile: 4444
-        pix_fmt: yuva444p10
+        pix_fmt: yuv444p10
         quant_mat: hq
         bits_per_mb: 8000
         mbs_per_slice: 4
         vendor: Lavc
-        alpha_bits: 16
         faststart: false
   image_sequences: []
 plans:

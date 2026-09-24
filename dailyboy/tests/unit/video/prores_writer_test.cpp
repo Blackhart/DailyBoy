@@ -190,25 +190,31 @@ TEST(ProresWriter, Open_Profile4444xq_WritesXqYuv444p10) {
 }
 
 /*!
- * \brief Encodes 4444 with yuva444p10 and alpha_bits 16.
+ * \brief Encodes HQ from a float ImageBuf using the 16-bit RGB→10-bit path.
  */
-TEST(ProresWriter, Open_PixFmtYuva444p10_WritesYuva444p10) {
+TEST(ProresWriter, Write_FloatFrame_WritesValidMov) {
   // Prepare
-  const std::filesystem::path mov = unique_mov("prores_pix_fmt_yuva");
+  const std::filesystem::path mov = unique_mov("prores_float_rgb");
+  OIIO::ImageSpec spec(kWidth, kHeight, 3, OIIO::TypeDesc::FLOAT);
+  OIIO::ImageBuf buf(spec);
+  const float rgb[3] = {0.501f, 0.251f, 0.125f};
+  ASSERT_TRUE(OIIO::ImageBufAlgo::fill(buf, rgb));
+  dailyboy::Frame frame(std::move(buf));
+  dailyboy::ProresWriter writer;
   dailyboy::JobOutputVideoProres options;
-  options.set_profile(dailyboy::JobOutputVideoProres::
-                          JobOutputVideoProresProfileValue::FourFourFourFour);
-  options.set_pix_fmt(dailyboy::JobOutputVideoProres::
-                          JobOutputVideoProresPixFmtValue::Yuva444p10);
-  options.set_alpha_bits(16);
 
   // Test
-  dailyboy::Status status = write_three_rgb(mov, options);
+  dailyboy::Status status =
+      writer.open(mov, kWidth, kHeight, 24, prores_video(options));
+  ASSERT_TRUE(status.ok()) << status.message();
+  status = writer.write(frame);
+  ASSERT_TRUE(status.ok()) << status.message();
+  status = writer.close();
 
   // Assert
   ASSERT_TRUE(status.ok()) << status.message();
-  // MOV demuxer tags ProRes 4444 alpha as 12-bit even when encoded as 10-bit.
-  EXPECT_EQ(probe_mov(mov).pix_fmt, AV_PIX_FMT_YUVA444P12);
+  EXPECT_EQ(probe_mov(mov).codec_id, AV_CODEC_ID_PRORES);
+  EXPECT_EQ(probe_mov(mov).pix_fmt, AV_PIX_FMT_YUV422P10);
 }
 
 /*!

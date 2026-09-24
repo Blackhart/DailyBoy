@@ -15,6 +15,7 @@ extern "C" {
 #include <libavutil/error.h>
 #include <libavutil/frame.h>
 #include <libavutil/log.h>
+#include <libavutil/pixdesc.h>
 #include <libavutil/pixfmt.h>
 #include <libswscale/swscale.h>
 }
@@ -38,6 +39,15 @@ namespace {
 std::mutex g_ffmpeg_log_mu;
 std::string* g_ffmpeg_log_sink = nullptr;
 
+// AVFrame docs: swscale may read 16 bytes past planes; prefer 32-byte linesizes.
+constexpr int kSwsRgbStrideAlign = 32;
+constexpr int kSwsSimdOverread = 64;
+
+int sws_rgb_stride(int encode_width, RgbEncodeDepth depth) {
+  const int bytes = encode_width * rgb_bytes_per_pixel(depth);
+  return (bytes + kSwsRgbStrideAlign - 1) & ~(kSwsRgbStrideAlign - 1);
+}
+
 void capture_av_log(void* ptr, int level, const char* fmt, va_list vl) {
   if (level > AV_LOG_ERROR) {
     return;
@@ -50,6 +60,44 @@ void capture_av_log(void* ptr, int level, const char* fmt, va_list vl) {
     return;
   }
   *g_ffmpeg_log_sink += line;
+}
+
+Status extract_rgb_channels(const Frame& frame, OIIO::TypeDesc type,
+                            int bytes_per_pixel, std::vector<uint8_t>& rgb) {
+  const OIIO::ImageBuf& src = frame.buf();
+  const int width = frame.width();
+  const int height = frame.height();
+  if (width <= 0 || height <= 0) {
+    return Status::User(std::string(USER_ERROR_ENCODE_4));
+  }
+
+  int order[3] = {0, 1, 2};
+  float fill[3] = {0.0f, 0.0f, 0.0f};
+  const int n = src.spec().nchannels;
+  if (n < 2) {
+    order[1] = 0;
+    order[2] = 0;
+  } else if (n < 3) {
+    order[2] = -1;
+  }
+
+  OIIO::ImageBuf rgb_buf;
+  try {
+    if (!OIIO::ImageBufAlgo::channels(rgb_buf, src, 3, order, fill)) {
+      return Status::User(std::string(USER_ERROR_ENCODE_4) + " " +
+                          rgb_buf.geterror());
+    }
+    rgb.resize(static_cast<std::size_t>(width) *
+               static_cast<std::size_t>(height) *
+               static_cast<std::size_t>(bytes_per_pixel));
+    if (!rgb_buf.get_pixels(OIIO::ROI(0, width, 0, height), type, rgb.data())) {
+      return Status::User(std::string(USER_ERROR_ENCODE_4) + " " +
+                          rgb_buf.geterror());
+    }
+  } catch (const std::exception& ex) {
+    return Status::User(std::string(USER_ERROR_ENCODE_4) + " " + ex.what());
+  }
+  return Status::Ok();
 }
 
 }  // namespace
@@ -92,7 +140,6 @@ Status ffmpeg_error(const std::string& detail) {
 
 Status send_packet_loop(AVFormatContext* format, AVCodecContext* codec,
                         AVStream* stream, AVFrame* frame) {
-  FfmpegLogCapture capture;
   int err = avcodec_send_frame(codec, frame);
   if (err < 0) {
     return ffmpeg_error("avcodec_send_frame: " + av_error_string(err));
@@ -124,55 +171,41 @@ Status send_packet_loop(AVFormatContext* format, AVCodecContext* codec,
   return Status::Ok();
 }
 
-Status extract_rgb8(const Frame& frame, std::vector<uint8_t>& rgb) {
-  const OIIO::ImageBuf& src = frame.buf();
-  const int width = frame.width();
-  const int height = frame.height();
-  if (width <= 0 || height <= 0) {
-    return Status::User(std::string(USER_ERROR_ENCODE_4));
+RgbEncodeDepth rgb_encode_depth_for_pix_fmt(AVPixelFormat pix_fmt) {
+  const AVPixFmtDescriptor* desc = av_pix_fmt_desc_get(pix_fmt);
+  if (desc != nullptr && desc->nb_components > 0 && desc->comp[0].depth > 8) {
+    return RgbEncodeDepth::Bits16;
   }
-
-  int order[3] = {0, 1, 2};
-  float fill[3] = {0.0f, 0.0f, 0.0f};
-  const int n = src.spec().nchannels;
-  if (n < 2) {
-    order[1] = 0;
-    order[2] = 0;
-  } else if (n < 3) {
-    order[2] = -1;
-  }
-
-  OIIO::ImageBuf rgb_buf;
-  try {
-    if (!OIIO::ImageBufAlgo::channels(rgb_buf, src, 3, order, fill)) {
-      return Status::User(std::string(USER_ERROR_ENCODE_4) + " " +
-                          rgb_buf.geterror());
-    }
-    rgb.resize(static_cast<std::size_t>(width) *
-               static_cast<std::size_t>(height) * 3);
-    if (!rgb_buf.get_pixels(OIIO::ROI(0, width, 0, height),
-                            OIIO::TypeDesc::UINT8, rgb.data())) {
-      return Status::User(std::string(USER_ERROR_ENCODE_4) + " " +
-                          rgb_buf.geterror());
-    }
-  } catch (const std::exception& ex) {
-    return Status::User(std::string(USER_ERROR_ENCODE_4) + " " + ex.what());
-  }
-  return Status::Ok();
+  return RgbEncodeDepth::Bits8;
 }
 
-const uint8_t* rgb8_with_encode_pad(const std::vector<uint8_t>& rgb, int width,
-                                    int height, int encode_width,
-                                    int encode_height,
-                                    std::vector<uint8_t>& padded,
-                                    int* dst_stride) {
-  *dst_stride = encode_width * 3;
-  if (encode_width == width && encode_height == height) {
-    return rgb.data();
-  }
-  const int src_stride = width * 3;
+AVPixelFormat sws_rgb_pix_fmt(RgbEncodeDepth depth) {
+  return depth == RgbEncodeDepth::Bits16 ? AV_PIX_FMT_RGB48 : AV_PIX_FMT_RGB24;
+}
+
+int rgb_bytes_per_pixel(RgbEncodeDepth depth) {
+  return depth == RgbEncodeDepth::Bits16 ? 6 : 3;
+}
+
+Status extract_rgb(const Frame& frame, RgbEncodeDepth depth,
+                   std::vector<uint8_t>& rgb) {
+  const OIIO::TypeDesc type = depth == RgbEncodeDepth::Bits16
+                                  ? OIIO::TypeDesc::UINT16
+                                  : OIIO::TypeDesc::UINT8;
+  return extract_rgb_channels(frame, type, rgb_bytes_per_pixel(depth), rgb);
+}
+
+const uint8_t* rgb_with_encode_pad(const std::vector<uint8_t>& rgb, int width,
+                                   int height, int encode_width,
+                                   int encode_height, RgbEncodeDepth depth,
+                                   std::vector<uint8_t>& padded,
+                                   int* dst_stride) {
+  const int bpp = rgb_bytes_per_pixel(depth);
+  *dst_stride = sws_rgb_stride(encode_width, depth);
+  const int src_stride = width * bpp;
   padded.assign(static_cast<std::size_t>(*dst_stride) *
-                    static_cast<std::size_t>(encode_height),
+                        static_cast<std::size_t>(encode_height) +
+                    kSwsSimdOverread,
                 0);
   for (int y = 0; y < height; ++y) {
     std::copy(
@@ -181,6 +214,70 @@ const uint8_t* rgb8_with_encode_pad(const std::vector<uint8_t>& rgb, int width,
         padded.begin() + static_cast<std::ptrdiff_t>(y) * *dst_stride);
   }
   return padded.data();
+}
+
+void fill_rgb_sws_src(const uint8_t* src, int stride,
+                      const uint8_t* (&planes)[AV_NUM_DATA_POINTERS],
+                      int (&strides)[AV_NUM_DATA_POINTERS]) {
+  for (int i = 0; i < AV_NUM_DATA_POINTERS; ++i) {
+    planes[i] = nullptr;
+    strides[i] = 0;
+  }
+  planes[0] = src;
+  strides[0] = stride;
+}
+
+Status create_rgb_to_yuv_sws(int encode_width, int encode_height,
+                             AVPixelFormat dst_pix_fmt,
+                             const JobOutputVideoSignal& signal,
+                             SwsContext** out_sws) {
+  if (out_sws == nullptr) {
+    return ffmpeg_error("sws output pointer is null.");
+  }
+  const RgbEncodeDepth depth = rgb_encode_depth_for_pix_fmt(dst_pix_fmt);
+  const AVPixelFormat src_fmt = sws_rgb_pix_fmt(depth);
+  *out_sws = sws_getContext(encode_width, encode_height, src_fmt, encode_width,
+                            encode_height, dst_pix_fmt, SWS_BILINEAR, nullptr,
+                            nullptr, nullptr);
+  if (*out_sws == nullptr) {
+    return ffmpeg_error("sws_getContext failed.");
+  }
+  const Status status = apply_sws_video_signal(*out_sws, signal);
+  if (!status.ok()) {
+    sws_freeContext(*out_sws);
+    *out_sws = nullptr;
+  }
+  return status;
+}
+
+Status convert_frame_rgb_to_yuv(const Frame& frame, int width, int height,
+                                int encode_width, int encode_height,
+                                SwsContext* sws, AVFrame* yuv) {
+  if (sws == nullptr || yuv == nullptr) {
+    return ffmpeg_error("sws or yuv frame is null.");
+  }
+  const RgbEncodeDepth depth =
+      rgb_encode_depth_for_pix_fmt(static_cast<AVPixelFormat>(yuv->format));
+  std::vector<uint8_t> rgb;
+  DAILYBOY_RETURN_IF_ERROR(extract_rgb(frame, depth, rgb));
+  std::vector<uint8_t> padded;
+  int dst_stride = 0;
+  const uint8_t* src =
+      rgb_with_encode_pad(rgb, width, height, encode_width, encode_height,
+                          depth, padded, &dst_stride);
+  const uint8_t* planes[AV_NUM_DATA_POINTERS];
+  int strides[AV_NUM_DATA_POINTERS];
+  fill_rgb_sws_src(src, dst_stride, planes, strides);
+  const int err = av_frame_make_writable(yuv);
+  if (err < 0) {
+    return ffmpeg_error("av_frame_make_writable: " + av_error_string(err));
+  }
+  const int scaled = sws_scale(sws, planes, strides, 0, encode_height,
+                               yuv->data, yuv->linesize);
+  if (scaled != encode_height) {
+    return ffmpeg_error("sws_scale failed.");
+  }
+  return Status::Ok();
 }
 
 void apply_video_signal(AVCodecContext* codec,

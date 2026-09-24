@@ -19,7 +19,6 @@ extern "C" {
 #include <dailyboy/log.hpp>
 #include <string>
 #include <variant>
-#include <vector>
 
 #include "error/video.hpp"
 #include "status.hpp"
@@ -308,14 +307,9 @@ Status H264Writer::open(const std::filesystem::path& path, int width,
                              av_error_string(err)));
   }
 
-  av_->sws = sws_getContext(encode_width_, encode_height_, AV_PIX_FMT_RGB24,
-                            encode_width_, encode_height_, av_->codec->pix_fmt,
-                            SWS_BILINEAR, nullptr, nullptr, nullptr);
-  if (av_->sws == nullptr) {
-    return fail(ffmpeg_error("sws_getContext failed."));
-  }
-  DAILYBOY_RETURN_IF_ERROR(
-      fail(apply_sws_video_signal(av_->sws, video.signal())));
+  DAILYBOY_RETURN_IF_ERROR(fail(
+      create_rgb_to_yuv_sws(encode_width_, encode_height_, av_->codec->pix_fmt,
+                            video.signal(), &av_->sws)));
 
   av_->yuv = av_frame_alloc();
   if (av_->yuv == nullptr) {
@@ -362,21 +356,10 @@ Status H264Writer::write(const Frame& frame) {
     return Status::User(std::string(USER_ERROR_ENCODE_3));
   }
 
-  std::vector<uint8_t> rgb;
-  DAILYBOY_RETURN_IF_ERROR(extract_rgb8(frame, rgb));
-  std::vector<uint8_t> padded;
-  int dst_stride = 0;
-  const uint8_t* src = rgb8_with_encode_pad(
-      rgb, width_, height_, encode_width_, encode_height_, padded, &dst_stride);
-
-  const uint8_t* planes[1] = {src};
-  const int strides[1] = {dst_stride};
-  int err = av_frame_make_writable(av_->yuv);
-  if (err < 0) {
-    return ffmpeg_error("av_frame_make_writable: " + av_error_string(err));
-  }
-  sws_scale(av_->sws, planes, strides, 0, encode_height_, av_->yuv->data,
-            av_->yuv->linesize);
+  FfmpegLogCapture ffmpeg_logs;
+  DAILYBOY_RETURN_IF_ERROR(
+      convert_frame_rgb_to_yuv(frame, width_, height_, encode_width_,
+                               encode_height_, av_->sws, av_->yuv));
   av_->yuv->pts = pts_;
   DAILYBOY_RETURN_IF_ERROR(
       send_packet_loop(av_->format, av_->codec, av_->stream, av_->yuv));
@@ -393,13 +376,13 @@ Status H264Writer::close() {
     audio_.reset();
     return Status::Ok();
   }
+  FfmpegLogCapture ffmpeg_logs;
   Status status =
       send_packet_loop(av_->format, av_->codec, av_->stream, nullptr);
   if (status.ok() && audio_) {
     status = audio_->flush_remaining_audio();
   }
   if (status.ok()) {
-    FfmpegLogCapture ffmpeg_logs;
     const int err = av_write_trailer(av_->format);
     if (err < 0) {
       status = ffmpeg_error("av_write_trailer: " + av_error_string(err));
