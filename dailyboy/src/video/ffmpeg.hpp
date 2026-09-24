@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -167,5 +168,13 @@ void apply_global_header(AVCodecContext* codec, const AVFormatContext* format);
  * \brief Adds \c movflags=faststart to \a mux_opts when \a faststart is true.
  */
 void apply_faststart(AVDictionary** mux_opts, bool faststart);
+
+/*!
+ * \brief Sets QuickTime \c timecode metadata on \a format when \a timecode is set.
+ *
+ * Call before \c avformat_write_header. No-op when \a timecode is empty.
+ */
+Status set_mov_timecode(AVFormatContext* format,
+                        const std::optional<std::string>& timecode);
 
 }  // namespace dailyboy

@@ -17,6 +17,7 @@ extern "C" {
 
 #include <cstdint>
 #include <dailyboy/log.hpp>
+#include <optional>
 #include <string>
 #include <variant>
 
@@ -145,7 +146,8 @@ MjpegWriter::~MjpegWriter() { close(); }
 
 Status MjpegWriter::open(const std::filesystem::path& path, int width,
                          int height, int fps, const JobOutputVideo& video,
-                         std::shared_ptr<const AudioPcmTimeline> audio) {
+                         std::shared_ptr<const AudioPcmTimeline> audio,
+                         std::optional<std::string> mov_timecode) {
   silence_ffmpeg_logs();
   const JobOutputVideoMjpeg* options =
       std::get_if<JobOutputVideoMjpeg>(&video.codec_options());
@@ -256,6 +258,7 @@ Status MjpegWriter::open(const std::filesystem::path& path, int width,
 
   AVDictionary* mux_opts = nullptr;
   apply_faststart(&mux_opts, options->faststart());
+  DAILYBOY_RETURN_IF_ERROR(fail(set_mov_timecode(av_->format, mov_timecode)));
   audio_ = std::make_unique<MovAudioTrack>();
   DAILYBOY_RETURN_IF_ERROR(
       fail(audio_->open_aac_stream_on_mov(av_->format, fps, std::move(audio))));

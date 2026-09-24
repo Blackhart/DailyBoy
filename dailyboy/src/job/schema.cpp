@@ -7,6 +7,7 @@
 
 #include <fstream>
 #include <nlohmann/json-schema.hpp>
+#include <optional>
 
 #include "error/job.hpp"
 #include "job/parse_colorimetry.hpp"
@@ -121,6 +122,76 @@ Status validate_output_contract(const YAML::Node& job_root) {
       visit(output["image_sequences"], "output.image_sequences"));
   return Status::Ok();
 }
+
+/*!
+ * \brief When \c plans[].timecode is set, enabled videos must share one fps.
+ *
+ * Also rejects \c drop_frame: true unless that fps is 30 or 60. Omitted video
+ * \c fps counts as 24 (same default as the writer).
+ */
+Status validate_timecode_contract(const YAML::Node& job_root) {
+  const YAML::Node plans = job_root["plans"];
+  if (!plans || !plans.IsSequence()) {
+    return Status::Ok();
+  }
+  bool has_timecode = false;
+  bool drop_frame = false;
+  for (std::size_t i = 0; i < plans.size(); ++i) {
+    const YAML::Node timecode = plans[i]["timecode"];
+    if (!timecode || !timecode.IsMap()) {
+      continue;
+    }
+    has_timecode = true;
+    if (timecode["drop_frame"]) {
+      try {
+        drop_frame = timecode["drop_frame"].as<bool>();
+      } catch (const YAML::Exception&) {
+        continue;
+      }
+    }
+  }
+  if (!has_timecode) {
+    return Status::Ok();
+  }
+
+  constexpr int kDefaultFps = 24;
+  std::optional<int> fps;
+  const YAML::Node videos = job_root["output"]["videos"];
+  if (videos && videos.IsSequence()) {
+    for (std::size_t i = 0; i < videos.size(); ++i) {
+      const YAML::Node enabled = videos[i]["enabled"];
+      bool is_enabled = false;
+      if (enabled) {
+        try {
+          is_enabled = enabled.as<bool>();
+        } catch (const YAML::Exception&) {
+          continue;
+        }
+      }
+      if (!is_enabled) {
+        continue;
+      }
+      int video_fps = kDefaultFps;
+      if (videos[i]["fps"]) {
+        try {
+          video_fps = videos[i]["fps"].as<int>();
+        } catch (const YAML::Exception&) {
+          continue;
+        }
+      }
+      if (fps.has_value() && *fps != video_fps) {
+        return Status::User(std::string(USER_ERROR_JOB_104));
+      }
+      fps = video_fps;
+    }
+  }
+  const int resolved = fps.value_or(kDefaultFps);
+  if (drop_frame && resolved != 30 && resolved != 60) {
+    return Status::User(std::string(USER_ERROR_JOB_103));
+  }
+  return Status::Ok();
+}
+
 std::string unescape_json_pointer_token(std::string part) {
   for (std::size_t p = 0; p + 1 < part.size();) {
     if (part[p] == '~' && part[p + 1] == '1') {
@@ -635,6 +706,7 @@ Status validate_job_schema(const std::filesystem::path& job_path) {
   }
   DAILYBOY_RETURN_IF_ERROR(validate_fileseq_patterns(job_root, substitutions));
   DAILYBOY_RETURN_IF_ERROR(validate_output_contract(job_root));
+  DAILYBOY_RETURN_IF_ERROR(validate_timecode_contract(job_root));
   if (job_root["color"] && job_root["color"].IsMap()) {
     DAILYBOY_RETURN_IF_ERROR(parse_colorimetry(job_root["color"]).status());
   }

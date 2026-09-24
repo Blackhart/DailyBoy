@@ -758,6 +758,35 @@ inline constexpr std::string_view USER_ERROR_JOB_100 =
     "plans[].sequence.handles: head and tail must be integers >= 0.";
 
 /*!
+ * \var USER_ERROR_JOB_101
+ * \brief Message when \c plans[].timecode.start is missing or wrong type.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_101 =
+    "plans[].timecode.start: required string (HH:MM:SS:FF) or integer >= 0.";
+
+/*!
+ * \var USER_ERROR_JOB_102
+ * \brief Message when \c plans[].timecode.start SMPTE string is invalid.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_102 =
+    "plans[].timecode.start: invalid SMPTE timecode "
+    "(expected HH:MM:SS:FF or HH:MM:SS;FF with drop_frame).";
+
+/*!
+ * \var USER_ERROR_JOB_103
+ * \brief Message when drop-frame is set with a non-NTSC integer rate.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_103 =
+    "plans[].timecode.drop_frame: true requires resolved fps 30 or 60.";
+
+/*!
+ * \var USER_ERROR_JOB_104
+ * \brief Message when enabled videos disagree on fps with timecode set.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_104 =
+    "plans[].timecode: all enabled output.videos[] must share the same fps.";
+
+/*!
  * \var INTERNAL_ERROR_JOB_1
  * \brief Message when schema validation is called with an empty path.
  */

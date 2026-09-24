@@ -71,6 +71,56 @@ TEST(Parse, ParsePlans_OnePlan_SetsIdAndRange) {
 }
 
 /*!
+ * \brief Parses string and integer \c timecode.start forms.
+ */
+TEST(Parse, ParsePlans_TimecodeStart_StringAndInteger) {
+  // Prepare
+  const YAML::Node string_node = YAML::Load(R"(
+- id: plate
+  input_colorspace: ACES - ACEScg
+  timecode:
+    start: "01:00:00:00"
+  sequence:
+    path: "/tmp/plate.%04d.exr"
+    frame_start: 1001
+    frame_end: 1003
+)");
+  const YAML::Node int_node = YAML::Load(R"(
+- id: plate
+  input_colorspace: ACES - ACEScg
+  timecode:
+    start: 86400
+    drop_frame: false
+  sequence:
+    path: "/tmp/plate.%04d.exr"
+    frame_start: 1001
+    frame_end: 1003
+)");
+
+  // Test
+  dailyboy::StatusOr<dailyboy::JobPlans> string_plans =
+      dailyboy::parse_plans(string_node);
+  dailyboy::StatusOr<dailyboy::JobPlans> int_plans =
+      dailyboy::parse_plans(int_node);
+
+  // Assert
+  ASSERT_TRUE(string_plans.ok()) << string_plans.status().message();
+  ASSERT_TRUE(string_plans.value().plans()[0].timecode().has_value());
+  EXPECT_TRUE(std::holds_alternative<std::string>(
+      string_plans.value().plans()[0].timecode()->start()));
+  EXPECT_EQ(std::get<std::string>(
+                string_plans.value().plans()[0].timecode()->start()),
+            "01:00:00:00");
+  ASSERT_TRUE(int_plans.ok()) << int_plans.status().message();
+  ASSERT_TRUE(int_plans.value().plans()[0].timecode().has_value());
+  EXPECT_TRUE(std::holds_alternative<int>(
+      int_plans.value().plans()[0].timecode()->start()));
+  EXPECT_EQ(std::get<int>(int_plans.value().plans()[0].timecode()->start()),
+            86400);
+  EXPECT_FALSE(int_plans.value().plans()[0].timecode()->drop_frame());
+}
+
+/*!
  * \brief Absent metadata yields empty substitutions.
  */
 TEST(Parse, ParseMetadata_NullNode_ReturnsEmptySubstitutions) {

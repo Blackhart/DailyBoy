@@ -332,4 +332,21 @@ void apply_faststart(AVDictionary** mux_opts, bool faststart) {
   }
 }
 
+Status set_mov_timecode(AVFormatContext* format,
+                        const std::optional<std::string>& timecode) {
+  if (!timecode.has_value() || timecode->empty() || format == nullptr) {
+    return Status::Ok();
+  }
+  if (av_dict_set(&format->metadata, "timecode", timecode->c_str(), 0) < 0) {
+    return ffmpeg_error("av_dict_set timecode failed.");
+  }
+  if (format->nb_streams > 0 && format->streams[0] != nullptr) {
+    if (av_dict_set(&format->streams[0]->metadata, "timecode",
+                    timecode->c_str(), 0) < 0) {
+      return ffmpeg_error("av_dict_set stream timecode failed.");
+    }
+  }
+  return Status::Ok();
+}
+
 }  // namespace dailyboy

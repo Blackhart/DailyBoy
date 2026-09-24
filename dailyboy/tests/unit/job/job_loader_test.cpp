@@ -7197,3 +7197,105 @@ TEST(JobLoader, LoadJob_NegativeHandleHead_ReturnsUserError) {
   EXPECT_TRUE(job.status().message().find("handles") != std::string::npos)
       << job.status().message();
 }
+
+/*!
+ * \brief Rejects mismatched enabled video fps when plans[].timecode is set.
+ */
+TEST(JobLoader, ValidateJobSchema_TimecodeMismatchedFps_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path dir =
+      std::filesystem::path(DAILYBOY_TEST_BINARY_DIR) / "timecode_contract";
+  std::filesystem::create_directories(dir);
+  const std::filesystem::path yaml = dir / "mismatched_fps.yaml";
+  {
+    std::ofstream out(yaml);
+    out << R"(
+dailyboy_version: 1
+color:
+  ocio_config: "/unused/config.ocio"
+layout:
+  canvas: { width: 8, height: 8 }
+  image: { fit: "contain" }
+  slate: { duration_frames: 0, lines: [] }
+output:
+  videos:
+    - id: a
+      enabled: true
+      display_view: { display: "passthrough", view: "passthrough" }
+      signal: { range: tv, matrix: bt709, primaries: bt709, transfer: bt709 }
+      path: /tmp/a.mov
+      fps: 24
+      codec: h264
+    - id: b
+      enabled: true
+      display_view: { display: "passthrough", view: "passthrough" }
+      signal: { range: tv, matrix: bt709, primaries: bt709, transfer: bt709 }
+      path: /tmp/b.mov
+      fps: 25
+      codec: h264
+plans:
+  - id: plate
+    input_colorspace: ACES - ACEScg
+    timecode:
+      start: "01:00:00:00"
+    sequence:
+      path: /tmp/plate.%04d.png
+      frame_start: 1001
+      frame_end: 1003
+)";
+  }
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_104));
+}
+
+/*!
+ * \brief Rejects drop_frame with non-NTSC resolved fps at schema validation.
+ */
+TEST(JobLoader, ValidateJobSchema_TimecodeDropFrameAt24_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path dir =
+      std::filesystem::path(DAILYBOY_TEST_BINARY_DIR) / "timecode_contract";
+  std::filesystem::create_directories(dir);
+  const std::filesystem::path yaml = dir / "drop_frame_24.yaml";
+  {
+    std::ofstream out(yaml);
+    out << R"(
+dailyboy_version: 1
+color:
+  ocio_config: "/unused/config.ocio"
+layout:
+  canvas: { width: 8, height: 8 }
+  image: { fit: "contain" }
+  slate: { duration_frames: 0, lines: [] }
+output:
+  videos:
+    - id: a
+      enabled: true
+      display_view: { display: "passthrough", view: "passthrough" }
+      signal: { range: tv, matrix: bt709, primaries: bt709, transfer: bt709 }
+      path: /tmp/a.mov
+      fps: 24
+      codec: h264
+plans:
+  - id: plate
+    input_colorspace: ACES - ACEScg
+    timecode:
+      start: "01:00:00;00"
+      drop_frame: true
+    sequence:
+      path: /tmp/plate.%04d.png
+      frame_start: 1001
+      frame_end: 1003
+)";
+  }
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_103));
+}

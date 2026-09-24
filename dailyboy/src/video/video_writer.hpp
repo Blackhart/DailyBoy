@@ -2,6 +2,8 @@
 
 #include <filesystem>
 #include <memory>
+#include <optional>
+#include <string>
 
 #include "image/frame.hpp"
 #include "job/output.hpp"
@@ -33,7 +35,8 @@ class VideoWriter {
   virtual Status open(
       const std::filesystem::path& path, int width, int height, int fps,
       const JobOutputVideo& video,
-      std::shared_ptr<const AudioPcmTimeline> audio = nullptr) = 0;
+      std::shared_ptr<const AudioPcmTimeline> audio = nullptr,
+      std::optional<std::string> mov_timecode = std::nullopt) = 0;
 
   /*!
    * \brief Encodes one frame (RGB extracted from the ImageBuf) and muxes it.
