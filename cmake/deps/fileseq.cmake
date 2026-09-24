@@ -5,57 +5,49 @@
 # enable_testing(), and find_package(GTest), which would pollute the DailyBoy tree.
 #
 # Also used as script mode (cmake -P):
-#   - PATCH: -DFILESEQ_CMAKELISTS=... (WIN32 OUTPUT_NAME + MSVC warning flags)
+#   - PATCH: -DFILESEQ_SOURCE_DIR=... -DFILESEQ_PATCH_DIR=... (WIN32 *.patch + dirent shim)
 #   - INSTALL: -DINSTALL_PREFIX=... -DBINARY_DIR=... -DSOURCE_DIR=...
 
 if(CMAKE_SCRIPT_MODE_FILE)
     cmake_minimum_required(VERSION 3.28)
 
-    # WIN32 patch: OUTPUT_NAME clash + GCC-only warning flags under MSVC.
-    if(FILESEQ_CMAKELISTS)
-        if(NOT EXISTS "${FILESEQ_CMAKELISTS}")
-            message(FATAL_ERROR "Missing ${FILESEQ_CMAKELISTS}")
+    # WIN32: apply numbered *.patch under patches/fileseq/windows/cyXXXX/, then copy dirent shim.
+    if(FILESEQ_SOURCE_DIR AND FILESEQ_PATCH_DIR)
+        if(NOT IS_DIRECTORY "${FILESEQ_SOURCE_DIR}")
+            message(FATAL_ERROR "Missing FILESEQ_SOURCE_DIR=${FILESEQ_SOURCE_DIR}")
         endif()
-        file(READ "${FILESEQ_CMAKELISTS}" _content)
-        set(_patched "${_content}")
+        if(NOT IS_DIRECTORY "${FILESEQ_PATCH_DIR}")
+            message(FATAL_ERROR "Missing FILESEQ_PATCH_DIR=${FILESEQ_PATCH_DIR}")
+        endif()
 
-        if(NOT _patched MATCHES "OUTPUT_NAME fileseq_static")
-            set(_before "${_patched}")
-            set(_needle
-                "set_target_properties(fileseq_static PROPERTIES OUTPUT_NAME fileseq)"
+        file(GLOB _dailyboy_fileseq_patches "${FILESEQ_PATCH_DIR}/*.patch")
+        list(SORT _dailyboy_fileseq_patches)
+        if(_dailyboy_fileseq_patches STREQUAL "")
+            message(FATAL_ERROR "No .patch files in ${FILESEQ_PATCH_DIR}")
+        endif()
+
+        foreach(_patch IN LISTS _dailyboy_fileseq_patches)
+            execute_process(
+                COMMAND git apply --verbose --whitespace=nowarn "${_patch}"
+                WORKING_DIRECTORY "${FILESEQ_SOURCE_DIR}"
+                RESULT_VARIABLE _dailyboy_fileseq_patch_rc
+                ERROR_VARIABLE _dailyboy_fileseq_patch_err
+                OUTPUT_VARIABLE _dailyboy_fileseq_patch_out
             )
-            set(_replacement
-                "set_target_properties(fileseq_static PROPERTIES OUTPUT_NAME fileseq_static)"
-            )
-            string(REPLACE "${_needle}" "${_replacement}" _patched "${_patched}")
-            if(_patched STREQUAL _before)
-                message(FATAL_ERROR "fileseq: could not patch static OUTPUT_NAME")
+            if(NOT _dailyboy_fileseq_patch_rc EQUAL 0)
+                message(
+                    FATAL_ERROR
+                    "fileseq: git apply failed for ${_patch}:\n"
+                    "${_dailyboy_fileseq_patch_out}${_dailyboy_fileseq_patch_err}"
+                )
             endif()
-        endif()
+        endforeach()
 
-        # Unguarded GCC flags break MSVC (cl D8021 on /Wextra). Skip if already guarded.
-        if(NOT _patched MATCHES "if\\(MSVC\\)[^\n]*\n  add_compile_options\\(/W4\\)")
-            set(_before "${_patched}")
-            set(_warnings_needle
-                "# Compiler warnings\nadd_compile_options(-Wall -Wextra -Wpedantic)"
-            )
-            set(_warnings_replacement
-                "# Compiler warnings\nif(MSVC)\n  add_compile_options(/W4)\nelse()\n  add_compile_options(-Wall -Wextra -Wpedantic)\nendif()"
-            )
-            string(REPLACE
-                "${_warnings_needle}"
-                "${_warnings_replacement}"
-                _patched
-                "${_patched}"
-            )
-            if(_patched STREQUAL _before)
-                message(FATAL_ERROR "fileseq: could not patch MSVC warning flags")
-            endif()
+        set(_dailyboy_fileseq_dirent_shim "${FILESEQ_PATCH_DIR}/fileseq_dirent_win.h")
+        if(NOT EXISTS "${_dailyboy_fileseq_dirent_shim}")
+            message(FATAL_ERROR "Missing ${_dailyboy_fileseq_dirent_shim}")
         endif()
-
-        if(NOT _patched STREQUAL _content)
-            file(WRITE "${FILESEQ_CMAKELISTS}" "${_patched}")
-        endif()
+        file(COPY "${_dailyboy_fileseq_dirent_shim}" DESTINATION "${FILESEQ_SOURCE_DIR}/cpp")
         return()
     endif()
 
@@ -160,10 +152,14 @@ if(WIN32)
         "${_dailyboy_fileseq_install}/lib/antlr4-runtime-static.lib"
     )
     list(APPEND _dailyboy_fileseq_byproducts "${_dailyboy_fileseq_antlr_lib}")
+    set(_dailyboy_fileseq_patch_dir
+        "${CMAKE_CURRENT_LIST_DIR}/patches/fileseq/windows/cy${DAILYBOY_VFX_PLATFORM}"
+    )
     set(_dailyboy_fileseq_patch
         PATCH_COMMAND
             ${CMAKE_COMMAND}
-            -DFILESEQ_CMAKELISTS=<SOURCE_DIR>/cpp/CMakeLists.txt
+            -DFILESEQ_SOURCE_DIR=<SOURCE_DIR>
+            -DFILESEQ_PATCH_DIR=${_dailyboy_fileseq_patch_dir}
             -P ${CMAKE_CURRENT_LIST_FILE}
     )
 else()
@@ -215,5 +211,6 @@ unset(_dailyboy_fileseq_install)
 unset(_dailyboy_fileseq_lib)
 unset(_dailyboy_fileseq_antlr_lib)
 unset(_dailyboy_fileseq_byproducts)
+unset(_dailyboy_fileseq_patch_dir)
 unset(_dailyboy_fileseq_ep_cmake_args)
 unset(_dailyboy_fileseq_patch)

@@ -1,0 +1,15 @@
+--- a/cpp/CMakeLists.txt
++++ b/cpp/CMakeLists.txt
+@@ -8,7 +8,11 @@
+ set(CMAKE_CXX_EXTENSIONS OFF)
+ 
+ # Compiler warnings
+-add_compile_options(-Wall -Wextra -Wpedantic)
++if(MSVC)
++  add_compile_options(/W4)
++else()
++  add_compile_options(-Wall -Wextra -Wpedantic)
++endif()
+ 
+ # ANTLR4 parser generation (optional - only if Java is available)
+ find_program(JAVA_EXECUTABLE java)
