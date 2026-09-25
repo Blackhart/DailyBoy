@@ -7,22 +7,19 @@ layout:
     height: 8
   image:
     fit: "contain"
-  slate:
-    duration_frames: 0
-    lines: []
 output:
   videos:
-    - id: preview
+    - id: "preview"
       enabled: true
       display_view:
         display: "passthrough"
         view: "passthrough"
-      path: /tmp/dailyboy_omit_codec.mov
+      path: "/tmp/dailyboy_omit_codec.mov"
   image_sequences: []
 plans:
-  - id: plate
-    input_colorspace: ACES - ACEScg
+  - id: "plate"
+    input_colorspace: "ACES - ACEScg"
     sequence:
-      path: /tmp/plate.%04d.png
+      path: "/tmp/plate.%04d.png"
       frame_start: 1001
       frame_end: 1003

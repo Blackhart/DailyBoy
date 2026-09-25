@@ -17,6 +17,7 @@
 #include "job/plans.hpp"
 #include "job/primitives.hpp"
 #include "job/text.hpp"
+#include "support/test_fonts.hpp"
 
 namespace {
 
@@ -98,6 +99,12 @@ void expect_pixel_position(const dailyboy::TextPosition& position, int x,
   EXPECT_EQ(pixel.y(), y);
 }
 
+std::string test_font_path() { return dailyboy::test::kDejaVuSans; }
+
+std::string yaml_font_path_line(const char* indent = "        ") {
+  return std::string(indent) + "path: \"" + test_font_path() + "\"\n";
+}
+
 std::filesystem::path write_dnxhd_job(const std::string& name,
                                       const std::string& codec_options) {
   const std::filesystem::path dir =
@@ -114,9 +121,6 @@ std::filesystem::path write_dnxhd_job(const std::string& name,
          "    height: 8\n"
          "  image:\n"
          "    fit: \"contain\"\n"
-         "  slate:\n"
-         "    duration_frames: 0\n"
-         "    lines: []\n"
          "output:\n"
          "  videos:\n"
          "    - id: preview\n"
@@ -136,10 +140,10 @@ std::filesystem::path write_dnxhd_job(const std::string& name,
   }
   out << "  image_sequences: []\n"
          "plans:\n"
-         "  - id: plate\n"
-         "    input_colorspace: ACES - ACEScg\n"
+         "  - id: \"plate\"\n"
+         "    input_colorspace: \"ACES - ACEScg\"\n"
          "    sequence:\n"
-         "      path: /tmp/plate.%04d.png\n"
+         "      path: \"/tmp/plate.%04d.png\"\n"
          "      frame_start: 1001\n"
          "      frame_end: 1003\n";
   return path;
@@ -164,16 +168,13 @@ std::filesystem::path write_output_job(const std::string& name,
       << "    height: " << canvas_height << "\n"
       << "  image:\n"
          "    fit: \"contain\"\n"
-         "  slate:\n"
-         "    duration_frames: 0\n"
-         "    lines: []\n"
          "output:\n"
       << output_yaml
       << "plans:\n"
-         "  - id: plate\n"
-         "    input_colorspace: ACES - ACEScg\n"
+         "  - id: \"plate\"\n"
+         "    input_colorspace: \"ACES - ACEScg\"\n"
          "    sequence:\n"
-         "      path: /tmp/plate.%04d.png\n"
+         "      path: \"/tmp/plate.%04d.png\"\n"
          "      frame_start: 1001\n"
          "      frame_end: 1003\n";
   return path;
@@ -218,10 +219,7 @@ std::filesystem::path write_contract_job(
              "    width: 8\n"
              "    height: 8\n"
              "  image:\n"
-             "    fit: \"contain\"\n"
-             "  slate:\n"
-             "    duration_frames: 0\n"
-             "    lines: []\n";
+             "    fit: \"contain\"\n";
     }
   }
   if (spec.include_output) {
@@ -246,10 +244,10 @@ std::filesystem::path write_contract_job(
       out << spec.plans_yaml;
     } else {
       out << "plans:\n"
-             "  - id: plate\n"
-             "    input_colorspace: ACES - ACEScg\n"
+             "  - id: \"plate\"\n"
+             "    input_colorspace: \"ACES - ACEScg\"\n"
              "    sequence:\n"
-             "      path: /tmp/plate.%04d.png\n"
+             "      path: \"/tmp/plate.%04d.png\"\n"
              "      frame_start: 1001\n"
              "      frame_end: 1003\n";
     }
@@ -301,10 +299,8 @@ std::filesystem::path write_burn_in_position_job(
                                 "  burn_ins:\n"
                                 "    - template: \"{frame}\"\n"
                                 "      position:\n") +
-                            position_fields +
-                            "      font:\n"
-                            "        path: \"/unused/font.ttf\"\n"
-                            "        size_px: 12\n";
+                            position_fields + "      font:\n" +
+                            yaml_font_path_line() + "        size_px: 12\n";
   return write_burn_in_contract_job(name, block);
 }
 
@@ -319,6 +315,80 @@ std::filesystem::path write_burn_in_font_job(const std::string& name,
                                 "      font:\n") +
                             font_fields;
   return write_burn_in_contract_job(name, block);
+}
+
+std::filesystem::path write_burn_in_box_job(const std::string& name,
+                                            const std::string& box_fields) {
+  const std::string block = std::string(
+                                "  burn_ins:\n"
+                                "    - template: \"{frame}\"\n"
+                                "      position:\n"
+                                "        mode: \"layout\"\n"
+                                "        anchor: \"top_left\"\n"
+                                "      font:\n") +
+                            yaml_font_path_line() +
+                            "        size_px: 12\n"
+                            "      box:\n" +
+                            box_fields;
+  return write_burn_in_contract_job(name, block);
+}
+
+std::filesystem::path write_plan_contract_job(const std::string& name,
+                                              const std::string& plans_yaml) {
+  return write_contract_job(name, {.plans_yaml = plans_yaml.c_str()});
+}
+
+std::filesystem::path write_slate_contract_job(const std::string& name,
+                                               const std::string& slate_block) {
+  const std::string layout_yaml =
+      "layout:\n"
+      "  canvas:\n"
+      "    width: 8\n"
+      "    height: 8\n"
+      "  image:\n"
+      "    fit: \"contain\"\n" +
+      slate_block;
+  return write_contract_job(name, {.layout_yaml = layout_yaml.c_str()});
+}
+
+std::filesystem::path write_slate_line_job(const std::string& name,
+                                           const std::string& line_fields) {
+  const std::string block = std::string(
+                                "  slate:\n"
+                                "    duration_frames: 1\n"
+                                "    lines:\n"
+                                "      - ") +
+                            line_fields;
+  return write_slate_contract_job(name, block);
+}
+
+std::filesystem::path write_slate_position_job(
+    const std::string& name, const std::string& position_fields) {
+  const std::string block = std::string(
+                                "  slate:\n"
+                                "    duration_frames: 1\n"
+                                "    lines:\n"
+                                "      - text: \"slate\"\n"
+                                "        position:\n") +
+                            position_fields + "        font:\n" +
+                            yaml_font_path_line("          ") +
+                            "          size_px: 12\n";
+  return write_slate_contract_job(name, block);
+}
+
+std::filesystem::path write_slate_font_job(const std::string& name,
+                                           const std::string& font_fields) {
+  const std::string block = std::string(
+                                "  slate:\n"
+                                "    duration_frames: 1\n"
+                                "    lines:\n"
+                                "      - text: \"slate\"\n"
+                                "        position:\n"
+                                "          mode: \"layout\"\n"
+                                "          anchor: \"center_center\"\n"
+                                "        font:\n") +
+                            font_fields;
+  return write_slate_contract_job(name, block);
 }
 
 std::filesystem::path write_layout_job(const std::string& name,
@@ -339,10 +409,7 @@ std::filesystem::path write_layout_job(const std::string& name,
          "    fit: \"contain\"\n"
          "  burn_ins:\n"
       << burn_ins_yaml
-      << "  slate:\n"
-         "    duration_frames: 0\n"
-         "    lines: []\n"
-         "output:\n"
+      << "output:\n"
          "  videos: []\n"
          "  image_sequences:\n"
          "    - id: preview\n"
@@ -352,10 +419,10 @@ std::filesystem::path write_layout_job(const std::string& name,
          "        view: \"passthrough\"\n"
          "      path_pattern: /tmp/preview.%04d.png\n"
          "plans:\n"
-         "  - id: plate\n"
-         "    input_colorspace: ACES - ACEScg\n"
+         "  - id: \"plate\"\n"
+         "    input_colorspace: \"ACES - ACEScg\"\n"
          "    sequence:\n"
-         "      path: /tmp/plate.%04d.png\n"
+         "      path: \"/tmp/plate.%04d.png\"\n"
          "      frame_start: 1001\n"
          "      frame_end: 1003\n";
   return path;
@@ -398,9 +465,6 @@ std::filesystem::path write_prores_job(const std::string& name,
          "    height: 8\n"
          "  image:\n"
          "    fit: \"contain\"\n"
-         "  slate:\n"
-         "    duration_frames: 0\n"
-         "    lines: []\n"
          "output:\n"
          "  videos:\n"
          "    - id: preview\n"
@@ -420,10 +484,10 @@ std::filesystem::path write_prores_job(const std::string& name,
   }
   out << "  image_sequences: []\n"
          "plans:\n"
-         "  - id: plate\n"
-         "    input_colorspace: ACES - ACEScg\n"
+         "  - id: \"plate\"\n"
+         "    input_colorspace: \"ACES - ACEScg\"\n"
          "    sequence:\n"
-         "      path: /tmp/plate.%04d.png\n"
+         "      path: \"/tmp/plate.%04d.png\"\n"
          "      frame_start: 1001\n"
          "      frame_end: 1003\n";
   return path;
@@ -553,10 +617,7 @@ TEST(JobLoader, ValidateJobSchema_OmittedCanvas_ReturnsUserError) {
   const char* layout_yaml =
       "layout:\n"
       "  image:\n"
-      "    fit: \"contain\"\n"
-      "  slate:\n"
-      "    duration_frames: 0\n"
-      "    lines: []\n";
+      "    fit: \"contain\"\n";
   const std::filesystem::path yaml =
       write_contract_job("no_canvas.yaml", {.layout_yaml = layout_yaml});
 
@@ -580,10 +641,7 @@ TEST(JobLoader, ValidateJobSchema_PresentCanvas_Succeeds) {
       "    width: 8\n"
       "    height: 8\n"
       "  image:\n"
-      "    fit: \"contain\"\n"
-      "  slate:\n"
-      "    duration_frames: 0\n"
-      "    lines: []\n";
+      "    fit: \"contain\"\n";
   const std::filesystem::path yaml =
       write_contract_job("with_canvas.yaml", {.layout_yaml = layout_yaml});
 
@@ -609,10 +667,7 @@ TEST(JobLoader, ValidateJobSchema_PresentCanvasWidth_Succeeds) {
       "    width: 8\n"
       "    height: 8\n"
       "  image:\n"
-      "    fit: \"contain\"\n"
-      "  slate:\n"
-      "    duration_frames: 0\n"
-      "    lines: []\n";
+      "    fit: \"contain\"\n";
   const std::filesystem::path yaml = write_contract_job(
       "with_canvas_width.yaml", {.layout_yaml = layout_yaml});
 
@@ -636,10 +691,7 @@ TEST(JobLoader, ValidateJobSchema_OmittedCanvasWidth_ReturnsUserError) {
       "  canvas:\n"
       "    height: 8\n"
       "  image:\n"
-      "    fit: \"contain\"\n"
-      "  slate:\n"
-      "    duration_frames: 0\n"
-      "    lines: []\n";
+      "    fit: \"contain\"\n";
   const std::filesystem::path yaml =
       write_contract_job("no_canvas_width.yaml", {.layout_yaml = layout_yaml});
 
@@ -663,10 +715,7 @@ TEST(JobLoader, ValidateJobSchema_NonIntegerCanvasWidth_ReturnsUserError) {
       "    width: 8.5\n"
       "    height: 8\n"
       "  image:\n"
-      "    fit: \"contain\"\n"
-      "  slate:\n"
-      "    duration_frames: 0\n"
-      "    lines: []\n";
+      "    fit: \"contain\"\n";
   const std::filesystem::path yaml = write_contract_job(
       "non_integer_canvas_width.yaml", {.layout_yaml = layout_yaml});
 
@@ -692,10 +741,7 @@ TEST(JobLoader, ValidateJobSchema_OddCanvasWidth_ReturnsUserError) {
       "    width: 7\n"
       "    height: 8\n"
       "  image:\n"
-      "    fit: \"contain\"\n"
-      "  slate:\n"
-      "    duration_frames: 0\n"
-      "    lines: []\n";
+      "    fit: \"contain\"\n";
   const std::filesystem::path yaml =
       write_contract_job("odd_canvas_width.yaml", {.layout_yaml = layout_yaml});
 
@@ -721,10 +767,7 @@ TEST(JobLoader, ValidateJobSchema_EvenCanvasWidth_Succeeds) {
       "    width: 8\n"
       "    height: 8\n"
       "  image:\n"
-      "    fit: \"contain\"\n"
-      "  slate:\n"
-      "    duration_frames: 0\n"
-      "    lines: []\n";
+      "    fit: \"contain\"\n";
   const std::filesystem::path yaml = write_contract_job(
       "even_canvas_width.yaml", {.layout_yaml = layout_yaml});
 
@@ -749,10 +792,7 @@ TEST(JobLoader, ValidateJobSchema_CanvasWidthBelow2_ReturnsUserError) {
       "    width: 0\n"
       "    height: 8\n"
       "  image:\n"
-      "    fit: \"contain\"\n"
-      "  slate:\n"
-      "    duration_frames: 0\n"
-      "    lines: []\n";
+      "    fit: \"contain\"\n";
   const std::filesystem::path yaml = write_contract_job(
       "below_min_canvas_width.yaml", {.layout_yaml = layout_yaml});
 
@@ -778,10 +818,7 @@ TEST(JobLoader, ValidateJobSchema_CanvasWidthAtLeast2_Succeeds) {
       "    width: 2\n"
       "    height: 8\n"
       "  image:\n"
-      "    fit: \"contain\"\n"
-      "  slate:\n"
-      "    duration_frames: 0\n"
-      "    lines: []\n";
+      "    fit: \"contain\"\n";
   const std::filesystem::path yaml =
       write_contract_job("min_canvas_width.yaml", {.layout_yaml = layout_yaml});
 
@@ -792,7 +829,8 @@ TEST(JobLoader, ValidateJobSchema_CanvasWidthAtLeast2_Succeeds) {
   // Assert
   ASSERT_TRUE(schema.ok()) << schema.message();
   ASSERT_TRUE(job.ok()) << job.status().message();
-  EXPECT_GE(job.value().layout().canvas().width(), 2);
+  EXPECT_EQ(job.value().layout().canvas().width(), 2);
+  EXPECT_EQ(job.value().layout().canvas().height(), 8);
 }
 
 /*!
@@ -806,10 +844,7 @@ TEST(JobLoader, ValidateJobSchema_PresentCanvasHeight_Succeeds) {
       "    width: 8\n"
       "    height: 8\n"
       "  image:\n"
-      "    fit: \"contain\"\n"
-      "  slate:\n"
-      "    duration_frames: 0\n"
-      "    lines: []\n";
+      "    fit: \"contain\"\n";
   const std::filesystem::path yaml = write_contract_job(
       "with_canvas_height.yaml", {.layout_yaml = layout_yaml});
 
@@ -833,10 +868,7 @@ TEST(JobLoader, ValidateJobSchema_OmittedCanvasHeight_ReturnsUserError) {
       "  canvas:\n"
       "    width: 8\n"
       "  image:\n"
-      "    fit: \"contain\"\n"
-      "  slate:\n"
-      "    duration_frames: 0\n"
-      "    lines: []\n";
+      "    fit: \"contain\"\n";
   const std::filesystem::path yaml =
       write_contract_job("no_canvas_height.yaml", {.layout_yaml = layout_yaml});
 
@@ -860,10 +892,7 @@ TEST(JobLoader, ValidateJobSchema_NonIntegerCanvasHeight_ReturnsUserError) {
       "    width: 8\n"
       "    height: 8.5\n"
       "  image:\n"
-      "    fit: \"contain\"\n"
-      "  slate:\n"
-      "    duration_frames: 0\n"
-      "    lines: []\n";
+      "    fit: \"contain\"\n";
   const std::filesystem::path yaml = write_contract_job(
       "non_integer_canvas_height.yaml", {.layout_yaml = layout_yaml});
 
@@ -889,10 +918,7 @@ TEST(JobLoader, ValidateJobSchema_OddCanvasHeight_ReturnsUserError) {
       "    width: 8\n"
       "    height: 7\n"
       "  image:\n"
-      "    fit: \"contain\"\n"
-      "  slate:\n"
-      "    duration_frames: 0\n"
-      "    lines: []\n";
+      "    fit: \"contain\"\n";
   const std::filesystem::path yaml = write_contract_job(
       "odd_canvas_height.yaml", {.layout_yaml = layout_yaml});
 
@@ -918,10 +944,7 @@ TEST(JobLoader, ValidateJobSchema_EvenCanvasHeight_Succeeds) {
       "    width: 8\n"
       "    height: 8\n"
       "  image:\n"
-      "    fit: \"contain\"\n"
-      "  slate:\n"
-      "    duration_frames: 0\n"
-      "    lines: []\n";
+      "    fit: \"contain\"\n";
   const std::filesystem::path yaml = write_contract_job(
       "even_canvas_height.yaml", {.layout_yaml = layout_yaml});
 
@@ -946,10 +969,7 @@ TEST(JobLoader, ValidateJobSchema_CanvasHeightBelow2_ReturnsUserError) {
       "    width: 8\n"
       "    height: 0\n"
       "  image:\n"
-      "    fit: \"contain\"\n"
-      "  slate:\n"
-      "    duration_frames: 0\n"
-      "    lines: []\n";
+      "    fit: \"contain\"\n";
   const std::filesystem::path yaml = write_contract_job(
       "below_min_canvas_height.yaml", {.layout_yaml = layout_yaml});
 
@@ -975,10 +995,7 @@ TEST(JobLoader, ValidateJobSchema_CanvasHeightAtLeast2_Succeeds) {
       "    width: 8\n"
       "    height: 2\n"
       "  image:\n"
-      "    fit: \"contain\"\n"
-      "  slate:\n"
-      "    duration_frames: 0\n"
-      "    lines: []\n";
+      "    fit: \"contain\"\n";
   const std::filesystem::path yaml = write_contract_job(
       "min_canvas_height.yaml", {.layout_yaml = layout_yaml});
 
@@ -989,7 +1006,8 @@ TEST(JobLoader, ValidateJobSchema_CanvasHeightAtLeast2_Succeeds) {
   // Assert
   ASSERT_TRUE(schema.ok()) << schema.message();
   ASSERT_TRUE(job.ok()) << job.status().message();
-  EXPECT_GE(job.value().layout().canvas().height(), 2);
+  EXPECT_EQ(job.value().layout().canvas().width(), 8);
+  EXPECT_EQ(job.value().layout().canvas().height(), 2);
 }
 
 /*!
@@ -1004,10 +1022,7 @@ TEST(JobLoader, ValidateJobSchema_PresentPixelAspect_Succeeds) {
       "    height: 8\n"
       "  pixel_aspect: 2.0\n"
       "  image:\n"
-      "    fit: \"contain\"\n"
-      "  slate:\n"
-      "    duration_frames: 0\n"
-      "    lines: []\n";
+      "    fit: \"contain\"\n";
   const std::filesystem::path yaml = write_contract_job(
       "with_pixel_aspect.yaml", {.layout_yaml = layout_yaml});
 
@@ -1032,10 +1047,7 @@ TEST(JobLoader, ValidateJobSchema_OmittedPixelAspect_Succeeds) {
       "    width: 8\n"
       "    height: 8\n"
       "  image:\n"
-      "    fit: \"contain\"\n"
-      "  slate:\n"
-      "    duration_frames: 0\n"
-      "    lines: []\n";
+      "    fit: \"contain\"\n";
   const std::filesystem::path yaml =
       write_contract_job("no_pixel_aspect.yaml", {.layout_yaml = layout_yaml});
 
@@ -1061,10 +1073,7 @@ TEST(JobLoader, ValidateJobSchema_NonNumberPixelAspect_ReturnsUserError) {
       "    height: 8\n"
       "  pixel_aspect: hello\n"
       "  image:\n"
-      "    fit: \"contain\"\n"
-      "  slate:\n"
-      "    duration_frames: 0\n"
-      "    lines: []\n";
+      "    fit: \"contain\"\n";
   const std::filesystem::path yaml = write_contract_job(
       "non_number_pixel_aspect.yaml", {.layout_yaml = layout_yaml});
 
@@ -1092,10 +1101,7 @@ TEST(JobLoader, ValidateJobSchema_NumberPixelAspect_Succeeds) {
       "    height: 8\n"
       "  pixel_aspect: 2.0\n"
       "  image:\n"
-      "    fit: \"contain\"\n"
-      "  slate:\n"
-      "    duration_frames: 0\n"
-      "    lines: []\n";
+      "    fit: \"contain\"\n";
   const std::filesystem::path yaml = write_contract_job(
       "number_pixel_aspect.yaml", {.layout_yaml = layout_yaml});
 
@@ -1110,6 +1116,31 @@ TEST(JobLoader, ValidateJobSchema_NumberPixelAspect_Succeeds) {
 }
 
 /*!
+ * \brief Rejects \c pixel_aspect that is not strictly positive.
+ */
+TEST(JobLoader, ValidateJobSchema_PixelAspectNotPositive_ReturnsUserError) {
+  // Prepare
+  const char* layout_yaml =
+      "layout:\n"
+      "  canvas:\n"
+      "    width: 8\n"
+      "    height: 8\n"
+      "  pixel_aspect: 0\n"
+      "  image:\n"
+      "    fit: \"contain\"\n";
+  const std::filesystem::path yaml = write_contract_job(
+      "pixel_aspect_not_positive.yaml", {.layout_yaml = layout_yaml});
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_132));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_132));
+}
+
+/*!
  * \brief Accepts a layout block that includes \c image.
  */
 TEST(JobLoader, ValidateJobSchema_PresentImage_Succeeds) {
@@ -1120,10 +1151,7 @@ TEST(JobLoader, ValidateJobSchema_PresentImage_Succeeds) {
       "    width: 8\n"
       "    height: 8\n"
       "  image:\n"
-      "    fit: \"contain\"\n"
-      "  slate:\n"
-      "    duration_frames: 0\n"
-      "    lines: []\n";
+      "    fit: \"contain\"\n";
   const std::filesystem::path yaml =
       write_contract_job("with_image.yaml", {.layout_yaml = layout_yaml});
 
@@ -1147,10 +1175,7 @@ TEST(JobLoader, ValidateJobSchema_OmittedImage_ReturnsUserError) {
       "layout:\n"
       "  canvas:\n"
       "    width: 8\n"
-      "    height: 8\n"
-      "  slate:\n"
-      "    duration_frames: 0\n"
-      "    lines: []\n";
+      "    height: 8\n";
   const std::filesystem::path yaml =
       write_contract_job("no_image.yaml", {.layout_yaml = layout_yaml});
 
@@ -1168,16 +1193,15 @@ TEST(JobLoader, ValidateJobSchema_OmittedImage_ReturnsUserError) {
  */
 TEST(JobLoader, ValidateJobSchema_PresentBurnIns_Succeeds) {
   // Prepare
-  const std::filesystem::path yaml =
-      write_burn_in_contract_job("with_burn_ins.yaml",
-                                 "  burn_ins:\n"
-                                 "    - template: \"{frame}\"\n"
-                                 "      position:\n"
-                                 "        mode: \"layout\"\n"
-                                 "        anchor: \"top_left\"\n"
-                                 "      font:\n"
-                                 "        path: \"/unused/font.ttf\"\n"
-                                 "        size_px: 12\n");
+  const std::filesystem::path yaml = write_burn_in_contract_job(
+      "with_burn_ins.yaml",
+      "  burn_ins:\n"
+      "    - template: \"{frame}\"\n"
+      "      position:\n"
+      "        mode: \"layout\"\n"
+      "        anchor: \"top_left\"\n"
+      "      font:\n" +
+          yaml_font_path_line() + "        size_px: 12\n");
 
   // Test
   dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
@@ -1187,6 +1211,8 @@ TEST(JobLoader, ValidateJobSchema_PresentBurnIns_Succeeds) {
   ASSERT_TRUE(schema.ok()) << schema.message();
   ASSERT_TRUE(job.ok()) << job.status().message();
   ASSERT_EQ(job.value().layout().burn_ins().burn_ins().size(), 1u);
+  EXPECT_EQ(job.value().layout().burn_ins().burn_ins().front().template_text(),
+            "{frame}");
 }
 
 /*!
@@ -1200,10 +1226,7 @@ TEST(JobLoader, ValidateJobSchema_OmittedBurnIns_Succeeds) {
       "    width: 8\n"
       "    height: 8\n"
       "  image:\n"
-      "    fit: \"contain\"\n"
-      "  slate:\n"
-      "    duration_frames: 0\n"
-      "    lines: []\n";
+      "    fit: \"contain\"\n";
   const std::filesystem::path yaml =
       write_contract_job("no_burn_ins.yaml", {.layout_yaml = layout_yaml});
 
@@ -1222,16 +1245,15 @@ TEST(JobLoader, ValidateJobSchema_OmittedBurnIns_Succeeds) {
  */
 TEST(JobLoader, ValidateJobSchema_BurnInsAtLeastOne_Succeeds) {
   // Prepare
-  const std::filesystem::path yaml =
-      write_burn_in_contract_job("burn_ins_at_least_one.yaml",
-                                 "  burn_ins:\n"
-                                 "    - template: \"{frame}\"\n"
-                                 "      position:\n"
-                                 "        mode: \"layout\"\n"
-                                 "        anchor: \"top_left\"\n"
-                                 "      font:\n"
-                                 "        path: \"/unused/font.ttf\"\n"
-                                 "        size_px: 12\n");
+  const std::filesystem::path yaml = write_burn_in_contract_job(
+      "burn_ins_at_least_one.yaml",
+      "  burn_ins:\n"
+      "    - template: \"{frame}\"\n"
+      "      position:\n"
+      "        mode: \"layout\"\n"
+      "        anchor: \"top_left\"\n"
+      "      font:\n" +
+          yaml_font_path_line() + "        size_px: 12\n");
 
   // Test
   dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
@@ -1240,7 +1262,9 @@ TEST(JobLoader, ValidateJobSchema_BurnInsAtLeastOne_Succeeds) {
   // Assert
   ASSERT_TRUE(schema.ok()) << schema.message();
   ASSERT_TRUE(job.ok()) << job.status().message();
-  EXPECT_GE(job.value().layout().burn_ins().burn_ins().size(), 1u);
+  ASSERT_EQ(job.value().layout().burn_ins().burn_ins().size(), 1u);
+  EXPECT_EQ(job.value().layout().burn_ins().burn_ins().front().template_text(),
+            "{frame}");
 }
 
 /*!
@@ -1265,18 +1289,14 @@ TEST(JobLoader, ValidateJobSchema_EmptyBurnIns_ReturnsUserError) {
  */
 TEST(JobLoader, ValidateJobSchema_PresentSlate_Succeeds) {
   // Prepare
-  const char* layout_yaml =
-      "layout:\n"
-      "  canvas:\n"
-      "    width: 8\n"
-      "    height: 8\n"
-      "  image:\n"
-      "    fit: \"contain\"\n"
-      "  slate:\n"
-      "    duration_frames: 0\n"
-      "    lines: []\n";
-  const std::filesystem::path yaml =
-      write_contract_job("with_slate.yaml", {.layout_yaml = layout_yaml});
+  const std::filesystem::path yaml = write_slate_line_job(
+      "with_slate.yaml", std::string("text: \"slate\"\n"
+                                     "        position:\n"
+                                     "          mode: \"layout\"\n"
+                                     "          anchor: \"center_center\"\n"
+                                     "        font:\n") +
+                             yaml_font_path_line("          ") +
+                             "          size_px: 12\n");
 
   // Test
   dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
@@ -1285,8 +1305,9 @@ TEST(JobLoader, ValidateJobSchema_PresentSlate_Succeeds) {
   // Assert
   ASSERT_TRUE(schema.ok()) << schema.message();
   ASSERT_TRUE(job.ok()) << job.status().message();
-  EXPECT_EQ(job.value().layout().slate().duration_frames(), 0);
-  EXPECT_TRUE(job.value().layout().slate().lines().empty());
+  EXPECT_EQ(job.value().layout().slate().duration_frames(), 1);
+  ASSERT_EQ(job.value().layout().slate().lines().size(), 1u);
+  EXPECT_EQ(job.value().layout().slate().lines().front().text(), "slate");
 }
 
 /*!
@@ -1316,6 +1337,703 @@ TEST(JobLoader, ValidateJobSchema_OmittedSlate_Succeeds) {
 }
 
 /*!
+ * \brief Rejects a slate with an empty \c lines list.
+ */
+TEST(JobLoader, ValidateJobSchema_EmptySlateLines_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_slate_contract_job("empty_slate_lines.yaml",
+                               "  slate:\n"
+                               "    duration_frames: 1\n"
+                               "    lines: []\n");
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_113));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_113));
+}
+
+/*!
+ * \brief Rejects a slate that omits \c duration_frames.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedSlateDurationFrames_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_slate_contract_job(
+      "omitted_slate_duration_frames.yaml",
+      std::string("  slate:\n"
+                  "    lines:\n"
+                  "      - text: \"slate\"\n"
+                  "        position:\n"
+                  "          mode: \"layout\"\n"
+                  "          anchor: \"center_center\"\n"
+                  "        font:\n") +
+          yaml_font_path_line("          ") + "          size_px: 12\n");
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_110));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_110));
+}
+
+/*!
+ * \brief Rejects \c slate.duration_frames that is not an integer.
+ */
+TEST(JobLoader,
+     ValidateJobSchema_SlateDurationFramesNotInteger_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_slate_contract_job(
+      "slate_duration_frames_not_integer.yaml",
+      std::string("  slate:\n"
+                  "    duration_frames: 1.5\n"
+                  "    lines:\n"
+                  "      - text: \"slate\"\n"
+                  "        position:\n"
+                  "          mode: \"layout\"\n"
+                  "          anchor: \"center_center\"\n"
+                  "        font:\n") +
+          yaml_font_path_line("          ") + "          size_px: 12\n");
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_111));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_111));
+}
+
+/*!
+ * \brief Rejects \c slate.duration_frames below 0.
+ */
+TEST(JobLoader, ValidateJobSchema_SlateDurationFramesBelow0_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_slate_contract_job(
+      "slate_duration_frames_below_0.yaml",
+      std::string("  slate:\n"
+                  "    duration_frames: -1\n"
+                  "    lines:\n"
+                  "      - text: \"slate\"\n"
+                  "        position:\n"
+                  "          mode: \"layout\"\n"
+                  "          anchor: \"center_center\"\n"
+                  "        font:\n") +
+          yaml_font_path_line("          ") + "          size_px: 12\n");
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_112));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_112));
+}
+
+/*!
+ * \brief Accepts a slate that includes \c duration_frames.
+ */
+TEST(JobLoader, ValidateJobSchema_PresentSlateDurationFrames_Succeeds) {
+  // Prepare
+  const std::filesystem::path yaml = write_slate_contract_job(
+      "present_slate_duration_frames.yaml",
+      std::string("  slate:\n"
+                  "    duration_frames: 24\n"
+                  "    lines:\n"
+                  "      - text: \"slate\"\n"
+                  "        position:\n"
+                  "          mode: \"layout\"\n"
+                  "          anchor: \"center_center\"\n"
+                  "        font:\n") +
+          yaml_font_path_line("          ") + "          size_px: 12\n");
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  ASSERT_TRUE(schema.ok()) << schema.message();
+  ASSERT_TRUE(job.ok()) << job.status().message();
+  EXPECT_EQ(job.value().layout().slate().duration_frames(), 24);
+}
+
+/*!
+ * \brief Rejects a slate that omits \c lines.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedSlateLines_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_slate_contract_job("omitted_slate_lines.yaml",
+                               "  slate:\n"
+                               "    duration_frames: 1\n");
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_113));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_113));
+}
+
+/*!
+ * \brief Rejects a slate line that omits \c text.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedSlateLineText_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_slate_line_job(
+      "omitted_slate_line_text.yaml",
+      std::string("position:\n"
+                  "          mode: \"layout\"\n"
+                  "          anchor: \"center_center\"\n"
+                  "        font:\n") +
+          yaml_font_path_line("          ") + "          size_px: 12\n");
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_114));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_114));
+}
+
+/*!
+ * \brief Rejects a slate line \c text as an unquoted YAML scalar.
+ */
+TEST(JobLoader, ValidateJobSchema_UnquotedSlateLineText_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_slate_line_job(
+      "unquoted_slate_line_text.yaml",
+      std::string("text: hello\n"
+                  "        position:\n"
+                  "          mode: \"layout\"\n"
+                  "          anchor: \"center_center\"\n"
+                  "        font:\n") +
+          yaml_font_path_line("          ") + "          size_px: 12\n");
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_117));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_117));
+}
+
+/*!
+ * \brief Accepts a slate line that includes quoted \c text.
+ */
+TEST(JobLoader, ValidateJobSchema_PresentSlateLineText_Succeeds) {
+  // Prepare
+  const std::filesystem::path yaml = write_slate_line_job(
+      "present_slate_line_text.yaml",
+      std::string("text: \"Shot {shot}\"\n"
+                  "        position:\n"
+                  "          mode: \"layout\"\n"
+                  "          anchor: \"center_center\"\n"
+                  "        font:\n") +
+          yaml_font_path_line("          ") + "          size_px: 12\n");
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  ASSERT_TRUE(schema.ok()) << schema.message();
+  ASSERT_TRUE(job.ok()) << job.status().message();
+  ASSERT_EQ(job.value().layout().slate().lines().size(), 1u);
+  EXPECT_EQ(job.value().layout().slate().lines().front().text(), "Shot {shot}");
+}
+
+/*!
+ * \brief Rejects a slate line that omits \c position.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedSlateLinePosition_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_slate_line_job(
+      "omitted_slate_line_position.yaml",
+      std::string("text: \"slate\"\n"
+                  "        font:\n") +
+          yaml_font_path_line("          ") + "          size_px: 12\n");
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_115));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_115));
+}
+
+/*!
+ * \brief Rejects a slate line position that omits \c mode.
+ */
+TEST(JobLoader,
+     ValidateJobSchema_OmittedSlateLinePositionMode_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_slate_position_job("omitted_slate_line_position_mode.yaml",
+                               "          anchor: \"center_center\"\n");
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_136));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_136));
+}
+
+/*!
+ * \brief Rejects a slate line \c position.mode as an unquoted YAML scalar.
+ */
+TEST(JobLoader,
+     ValidateJobSchema_UnquotedSlateLinePositionMode_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_slate_position_job("unquoted_slate_line_position_mode.yaml",
+                               "          mode: layout\n"
+                               "          anchor: \"center_center\"\n");
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_77));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_77));
+}
+
+/*!
+ * \brief Rejects a slate line \c position.mode that is unsupported.
+ */
+TEST(JobLoader,
+     ValidateJobSchema_UnsupportedSlateLinePositionMode_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_slate_position_job("unsupported_slate_line_position_mode.yaml",
+                               "          mode: \"stretch\"\n");
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_20));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_20));
+}
+
+/*!
+ * \brief Rejects a slate line \c position.anchor when \c mode is not layout.
+ */
+TEST(
+    JobLoader,
+    ValidateJobSchema_SlateLinePositionAnchorWithoutLayoutMode_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_slate_position_job("slate_line_position_anchor_without_layout.yaml",
+                               "          mode: \"pixel\"\n"
+                               "          anchor: \"center_center\"\n"
+                               "          x: 4\n"
+                               "          y: 4\n");
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_79));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_79));
+}
+
+/*!
+ * \brief Rejects a slate line \c position.anchor as an unquoted YAML scalar.
+ */
+TEST(JobLoader,
+     ValidateJobSchema_UnquotedSlateLinePositionAnchor_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_slate_position_job("unquoted_slate_line_position_anchor.yaml",
+                               "          mode: \"layout\"\n"
+                               "          anchor: center_center\n");
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_78));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_78));
+}
+
+/*!
+ * \brief Rejects a slate line \c position.anchor that is unsupported.
+ */
+TEST(JobLoader,
+     ValidateJobSchema_UnsupportedSlateLinePositionAnchor_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_slate_position_job("unsupported_slate_line_position_anchor.yaml",
+                               "          mode: \"layout\"\n"
+                               "          anchor: \"center\"\n");
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_19));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_19));
+}
+
+/*!
+ * \brief Rejects slate line \c position.x and \c y when \c mode is layout.
+ */
+TEST(JobLoader,
+     ValidateJobSchema_SlateLinePositionXYWithLayoutMode_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_slate_position_job("slate_line_position_xy_with_layout.yaml",
+                               "          mode: \"layout\"\n"
+                               "          anchor: \"center_center\"\n"
+                               "          x: 4\n"
+                               "          y: 4\n");
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_80));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_80));
+}
+
+/*!
+ * \brief Rejects a slate line \c position.x that is not an integer.
+ */
+TEST(JobLoader,
+     ValidateJobSchema_NonIntegerSlateLinePositionX_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_slate_position_job("non_integer_slate_line_position_x.yaml",
+                               "          mode: \"pixel\"\n"
+                               "          x: 1.5\n"
+                               "          y: 4\n");
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_81));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_81));
+}
+
+/*!
+ * \brief Rejects a slate line \c position.y that is not an integer.
+ */
+TEST(JobLoader,
+     ValidateJobSchema_NonIntegerSlateLinePositionY_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_slate_position_job("non_integer_slate_line_position_y.yaml",
+                               "          mode: \"pixel\"\n"
+                               "          x: 4\n"
+                               "          y: 1.5\n");
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_82));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_82));
+}
+
+/*!
+ * \brief Rejects pixel slate line \c position.x outside \c [0, canvas.width].
+ */
+TEST(JobLoader,
+     ValidateJobSchema_SlateLinePositionPixelXOutOfRange_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_slate_position_job("slate_line_position_pixel_x_out_of_range.yaml",
+                               "          mode: \"pixel\"\n"
+                               "          x: 9\n"
+                               "          y: 4\n");
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_83));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_83));
+}
+
+/*!
+ * \brief Rejects pixel slate line \c position.y outside \c [0, canvas.height].
+ */
+TEST(JobLoader,
+     ValidateJobSchema_SlateLinePositionPixelYOutOfRange_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_slate_position_job("slate_line_position_pixel_y_out_of_range.yaml",
+                               "          mode: \"pixel\"\n"
+                               "          x: 4\n"
+                               "          y: 9\n");
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_84));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_84));
+}
+
+/*!
+ * \brief Rejects percent slate line \c position.x outside \c [0, 100].
+ */
+TEST(JobLoader,
+     ValidateJobSchema_SlateLinePositionPercentXOutOfRange_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_slate_position_job(
+      "slate_line_position_percent_x_out_of_range.yaml",
+      "          mode: \"percent\"\n"
+      "          x: 101\n"
+      "          y: 50\n");
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_85));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_85));
+}
+
+/*!
+ * \brief Rejects percent slate line \c position.y outside \c [0, 100].
+ */
+TEST(JobLoader,
+     ValidateJobSchema_SlateLinePositionPercentYOutOfRange_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_slate_position_job(
+      "slate_line_position_percent_y_out_of_range.yaml",
+      "          mode: \"percent\"\n"
+      "          x: 50\n"
+      "          y: 101\n");
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_86));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_86));
+}
+
+/*!
+ * \brief Rejects a slate line that omits \c font.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedSlateLineFont_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_slate_line_job("omitted_slate_line_font.yaml",
+                           "text: \"slate\"\n"
+                           "        position:\n"
+                           "          mode: \"layout\"\n"
+                           "          anchor: \"center_center\"\n");
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_116));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_116));
+}
+
+/*!
+ * \brief Rejects a slate line font that omits \c path.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedSlateLineFontPath_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_slate_font_job(
+      "omitted_slate_line_font_path.yaml", "          size_px: 12\n");
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_137));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_137));
+}
+
+/*!
+ * \brief Rejects a slate line \c font.path as an unquoted YAML scalar.
+ */
+TEST(JobLoader, ValidateJobSchema_UnquotedSlateLineFontPath_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_slate_font_job("unquoted_slate_line_font_path.yaml",
+                           "          path: /unused/font.ttf\n"
+                           "          size_px: 12\n");
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_87));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_87));
+}
+
+/*!
+ * \brief Rejects a slate line \c font.path that is an empty quoted string.
+ */
+TEST(JobLoader, ValidateJobSchema_EmptySlateLineFontPath_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_slate_font_job("empty_slate_line_font_path.yaml",
+                           "          path: \"\"\n"
+                           "          size_px: 12\n");
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_87));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_87));
+}
+
+/*!
+ * \brief Rejects a slate line \c font.path that does not exist on disk.
+ */
+TEST(JobLoader,
+     ValidateJobSchema_SlateLineFontPathMissingFile_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_slate_font_job("slate_line_font_path_missing_file.yaml",
+                           "          path: \"/unused/font.ttf\"\n"
+                           "          size_px: 12\n");
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_139));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_139));
+}
+
+/*!
+ * \brief Rejects a slate line font that omits \c size_px.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedSlateLineFontSizePx_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_slate_font_job("omitted_slate_line_font_size_px.yaml",
+                           yaml_font_path_line("          "));
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_138));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_138));
+}
+
+/*!
+ * \brief Rejects a slate line \c font.size_px that is not an integer.
+ */
+TEST(JobLoader,
+     ValidateJobSchema_NonIntegerSlateLineFontSizePx_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_slate_font_job(
+      "non_integer_slate_line_font_size_px.yaml",
+      yaml_font_path_line("          ") + "          size_px: 12.5\n");
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_88));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_88));
+}
+
+/*!
+ * \brief Rejects a slate line \c font.size_px below 4.
+ */
+TEST(JobLoader, ValidateJobSchema_SlateLineFontSizePxBelow4_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_slate_font_job(
+      "slate_line_font_size_px_below_4.yaml",
+      yaml_font_path_line("          ") + "          size_px: 3\n");
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_89));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_89));
+}
+
+/*!
+ * \brief Accepts a slate line that includes \c position.
+ */
+TEST(JobLoader, ValidateJobSchema_PresentSlateLinePosition_Succeeds) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_slate_position_job("present_slate_line_position.yaml",
+                               "          mode: \"layout\"\n"
+                               "          anchor: \"top_left\"\n");
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  ASSERT_TRUE(schema.ok()) << schema.message();
+  ASSERT_TRUE(job.ok()) << job.status().message();
+  ASSERT_EQ(job.value().layout().slate().lines().size(), 1u);
+  expect_layout_anchor(job.value().layout().slate().lines().front().position(),
+                       dailyboy::TextPositionModeLayout::Anchor::TopLeft);
+}
+
+/*!
+ * \brief Accepts a slate line that includes \c font.
+ */
+TEST(JobLoader, ValidateJobSchema_PresentSlateLineFont_Succeeds) {
+  // Prepare
+  const std::filesystem::path yaml = write_slate_font_job(
+      "present_slate_line_font.yaml",
+      yaml_font_path_line("          ") + "          size_px: 18\n");
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  ASSERT_TRUE(schema.ok()) << schema.message();
+  ASSERT_TRUE(job.ok()) << job.status().message();
+  ASSERT_EQ(job.value().layout().slate().lines().size(), 1u);
+  expect_font(job.value().layout().slate().lines().front().font(),
+              test_font_path(), 18);
+}
+
+/*!
  * \brief Accepts a layout block that includes \c background.
  */
 TEST(JobLoader, ValidateJobSchema_PresentBackground_Succeeds) {
@@ -1330,10 +2048,7 @@ TEST(JobLoader, ValidateJobSchema_PresentBackground_Succeeds) {
       "  background:\n"
       "    r: 0.1\n"
       "    g: 0.2\n"
-      "    b: 0.3\n"
-      "  slate:\n"
-      "    duration_frames: 0\n"
-      "    lines: []\n";
+      "    b: 0.3\n";
   const std::filesystem::path yaml =
       write_contract_job("with_background.yaml", {.layout_yaml = layout_yaml});
 
@@ -1358,10 +2073,7 @@ TEST(JobLoader, ValidateJobSchema_OmittedBackground_Succeeds) {
       "    width: 8\n"
       "    height: 8\n"
       "  image:\n"
-      "    fit: \"contain\"\n"
-      "  slate:\n"
-      "    duration_frames: 0\n"
-      "    lines: []\n";
+      "    fit: \"contain\"\n";
   const std::filesystem::path yaml =
       write_contract_job("no_background.yaml", {.layout_yaml = layout_yaml});
 
@@ -2394,6 +3106,25 @@ TEST(JobLoader, ValidateJobSchema_BackgroundRNotInRange_ReturnsUserError) {
 }
 
 /*!
+ * \brief Rejects \c background.r that is not a number.
+ */
+TEST(JobLoader, ValidateJobSchema_BackgroundRNotNumber_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_background_contract_job("background_r_not_number.yaml",
+                                    "  background:\n"
+                                    "    r: \"x\"\n");
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_71));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_71));
+}
+
+/*!
  * \brief Rejects \c g that is not a number between 0 and 1.
  */
 TEST(JobLoader, ValidateJobSchema_BackgroundGNotInRange_ReturnsUserError) {
@@ -2518,16 +3249,15 @@ TEST(JobLoader, ValidateJobSchema_BackgroundDecimalChannels_Succeeds) {
  */
 TEST(JobLoader, ValidateJobSchema_PresentBurnInTemplate_Succeeds) {
   // Prepare
-  const std::filesystem::path yaml =
-      write_burn_in_contract_job("present_burn_in_template.yaml",
-                                 "  burn_ins:\n"
-                                 "    - template: \"{frame}\"\n"
-                                 "      position:\n"
-                                 "        mode: \"layout\"\n"
-                                 "        anchor: \"top_left\"\n"
-                                 "      font:\n"
-                                 "        path: \"/unused/font.ttf\"\n"
-                                 "        size_px: 12\n");
+  const std::filesystem::path yaml = write_burn_in_contract_job(
+      "present_burn_in_template.yaml",
+      "  burn_ins:\n"
+      "    - template: \"{frame}\"\n"
+      "      position:\n"
+      "        mode: \"layout\"\n"
+      "        anchor: \"top_left\"\n"
+      "      font:\n" +
+          yaml_font_path_line() + "        size_px: 12\n");
 
   // Test
   dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
@@ -2545,15 +3275,14 @@ TEST(JobLoader, ValidateJobSchema_PresentBurnInTemplate_Succeeds) {
  */
 TEST(JobLoader, ValidateJobSchema_OmittedBurnInTemplate_ReturnsUserError) {
   // Prepare
-  const std::filesystem::path yaml =
-      write_burn_in_contract_job("omitted_burn_in_template.yaml",
-                                 "  burn_ins:\n"
-                                 "    - position:\n"
-                                 "        mode: \"layout\"\n"
-                                 "        anchor: \"top_left\"\n"
-                                 "      font:\n"
-                                 "        path: \"/unused/font.ttf\"\n"
-                                 "        size_px: 12\n");
+  const std::filesystem::path yaml = write_burn_in_contract_job(
+      "omitted_burn_in_template.yaml",
+      "  burn_ins:\n"
+      "    - position:\n"
+      "        mode: \"layout\"\n"
+      "        anchor: \"top_left\"\n"
+      "      font:\n" +
+          yaml_font_path_line() + "        size_px: 12\n");
 
   // Test
   dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
@@ -2569,16 +3298,15 @@ TEST(JobLoader, ValidateJobSchema_OmittedBurnInTemplate_ReturnsUserError) {
  */
 TEST(JobLoader, ValidateJobSchema_PresentBurnInPosition_Succeeds) {
   // Prepare
-  const std::filesystem::path yaml =
-      write_burn_in_contract_job("present_burn_in_position.yaml",
-                                 "  burn_ins:\n"
-                                 "    - template: \"{frame}\"\n"
-                                 "      position:\n"
-                                 "        mode: \"layout\"\n"
-                                 "        anchor: \"top_left\"\n"
-                                 "      font:\n"
-                                 "        path: \"/unused/font.ttf\"\n"
-                                 "        size_px: 12\n");
+  const std::filesystem::path yaml = write_burn_in_contract_job(
+      "present_burn_in_position.yaml",
+      "  burn_ins:\n"
+      "    - template: \"{frame}\"\n"
+      "      position:\n"
+      "        mode: \"layout\"\n"
+      "        anchor: \"top_left\"\n"
+      "      font:\n" +
+          yaml_font_path_line() + "        size_px: 12\n");
 
   // Test
   dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
@@ -2597,13 +3325,12 @@ TEST(JobLoader, ValidateJobSchema_PresentBurnInPosition_Succeeds) {
  */
 TEST(JobLoader, ValidateJobSchema_OmittedBurnInPosition_ReturnsUserError) {
   // Prepare
-  const std::filesystem::path yaml =
-      write_burn_in_contract_job("omitted_burn_in_position.yaml",
-                                 "  burn_ins:\n"
-                                 "    - template: \"{frame}\"\n"
-                                 "      font:\n"
-                                 "        path: \"/unused/font.ttf\"\n"
-                                 "        size_px: 12\n");
+  const std::filesystem::path yaml = write_burn_in_contract_job(
+      "omitted_burn_in_position.yaml",
+      "  burn_ins:\n"
+      "    - template: \"{frame}\"\n"
+      "      font:\n" +
+          yaml_font_path_line() + "        size_px: 12\n");
 
   // Test
   dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
@@ -2619,16 +3346,15 @@ TEST(JobLoader, ValidateJobSchema_OmittedBurnInPosition_ReturnsUserError) {
  */
 TEST(JobLoader, ValidateJobSchema_PresentBurnInFont_Succeeds) {
   // Prepare
-  const std::filesystem::path yaml =
-      write_burn_in_contract_job("present_burn_in_font.yaml",
-                                 "  burn_ins:\n"
-                                 "    - template: \"{frame}\"\n"
-                                 "      position:\n"
-                                 "        mode: \"layout\"\n"
-                                 "        anchor: \"top_left\"\n"
-                                 "      font:\n"
-                                 "        path: \"/unused/font.ttf\"\n"
-                                 "        size_px: 12\n");
+  const std::filesystem::path yaml = write_burn_in_contract_job(
+      "present_burn_in_font.yaml",
+      "  burn_ins:\n"
+      "    - template: \"{frame}\"\n"
+      "      position:\n"
+      "        mode: \"layout\"\n"
+      "        anchor: \"top_left\"\n"
+      "      font:\n" +
+          yaml_font_path_line() + "        size_px: 12\n");
 
   // Test
   dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
@@ -2638,7 +3364,7 @@ TEST(JobLoader, ValidateJobSchema_PresentBurnInFont_Succeeds) {
   ASSERT_TRUE(schema.ok()) << schema.message();
   ASSERT_TRUE(job.ok()) << job.status().message();
   expect_font(job.value().layout().burn_ins().burn_ins().front().font(),
-              "/unused/font.ttf", 12);
+              test_font_path(), 12);
 }
 
 /*!
@@ -2675,11 +3401,11 @@ TEST(JobLoader, ValidateJobSchema_PresentBurnInBox_Succeeds) {
                                  "      position:\n"
                                  "        mode: \"layout\"\n"
                                  "        anchor: \"top_left\"\n"
-                                 "      font:\n"
-                                 "        path: \"/unused/font.ttf\"\n"
-                                 "        size_px: 12\n"
-                                 "      box:\n"
-                                 "        mode: \"fill\"\n");
+                                 "      font:\n" +
+                                     yaml_font_path_line() +
+                                     "        size_px: 12\n"
+                                     "      box:\n"
+                                     "        mode: \"fill\"\n");
 
   // Test
   dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
@@ -2688,8 +3414,9 @@ TEST(JobLoader, ValidateJobSchema_PresentBurnInBox_Succeeds) {
   // Assert
   ASSERT_TRUE(schema.ok()) << schema.message();
   ASSERT_TRUE(job.ok()) << job.status().message();
-  ASSERT_TRUE(
-      job.value().layout().burn_ins().burn_ins().front().box().has_value());
+  const auto& box = job.value().layout().burn_ins().burn_ins().front().box();
+  ASSERT_TRUE(box.has_value());
+  expect_burn_in_box_fill(*box, 0.0, 0.0, 0.0, 1.0, 0);
 }
 
 /*!
@@ -2697,16 +3424,15 @@ TEST(JobLoader, ValidateJobSchema_PresentBurnInBox_Succeeds) {
  */
 TEST(JobLoader, ValidateJobSchema_OmittedBurnInBox_Succeeds) {
   // Prepare
-  const std::filesystem::path yaml =
-      write_burn_in_contract_job("omitted_burn_in_box.yaml",
-                                 "  burn_ins:\n"
-                                 "    - template: \"{frame}\"\n"
-                                 "      position:\n"
-                                 "        mode: \"layout\"\n"
-                                 "        anchor: \"top_left\"\n"
-                                 "      font:\n"
-                                 "        path: \"/unused/font.ttf\"\n"
-                                 "        size_px: 12\n");
+  const std::filesystem::path yaml = write_burn_in_contract_job(
+      "omitted_burn_in_box.yaml",
+      "  burn_ins:\n"
+      "    - template: \"{frame}\"\n"
+      "      position:\n"
+      "        mode: \"layout\"\n"
+      "        anchor: \"top_left\"\n"
+      "      font:\n" +
+          yaml_font_path_line() + "        size_px: 12\n");
 
   // Test
   dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
@@ -2720,20 +3446,235 @@ TEST(JobLoader, ValidateJobSchema_OmittedBurnInBox_Succeeds) {
 }
 
 /*!
+ * \brief Defaults omitted \c box.mode to fill.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedBurnInBoxMode_DefaultsToFill) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_burn_in_box_job("omitted_burn_in_box_mode.yaml",
+                            "        color:\n"
+                            "          r: 0.1\n"
+                            "          g: 0.2\n"
+                            "          b: 0.3\n");
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  ASSERT_TRUE(schema.ok()) << schema.message();
+  ASSERT_TRUE(job.ok()) << job.status().message();
+  const auto& box = job.value().layout().burn_ins().burn_ins().front().box();
+  ASSERT_TRUE(box.has_value());
+  expect_burn_in_box_fill(*box, 0.1, 0.2, 0.3, 1.0, 0);
+}
+
+/*!
+ * \brief Rejects \c box.mode as an unquoted YAML scalar.
+ */
+TEST(JobLoader, ValidateJobSchema_UnquotedBurnInBoxMode_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_burn_in_box_job(
+      "unquoted_burn_in_box_mode.yaml", "        mode: fill\n");
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_105));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_105));
+}
+
+/*!
+ * \brief Rejects \c box.mode that is not fill or outline.
+ */
+TEST(JobLoader, ValidateJobSchema_UnsupportedBurnInBoxMode_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_burn_in_box_job(
+      "unsupported_burn_in_box_mode.yaml", "        mode: \"foo\"\n");
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_21));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_21));
+}
+
+/*!
+ * \brief Accepts \c box that omits \c color and defaults channels to 0.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedBurnInBoxColor_Succeeds) {
+  // Prepare
+  const std::filesystem::path yaml = write_burn_in_box_job(
+      "omitted_burn_in_box_color.yaml", "        mode: \"fill\"\n");
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  ASSERT_TRUE(schema.ok()) << schema.message();
+  ASSERT_TRUE(job.ok()) << job.status().message();
+  const auto& box = job.value().layout().burn_ins().burn_ins().front().box();
+  ASSERT_TRUE(box.has_value());
+  expect_burn_in_box_fill(*box, 0.0, 0.0, 0.0, 1.0, 0);
+}
+
+/*!
+ * \brief Rejects \c box.color.r outside \c [0, 1].
+ */
+TEST(JobLoader, ValidateJobSchema_BurnInBoxColorRNotInRange_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_burn_in_box_job("burn_in_box_color_r_out_of_range.yaml",
+                            "        mode: \"fill\"\n"
+                            "        color:\n"
+                            "          r: 2\n");
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_107));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_107));
+}
+
+/*!
+ * \brief Defaults omitted \c box.opacity to 1.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedBurnInBoxOpacity_DefaultsTo1) {
+  // Prepare
+  const std::filesystem::path yaml = write_burn_in_box_job(
+      "omitted_burn_in_box_opacity.yaml", "        mode: \"fill\"\n");
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  ASSERT_TRUE(schema.ok()) << schema.message();
+  ASSERT_TRUE(job.ok()) << job.status().message();
+  const auto& box = job.value().layout().burn_ins().burn_ins().front().box();
+  ASSERT_TRUE(box.has_value());
+  expect_near(box->opacity(), 1.0);
+}
+
+/*!
+ * \brief Rejects \c box.opacity outside \c [0, 1].
+ */
+TEST(JobLoader, ValidateJobSchema_BurnInBoxOpacityNotInRange_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_burn_in_box_job("burn_in_box_opacity_out_of_range.yaml",
+                            "        mode: \"fill\"\n"
+                            "        opacity: 1.5\n");
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_108));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_108));
+}
+
+/*!
+ * \brief Accepts \c box that omits \c margin and defaults sides to 0.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedBurnInBoxMargin_Succeeds) {
+  // Prepare
+  const std::filesystem::path yaml = write_burn_in_box_job(
+      "omitted_burn_in_box_margin.yaml", "        mode: \"fill\"\n");
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  ASSERT_TRUE(schema.ok()) << schema.message();
+  ASSERT_TRUE(job.ok()) << job.status().message();
+  const auto& box = job.value().layout().burn_ins().burn_ins().front().box();
+  ASSERT_TRUE(box.has_value());
+  expect_margin_all(box->margin(), 0);
+}
+
+/*!
+ * \brief Rejects \c box.margin that is not an integer or per-side map.
+ */
+TEST(JobLoader, ValidateJobSchema_BurnInBoxMarginWrongType_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_burn_in_box_job("burn_in_box_margin_wrong_type.yaml",
+                            "        mode: \"fill\"\n"
+                            "        margin: 1.5\n");
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_109));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_109));
+}
+
+/*!
+ * \brief Rejects \c box.margin below 0.
+ */
+TEST(JobLoader, ValidateJobSchema_BurnInBoxMarginBelow0_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_burn_in_box_job("burn_in_box_margin_below_0.yaml",
+                            "        mode: \"fill\"\n"
+                            "        margin: -1\n");
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_109));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_109));
+}
+
+/*!
+ * \brief Rejects \c box.margin keys other than top, right, bottom, left.
+ */
+TEST(JobLoader, ValidateJobSchema_BurnInBoxMarginUnknownKey_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_burn_in_box_job("burn_in_box_margin_unknown_key.yaml",
+                            "        mode: \"fill\"\n"
+                            "        margin:\n"
+                            "          top: 1\n"
+                            "          diag: 1\n");
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_40));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_40));
+}
+
+/*!
  * \brief Accepts \c template as a quoted YAML string.
  */
 TEST(JobLoader, ValidateJobSchema_QuotedBurnInTemplate_Succeeds) {
   // Prepare
-  const std::filesystem::path yaml =
-      write_burn_in_contract_job("quoted_burn_in_template.yaml",
-                                 "  burn_ins:\n"
-                                 "    - template: \"{frame}\"\n"
-                                 "      position:\n"
-                                 "        mode: \"layout\"\n"
-                                 "        anchor: \"top_left\"\n"
-                                 "      font:\n"
-                                 "        path: \"/unused/font.ttf\"\n"
-                                 "        size_px: 12\n");
+  const std::filesystem::path yaml = write_burn_in_contract_job(
+      "quoted_burn_in_template.yaml",
+      "  burn_ins:\n"
+      "    - template: \"{frame}\"\n"
+      "      position:\n"
+      "        mode: \"layout\"\n"
+      "        anchor: \"top_left\"\n"
+      "      font:\n" +
+          yaml_font_path_line() + "        size_px: 12\n");
 
   // Test
   dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
@@ -2751,16 +3692,15 @@ TEST(JobLoader, ValidateJobSchema_QuotedBurnInTemplate_Succeeds) {
  */
 TEST(JobLoader, ValidateJobSchema_UnquotedBurnInTemplate_ReturnsUserError) {
   // Prepare
-  const std::filesystem::path yaml =
-      write_burn_in_contract_job("unquoted_burn_in_template.yaml",
-                                 "  burn_ins:\n"
-                                 "    - template: hello\n"
-                                 "      position:\n"
-                                 "        mode: \"layout\"\n"
-                                 "        anchor: \"top_left\"\n"
-                                 "      font:\n"
-                                 "        path: \"/unused/font.ttf\"\n"
-                                 "        size_px: 12\n");
+  const std::filesystem::path yaml = write_burn_in_contract_job(
+      "unquoted_burn_in_template.yaml",
+      "  burn_ins:\n"
+      "    - template: hello\n"
+      "      position:\n"
+      "        mode: \"layout\"\n"
+      "        anchor: \"top_left\"\n"
+      "      font:\n" +
+          yaml_font_path_line() + "        size_px: 12\n");
 
   // Test
   dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
@@ -2769,6 +3709,23 @@ TEST(JobLoader, ValidateJobSchema_UnquotedBurnInTemplate_ReturnsUserError) {
   // Assert
   expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_76));
   expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_76));
+}
+
+/*!
+ * \brief Rejects \c position that omits \c mode.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedBurnInPositionMode_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_burn_in_position_job(
+      "omitted_burn_in_position_mode.yaml", "        anchor: \"top_left\"\n");
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_136));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_136));
 }
 
 /*!
@@ -3544,14 +4501,85 @@ TEST(JobLoader, ValidateJobSchema_UnquotedBurnInFontPath_ReturnsUserError) {
 }
 
 /*!
+ * \brief Rejects \c font that omits \c path.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedBurnInFontPath_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_burn_in_font_job(
+      "omitted_burn_in_font_path.yaml", "        size_px: 12\n");
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_137));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_137));
+}
+
+/*!
+ * \brief Rejects empty quoted \c font.path.
+ */
+TEST(JobLoader, ValidateJobSchema_EmptyBurnInFontPath_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_burn_in_font_job("empty_burn_in_font_path.yaml",
+                             "        path: \"\"\n"
+                             "        size_px: 12\n");
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_87));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_87));
+}
+
+/*!
+ * \brief Rejects quoted \c font.path when the file is missing on disk.
+ */
+TEST(JobLoader, ValidateJobSchema_BurnInFontPathMissingFile_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_burn_in_font_job("burn_in_font_path_missing_file.yaml",
+                             "        path: \"/unused/font.ttf\"\n"
+                             "        size_px: 12\n");
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_139));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_139));
+}
+
+/*!
+ * \brief Rejects \c font that omits \c size_px.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedBurnInFontSizePx_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_burn_in_font_job(
+      "omitted_burn_in_font_size_px.yaml", yaml_font_path_line());
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_138));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_138));
+}
+
+/*!
  * \brief Accepts \c font.path as a quoted YAML string.
  */
 TEST(JobLoader, ValidateJobSchema_QuotedBurnInFontPath_Succeeds) {
   // Prepare
   const std::filesystem::path yaml =
       write_burn_in_font_job("quoted_burn_in_font_path.yaml",
-                             "        path: \"/unused/font.ttf\"\n"
-                             "        size_px: 12\n");
+                             yaml_font_path_line() + "        size_px: 12\n");
 
   // Test
   dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
@@ -3562,7 +4590,7 @@ TEST(JobLoader, ValidateJobSchema_QuotedBurnInFontPath_Succeeds) {
   ASSERT_TRUE(job.ok()) << job.status().message();
   const dailyboy::TextFont& font =
       job.value().layout().burn_ins().burn_ins().front().font();
-  EXPECT_EQ(font.path(), std::filesystem::path("/unused/font.ttf"));
+  EXPECT_EQ(font.path(), std::filesystem::path(test_font_path()));
 }
 
 /*!
@@ -3572,8 +4600,7 @@ TEST(JobLoader, ValidateJobSchema_NonIntegerBurnInFontSizePx_ReturnsUserError) {
   // Prepare
   const std::filesystem::path yaml =
       write_burn_in_font_job("non_integer_burn_in_font_size_px.yaml",
-                             "        path: \"/unused/font.ttf\"\n"
-                             "        size_px: 12.5\n");
+                             yaml_font_path_line() + "        size_px: 12.5\n");
 
   // Test
   dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
@@ -3591,8 +4618,7 @@ TEST(JobLoader, ValidateJobSchema_IntegerBurnInFontSizePx_Succeeds) {
   // Prepare
   const std::filesystem::path yaml =
       write_burn_in_font_job("integer_burn_in_font_size_px.yaml",
-                             "        path: \"/unused/font.ttf\"\n"
-                             "        size_px: 12\n");
+                             yaml_font_path_line() + "        size_px: 12\n");
 
   // Test
   dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
@@ -3613,8 +4639,7 @@ TEST(JobLoader, ValidateJobSchema_BurnInFontSizePxBelow4_ReturnsUserError) {
   // Prepare
   const std::filesystem::path yaml =
       write_burn_in_font_job("burn_in_font_size_px_below_4.yaml",
-                             "        path: \"/unused/font.ttf\"\n"
-                             "        size_px: 3\n");
+                             yaml_font_path_line() + "        size_px: 3\n");
 
   // Test
   dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
@@ -3632,8 +4657,7 @@ TEST(JobLoader, ValidateJobSchema_BurnInFontSizePxAtLeast4_Succeeds) {
   // Prepare
   const std::filesystem::path yaml =
       write_burn_in_font_job("burn_in_font_size_px_at_least_4.yaml",
-                             "        path: \"/unused/font.ttf\"\n"
-                             "        size_px: 4\n");
+                             yaml_font_path_line() + "        size_px: 4\n");
 
   // Test
   dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
@@ -3652,14 +4676,13 @@ TEST(JobLoader, ValidateJobSchema_BurnInFontSizePxAtLeast4_Succeeds) {
  */
 TEST(JobLoader, ValidateJobSchema_BurnInFontWithObjectColor_Succeeds) {
   // Prepare
-  const std::filesystem::path yaml =
-      write_burn_in_font_job("burn_in_font_with_object_color.yaml",
-                             "        path: \"/unused/font.ttf\"\n"
-                             "        size_px: 12\n"
-                             "        color:\n"
-                             "          r: 0.2\n"
-                             "          g: 0.4\n"
-                             "          b: 0.6\n");
+  const std::filesystem::path yaml = write_burn_in_font_job(
+      "burn_in_font_with_object_color.yaml", yaml_font_path_line() +
+                                                 "        size_px: 12\n"
+                                                 "        color:\n"
+                                                 "          r: 0.2\n"
+                                                 "          g: 0.4\n"
+                                                 "          b: 0.6\n");
 
   // Test
   dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
@@ -3680,8 +4703,7 @@ TEST(JobLoader, ValidateJobSchema_OmittedBurnInFontColor_Succeeds) {
   // Prepare
   const std::filesystem::path yaml =
       write_burn_in_font_job("omitted_burn_in_font_color.yaml",
-                             "        path: \"/unused/font.ttf\"\n"
-                             "        size_px: 12\n");
+                             yaml_font_path_line() + "        size_px: 12\n");
 
   // Test
   dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
@@ -3700,12 +4722,11 @@ TEST(JobLoader, ValidateJobSchema_OmittedBurnInFontColor_Succeeds) {
  */
 TEST(JobLoader, ValidateJobSchema_BurnInFontColorMap_Succeeds) {
   // Prepare
-  const std::filesystem::path yaml =
-      write_burn_in_font_job("burn_in_font_color_map.yaml",
-                             "        path: \"/unused/font.ttf\"\n"
-                             "        size_px: 12\n"
-                             "        color:\n"
-                             "          r: 0.1\n");
+  const std::filesystem::path yaml = write_burn_in_font_job(
+      "burn_in_font_color_map.yaml", yaml_font_path_line() +
+                                         "        size_px: 12\n"
+                                         "        color:\n"
+                                         "          r: 0.1\n");
 
   // Test
   dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
@@ -3724,11 +4745,10 @@ TEST(JobLoader, ValidateJobSchema_BurnInFontColorMap_Succeeds) {
  */
 TEST(JobLoader, ValidateJobSchema_BurnInFontColorNotMap_ReturnsUserError) {
   // Prepare
-  const std::filesystem::path yaml =
-      write_burn_in_font_job("burn_in_font_color_not_map.yaml",
-                             "        path: \"/unused/font.ttf\"\n"
-                             "        size_px: 12\n"
-                             "        color: 0.5\n");
+  const std::filesystem::path yaml = write_burn_in_font_job(
+      "burn_in_font_color_not_map.yaml", yaml_font_path_line() +
+                                             "        size_px: 12\n"
+                                             "        color: 0.5\n");
 
   // Test
   dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
@@ -3744,13 +4764,12 @@ TEST(JobLoader, ValidateJobSchema_BurnInFontColorNotMap_ReturnsUserError) {
  */
 TEST(JobLoader, ValidateJobSchema_BurnInFontColorUnknownKey_ReturnsUserError) {
   // Prepare
-  const std::filesystem::path yaml =
-      write_burn_in_font_job("burn_in_font_color_unknown_key.yaml",
-                             "        path: \"/unused/font.ttf\"\n"
-                             "        size_px: 12\n"
-                             "        color:\n"
-                             "          r: 0.1\n"
-                             "          alpha: 1\n");
+  const std::filesystem::path yaml = write_burn_in_font_job(
+      "burn_in_font_color_unknown_key.yaml", yaml_font_path_line() +
+                                                 "        size_px: 12\n"
+                                                 "        color:\n"
+                                                 "          r: 0.1\n"
+                                                 "          alpha: 1\n");
 
   // Test
   dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
@@ -3766,13 +4785,12 @@ TEST(JobLoader, ValidateJobSchema_BurnInFontColorUnknownKey_ReturnsUserError) {
  */
 TEST(JobLoader, ValidateJobSchema_OmittedBurnInFontColorR_DefaultsTo1) {
   // Prepare
-  const std::filesystem::path yaml =
-      write_burn_in_font_job("omitted_burn_in_font_color_r.yaml",
-                             "        path: \"/unused/font.ttf\"\n"
-                             "        size_px: 12\n"
-                             "        color:\n"
-                             "          g: 0.2\n"
-                             "          b: 0.3\n");
+  const std::filesystem::path yaml = write_burn_in_font_job(
+      "omitted_burn_in_font_color_r.yaml", yaml_font_path_line() +
+                                               "        size_px: 12\n"
+                                               "        color:\n"
+                                               "          g: 0.2\n"
+                                               "          b: 0.3\n");
 
   // Test
   dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
@@ -3793,13 +4811,12 @@ TEST(JobLoader, ValidateJobSchema_OmittedBurnInFontColorR_DefaultsTo1) {
  */
 TEST(JobLoader, ValidateJobSchema_OmittedBurnInFontColorG_DefaultsTo1) {
   // Prepare
-  const std::filesystem::path yaml =
-      write_burn_in_font_job("omitted_burn_in_font_color_g.yaml",
-                             "        path: \"/unused/font.ttf\"\n"
-                             "        size_px: 12\n"
-                             "        color:\n"
-                             "          r: 0.1\n"
-                             "          b: 0.3\n");
+  const std::filesystem::path yaml = write_burn_in_font_job(
+      "omitted_burn_in_font_color_g.yaml", yaml_font_path_line() +
+                                               "        size_px: 12\n"
+                                               "        color:\n"
+                                               "          r: 0.1\n"
+                                               "          b: 0.3\n");
 
   // Test
   dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
@@ -3820,13 +4837,12 @@ TEST(JobLoader, ValidateJobSchema_OmittedBurnInFontColorG_DefaultsTo1) {
  */
 TEST(JobLoader, ValidateJobSchema_OmittedBurnInFontColorB_DefaultsTo1) {
   // Prepare
-  const std::filesystem::path yaml =
-      write_burn_in_font_job("omitted_burn_in_font_color_b.yaml",
-                             "        path: \"/unused/font.ttf\"\n"
-                             "        size_px: 12\n"
-                             "        color:\n"
-                             "          r: 0.1\n"
-                             "          g: 0.2\n");
+  const std::filesystem::path yaml = write_burn_in_font_job(
+      "omitted_burn_in_font_color_b.yaml", yaml_font_path_line() +
+                                               "        size_px: 12\n"
+                                               "        color:\n"
+                                               "          r: 0.1\n"
+                                               "          g: 0.2\n");
 
   // Test
   dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
@@ -3847,12 +4863,11 @@ TEST(JobLoader, ValidateJobSchema_OmittedBurnInFontColorB_DefaultsTo1) {
  */
 TEST(JobLoader, ValidateJobSchema_PresentBurnInFontColorR_Succeeds) {
   // Prepare
-  const std::filesystem::path yaml =
-      write_burn_in_font_job("present_burn_in_font_color_r.yaml",
-                             "        path: \"/unused/font.ttf\"\n"
-                             "        size_px: 12\n"
-                             "        color:\n"
-                             "          r: 0.4\n");
+  const std::filesystem::path yaml = write_burn_in_font_job(
+      "present_burn_in_font_color_r.yaml", yaml_font_path_line() +
+                                               "        size_px: 12\n"
+                                               "        color:\n"
+                                               "          r: 0.4\n");
 
   // Test
   dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
@@ -3871,12 +4886,11 @@ TEST(JobLoader, ValidateJobSchema_PresentBurnInFontColorR_Succeeds) {
  */
 TEST(JobLoader, ValidateJobSchema_PresentBurnInFontColorG_Succeeds) {
   // Prepare
-  const std::filesystem::path yaml =
-      write_burn_in_font_job("present_burn_in_font_color_g.yaml",
-                             "        path: \"/unused/font.ttf\"\n"
-                             "        size_px: 12\n"
-                             "        color:\n"
-                             "          g: 0.5\n");
+  const std::filesystem::path yaml = write_burn_in_font_job(
+      "present_burn_in_font_color_g.yaml", yaml_font_path_line() +
+                                               "        size_px: 12\n"
+                                               "        color:\n"
+                                               "          g: 0.5\n");
 
   // Test
   dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
@@ -3895,12 +4909,11 @@ TEST(JobLoader, ValidateJobSchema_PresentBurnInFontColorG_Succeeds) {
  */
 TEST(JobLoader, ValidateJobSchema_PresentBurnInFontColorB_Succeeds) {
   // Prepare
-  const std::filesystem::path yaml =
-      write_burn_in_font_job("present_burn_in_font_color_b.yaml",
-                             "        path: \"/unused/font.ttf\"\n"
-                             "        size_px: 12\n"
-                             "        color:\n"
-                             "          b: 0.6\n");
+  const std::filesystem::path yaml = write_burn_in_font_job(
+      "present_burn_in_font_color_b.yaml", yaml_font_path_line() +
+                                               "        size_px: 12\n"
+                                               "        color:\n"
+                                               "          b: 0.6\n");
 
   // Test
   dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
@@ -3919,12 +4932,11 @@ TEST(JobLoader, ValidateJobSchema_PresentBurnInFontColorB_Succeeds) {
  */
 TEST(JobLoader, ValidateJobSchema_BurnInFontColorRNotInRange_ReturnsUserError) {
   // Prepare
-  const std::filesystem::path yaml =
-      write_burn_in_font_job("burn_in_font_color_r_out_of_range.yaml",
-                             "        path: \"/unused/font.ttf\"\n"
-                             "        size_px: 12\n"
-                             "        color:\n"
-                             "          r: 1.5\n");
+  const std::filesystem::path yaml = write_burn_in_font_job(
+      "burn_in_font_color_r_out_of_range.yaml", yaml_font_path_line() +
+                                                    "        size_px: 12\n"
+                                                    "        color:\n"
+                                                    "          r: 1.5\n");
 
   // Test
   dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
@@ -3940,12 +4952,11 @@ TEST(JobLoader, ValidateJobSchema_BurnInFontColorRNotInRange_ReturnsUserError) {
  */
 TEST(JobLoader, ValidateJobSchema_BurnInFontColorGNotInRange_ReturnsUserError) {
   // Prepare
-  const std::filesystem::path yaml =
-      write_burn_in_font_job("burn_in_font_color_g_out_of_range.yaml",
-                             "        path: \"/unused/font.ttf\"\n"
-                             "        size_px: 12\n"
-                             "        color:\n"
-                             "          g: 1.5\n");
+  const std::filesystem::path yaml = write_burn_in_font_job(
+      "burn_in_font_color_g_out_of_range.yaml", yaml_font_path_line() +
+                                                    "        size_px: 12\n"
+                                                    "        color:\n"
+                                                    "          g: 1.5\n");
 
   // Test
   dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
@@ -3961,12 +4972,11 @@ TEST(JobLoader, ValidateJobSchema_BurnInFontColorGNotInRange_ReturnsUserError) {
  */
 TEST(JobLoader, ValidateJobSchema_BurnInFontColorBNotInRange_ReturnsUserError) {
   // Prepare
-  const std::filesystem::path yaml =
-      write_burn_in_font_job("burn_in_font_color_b_out_of_range.yaml",
-                             "        path: \"/unused/font.ttf\"\n"
-                             "        size_px: 12\n"
-                             "        color:\n"
-                             "          b: 1.5\n");
+  const std::filesystem::path yaml = write_burn_in_font_job(
+      "burn_in_font_color_b_out_of_range.yaml", yaml_font_path_line() +
+                                                    "        size_px: 12\n"
+                                                    "        color:\n"
+                                                    "          b: 1.5\n");
 
   // Test
   dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
@@ -3982,12 +4992,11 @@ TEST(JobLoader, ValidateJobSchema_BurnInFontColorBNotInRange_ReturnsUserError) {
  */
 TEST(JobLoader, ValidateJobSchema_BurnInFontColorRInRange_Succeeds) {
   // Prepare
-  const std::filesystem::path yaml =
-      write_burn_in_font_job("burn_in_font_color_r_in_range.yaml",
-                             "        path: \"/unused/font.ttf\"\n"
-                             "        size_px: 12\n"
-                             "        color:\n"
-                             "          r: 0.0\n");
+  const std::filesystem::path yaml = write_burn_in_font_job(
+      "burn_in_font_color_r_in_range.yaml", yaml_font_path_line() +
+                                                "        size_px: 12\n"
+                                                "        color:\n"
+                                                "          r: 0.0\n");
 
   // Test
   dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
@@ -4006,12 +5015,11 @@ TEST(JobLoader, ValidateJobSchema_BurnInFontColorRInRange_Succeeds) {
  */
 TEST(JobLoader, ValidateJobSchema_BurnInFontColorGInRange_Succeeds) {
   // Prepare
-  const std::filesystem::path yaml =
-      write_burn_in_font_job("burn_in_font_color_g_in_range.yaml",
-                             "        path: \"/unused/font.ttf\"\n"
-                             "        size_px: 12\n"
-                             "        color:\n"
-                             "          g: 0.5\n");
+  const std::filesystem::path yaml = write_burn_in_font_job(
+      "burn_in_font_color_g_in_range.yaml", yaml_font_path_line() +
+                                                "        size_px: 12\n"
+                                                "        color:\n"
+                                                "          g: 0.5\n");
 
   // Test
   dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
@@ -4030,12 +5038,11 @@ TEST(JobLoader, ValidateJobSchema_BurnInFontColorGInRange_Succeeds) {
  */
 TEST(JobLoader, ValidateJobSchema_BurnInFontColorBInRange_Succeeds) {
   // Prepare
-  const std::filesystem::path yaml =
-      write_burn_in_font_job("burn_in_font_color_b_in_range.yaml",
-                             "        path: \"/unused/font.ttf\"\n"
-                             "        size_px: 12\n"
-                             "        color:\n"
-                             "          b: 1.0\n");
+  const std::filesystem::path yaml = write_burn_in_font_job(
+      "burn_in_font_color_b_in_range.yaml", yaml_font_path_line() +
+                                                "        size_px: 12\n"
+                                                "        color:\n"
+                                                "          b: 1.0\n");
 
   // Test
   dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
@@ -4054,14 +5061,13 @@ TEST(JobLoader, ValidateJobSchema_BurnInFontColorBInRange_Succeeds) {
  */
 TEST(JobLoader, ValidateJobSchema_BurnInFontColorDecimalChannels_Succeeds) {
   // Prepare
-  const std::filesystem::path yaml =
-      write_burn_in_font_job("burn_in_font_color_decimal.yaml",
-                             "        path: \"/unused/font.ttf\"\n"
-                             "        size_px: 12\n"
-                             "        color:\n"
-                             "          r: 0.12\n"
-                             "          g: 0.14\n"
-                             "          b: 0.18\n");
+  const std::filesystem::path yaml = write_burn_in_font_job(
+      "burn_in_font_color_decimal.yaml", yaml_font_path_line() +
+                                             "        size_px: 12\n"
+                                             "        color:\n"
+                                             "          r: 0.12\n"
+                                             "          g: 0.14\n"
+                                             "          b: 0.18\n");
 
   // Test
   dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
@@ -4765,16 +5771,16 @@ TEST(JobLoader, ValidateJobSchema_MultiplePlans_ReturnsUserError) {
   // Prepare
   const char* plans_yaml =
       "plans:\n"
-      "  - id: plate\n"
-      "    input_colorspace: ACES - ACEScg\n"
+      "  - id: \"plate\"\n"
+      "    input_colorspace: \"ACES - ACEScg\"\n"
       "    sequence:\n"
-      "      path: /tmp/plate.%04d.png\n"
+      "      path: \"/tmp/plate.%04d.png\"\n"
       "      frame_start: 1001\n"
       "      frame_end: 1003\n"
-      "  - id: grade\n"
-      "    input_colorspace: ACES - ACEScg\n"
+      "  - id: \"grade\"\n"
+      "    input_colorspace: \"ACES - ACEScg\"\n"
       "    sequence:\n"
-      "      path: /tmp/grade.%04d.png\n"
+      "      path: \"/tmp/grade.%04d.png\"\n"
       "      frame_start: 1001\n"
       "      frame_end: 1003\n";
   const std::filesystem::path yaml =
@@ -7020,10 +8026,8 @@ std::string layout_burn_in(const std::string& anchor,
              "        anchor: \"") +
          anchor +
          "\"\n"
-         "      font:\n"
-         "        path: \"dailyboy/tests/data/fonts/DejaVuSans.ttf\"\n"
-         "        size_px: 16\n" +
-         extra;
+         "      font:\n" +
+         yaml_font_path_line() + "        size_px: 16\n" + extra;
 }
 
 /*!
@@ -7119,10 +8123,10 @@ TEST(JobLoader, LoadJob_SequenceHandles_StoresHeadAndTail) {
   // Prepare
   const char* plans_yaml =
       "plans:\n"
-      "  - id: plate\n"
-      "    input_colorspace: ACES - ACEScg\n"
+      "  - id: \"plate\"\n"
+      "    input_colorspace: \"ACES - ACEScg\"\n"
       "    sequence:\n"
-      "      path: /tmp/plate.%04d.png\n"
+      "      path: \"/tmp/plate.%04d.png\"\n"
       "      frame_start: 1001\n"
       "      frame_end: 1003\n"
       "      handles:\n"
@@ -7175,10 +8179,10 @@ TEST(JobLoader, LoadJob_NegativeHandleHead_ReturnsUserError) {
   // Prepare
   const char* plans_yaml =
       "plans:\n"
-      "  - id: plate\n"
-      "    input_colorspace: ACES - ACEScg\n"
+      "  - id: \"plate\"\n"
+      "    input_colorspace: \"ACES - ACEScg\"\n"
       "    sequence:\n"
-      "      path: /tmp/plate.%04d.png\n"
+      "      path: \"/tmp/plate.%04d.png\"\n"
       "      frame_start: 1001\n"
       "      frame_end: 1003\n"
       "      handles:\n"
@@ -7216,7 +8220,6 @@ color:
 layout:
   canvas: { width: 8, height: 8 }
   image: { fit: "contain" }
-  slate: { duration_frames: 0, lines: [] }
 output:
   videos:
     - id: a
@@ -7234,12 +8237,12 @@ output:
       fps: 25
       codec: h264
 plans:
-  - id: plate
-    input_colorspace: ACES - ACEScg
+  - id: "plate"
+    input_colorspace: "ACES - ACEScg"
     timecode:
       start: "01:00:00:00"
     sequence:
-      path: /tmp/plate.%04d.png
+      path: "/tmp/plate.%04d.png"
       frame_start: 1001
       frame_end: 1003
 )";
@@ -7270,7 +8273,6 @@ color:
 layout:
   canvas: { width: 8, height: 8 }
   image: { fit: "contain" }
-  slate: { duration_frames: 0, lines: [] }
 output:
   videos:
     - id: a
@@ -7281,13 +8283,13 @@ output:
       fps: 24
       codec: h264
 plans:
-  - id: plate
-    input_colorspace: ACES - ACEScg
+  - id: "plate"
+    input_colorspace: "ACES - ACEScg"
     timecode:
       start: "01:00:00;00"
       drop_frame: true
     sequence:
-      path: /tmp/plate.%04d.png
+      path: "/tmp/plate.%04d.png"
       frame_start: 1001
       frame_end: 1003
 )";
@@ -7298,4 +8300,1398 @@ plans:
 
   // Assert
   expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_103));
+}
+
+// --- ValidateJobSchema plans / version / metadata (plan list) ---
+
+/*!
+ * \brief Rejects a job that omits dailyboy_version.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedDailyboyVersion_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path dir =
+      std::filesystem::path(DAILYBOY_TEST_BINARY_DIR) / "output_contract";
+  std::filesystem::create_directories(dir);
+  const std::filesystem::path yaml = dir / "omitted_dailyboy_version.yaml";
+  {
+    std::ofstream out(yaml);
+    out << "color:\n"
+           "  ocio_config: \"/unused/config.ocio\"\n"
+           "layout:\n"
+           "  canvas:\n"
+           "    width: 8\n"
+           "    height: 8\n"
+           "  image:\n"
+           "    fit: \"contain\"\n"
+           "output:\n"
+           "  videos:\n"
+           "    - id: preview\n"
+           "      enabled: true\n"
+           "      display_view:\n"
+           "        display: \"passthrough\"\n"
+           "        view: \"passthrough\"\n"
+           "      signal:\n"
+           "        range: tv\n"
+           "        matrix: bt709\n"
+           "        primaries: bt709\n"
+           "        transfer: bt709\n"
+           "      path: /tmp/dailyboy_contract.mov\n"
+           "      codec: h264\n"
+           "  image_sequences: []\n"
+           "plans:\n"
+           "  - id: \"plate\"\n"
+           "    input_colorspace: \"ACES - ACEScg\"\n"
+           "    sequence:\n"
+           "      path: \"/tmp/plate.%04d.png\"\n"
+           "      frame_start: 1001\n"
+           "      frame_end: 1003\n";
+  }
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_16));
+  ASSERT_FALSE(job.ok());
+  EXPECT_EQ(job.status().code(), dailyboy::Status::Code::kUser);
+  expect_user_message(job.status(), "dailyboy_version");
+}
+
+/*!
+ * \brief Rejects a dailyboy_version that is not an integer.
+ */
+TEST(JobLoader, ValidateJobSchema_DailyboyVersionNotInteger_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path dir =
+      std::filesystem::path(DAILYBOY_TEST_BINARY_DIR) / "output_contract";
+  std::filesystem::create_directories(dir);
+  const std::filesystem::path yaml = dir / "dailyboy_version_string.yaml";
+  {
+    std::ofstream out(yaml);
+    out << "dailyboy_version: 1.5\n"
+           "color:\n"
+           "  ocio_config: \"/unused/config.ocio\"\n"
+           "layout:\n"
+           "  canvas: { width: 8, height: 8 }\n"
+           "  image: { fit: \"contain\" }\n"
+           "output:\n"
+           "  videos:\n"
+           "    - id: preview\n"
+           "      enabled: true\n"
+           "      display_view: { display: \"passthrough\", view: "
+           "\"passthrough\" }\n"
+           "      signal: { range: tv, matrix: bt709, primaries: bt709, "
+           "transfer: bt709 }\n"
+           "      path: /tmp/dailyboy_contract.mov\n"
+           "      codec: h264\n"
+           "  image_sequences: []\n"
+           "plans:\n"
+           "  - id: \"plate\"\n"
+           "    input_colorspace: \"ACES - ACEScg\"\n"
+           "    sequence:\n"
+           "      path: \"/tmp/plate.%04d.png\"\n"
+           "      frame_start: 1001\n"
+           "      frame_end: 1003\n";
+  }
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_131));
+  ASSERT_FALSE(job.ok());
+  EXPECT_EQ(job.status().code(), dailyboy::Status::Code::kUser);
+}
+
+/*!
+ * \brief Rejects metadata.substitutions when it is not a map.
+ */
+TEST(JobLoader, ValidateJobSchema_SubstitutionsNotMap_ReturnsUserError) {
+  // Prepare
+  const char* metadata_yaml =
+      "metadata:\n"
+      "  substitutions: []\n";
+  const std::filesystem::path yaml = write_contract_job(
+      "substitutions_not_map.yaml", {.metadata_yaml = metadata_yaml});
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_4));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_4));
+}
+
+/*!
+ * \brief Rejects a frame-map substitution used outside burn-in or slate text.
+ */
+TEST(JobLoader,
+     ValidateJobSchema_FrameMapOutsideBurnInOrSlate_ReturnsUserError) {
+  // Prepare
+  const char* metadata_yaml =
+      "metadata:\n"
+      "  substitutions:\n"
+      "    note_frame:\n"
+      "      \"1001\": \"Start\"\n";
+  const char* plans_yaml =
+      "plans:\n"
+      "  - id: \"plate\"\n"
+      "    input_colorspace: \"ACES - ACEScg\"\n"
+      "    sequence:\n"
+      "      path: \"/tmp/{note_frame}.%04d.png\"\n"
+      "      frame_start: 1001\n"
+      "      frame_end: 1003\n";
+  const std::filesystem::path yaml = write_contract_job(
+      "frame_map_outside_burn_in.yaml",
+      {.metadata_yaml = metadata_yaml, .plans_yaml = plans_yaml});
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_7));
+  ASSERT_TRUE(job.ok()) << job.status().message();
+}
+
+/*!
+ * \brief Rejects a plan that omits id.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedPlanId_ReturnsUserError) {
+  // Prepare
+  const char* plans_yaml =
+      "plans:\n"
+      "  - input_colorspace: \"ACES - ACEScg\"\n"
+      "    sequence:\n"
+      "      path: \"/tmp/plate.%04d.png\"\n"
+      "      frame_start: 1001\n"
+      "      frame_end: 1003\n";
+  const std::filesystem::path yaml =
+      write_plan_contract_job("omitted_plan_id.yaml", plans_yaml);
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_118));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_118));
+}
+
+/*!
+ * \brief Rejects a plan id that is not a quoted string.
+ */
+TEST(JobLoader, ValidateJobSchema_UnquotedPlanId_ReturnsUserError) {
+  // Prepare
+  const char* plans_yaml =
+      "plans:\n"
+      "  - id: plate\n"
+      "    input_colorspace: \"ACES - ACEScg\"\n"
+      "    sequence:\n"
+      "      path: \"/tmp/plate.%04d.png\"\n"
+      "      frame_start: 1001\n"
+      "      frame_end: 1003\n";
+  const std::filesystem::path yaml =
+      write_plan_contract_job("unquoted_plan_id.yaml", plans_yaml);
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_119));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_119));
+}
+
+/*!
+ * \brief Rejects a plan id that is an empty quoted string.
+ */
+TEST(JobLoader, ValidateJobSchema_EmptyPlanId_ReturnsUserError) {
+  // Prepare
+  const char* plans_yaml =
+      "plans:\n"
+      "  - id: \"\"\n"
+      "    input_colorspace: \"ACES - ACEScg\"\n"
+      "    sequence:\n"
+      "      path: \"/tmp/plate.%04d.png\"\n"
+      "      frame_start: 1001\n"
+      "      frame_end: 1003\n";
+  const std::filesystem::path yaml =
+      write_plan_contract_job("empty_plan_id.yaml", plans_yaml);
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_119));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_119));
+}
+
+/*!
+ * \brief Accepts a plan with a quoted non-empty id and stores it.
+ */
+TEST(JobLoader, ValidateJobSchema_PresentPlanId_Succeeds) {
+  // Prepare
+  const char* plans_yaml =
+      "plans:\n"
+      "  - id: \"hero\"\n"
+      "    input_colorspace: \"ACES - ACEScg\"\n"
+      "    sequence:\n"
+      "      path: \"/tmp/plate.%04d.png\"\n"
+      "      frame_start: 1001\n"
+      "      frame_end: 1003\n";
+  const std::filesystem::path yaml =
+      write_plan_contract_job("present_plan_id.yaml", plans_yaml);
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  ASSERT_TRUE(schema.ok()) << schema.message();
+  ASSERT_TRUE(job.ok()) << job.status().message();
+  EXPECT_EQ(job.value().plans().plans().front().id(), "hero");
+}
+
+/*!
+ * \brief Rejects a plan that omits input_colorspace.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedPlanInputColorspace_ReturnsUserError) {
+  // Prepare
+  const char* plans_yaml =
+      "plans:\n"
+      "  - id: \"plate\"\n"
+      "    sequence:\n"
+      "      path: \"/tmp/plate.%04d.png\"\n"
+      "      frame_start: 1001\n"
+      "      frame_end: 1003\n";
+  const std::filesystem::path yaml =
+      write_plan_contract_job("omitted_plan_input_cs.yaml", plans_yaml);
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_120));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_120));
+}
+
+/*!
+ * \brief Rejects input_colorspace that is not a quoted string.
+ */
+TEST(JobLoader,
+     ValidateJobSchema_UnquotedPlanInputColorspace_ReturnsUserError) {
+  // Prepare
+  const char* plans_yaml =
+      "plans:\n"
+      "  - id: \"plate\"\n"
+      "    input_colorspace: ACEScg\n"
+      "    sequence:\n"
+      "      path: \"/tmp/plate.%04d.png\"\n"
+      "      frame_start: 1001\n"
+      "      frame_end: 1003\n";
+  const std::filesystem::path yaml =
+      write_plan_contract_job("unquoted_plan_input_cs.yaml", plans_yaml);
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_121));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_121));
+}
+
+/*!
+ * \brief Rejects input_colorspace that is an empty quoted string.
+ */
+TEST(JobLoader, ValidateJobSchema_EmptyPlanInputColorspace_ReturnsUserError) {
+  // Prepare
+  const char* plans_yaml =
+      "plans:\n"
+      "  - id: \"plate\"\n"
+      "    input_colorspace: \"\"\n"
+      "    sequence:\n"
+      "      path: \"/tmp/plate.%04d.png\"\n"
+      "      frame_start: 1001\n"
+      "      frame_end: 1003\n";
+  const std::filesystem::path yaml =
+      write_plan_contract_job("empty_plan_input_cs.yaml", plans_yaml);
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_121));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_121));
+}
+
+/*!
+ * \brief Accepts a quoted input_colorspace and stores it on the plan.
+ */
+TEST(JobLoader, ValidateJobSchema_PresentPlanInputColorspace_Succeeds) {
+  // Prepare
+  const char* plans_yaml =
+      "plans:\n"
+      "  - id: \"plate\"\n"
+      "    input_colorspace: \"ACES - ACEScg\"\n"
+      "    sequence:\n"
+      "      path: \"/tmp/plate.%04d.png\"\n"
+      "      frame_start: 1001\n"
+      "      frame_end: 1003\n";
+  const std::filesystem::path yaml =
+      write_plan_contract_job("present_plan_input_cs.yaml", plans_yaml);
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  ASSERT_TRUE(schema.ok()) << schema.message();
+  ASSERT_TRUE(job.ok()) << job.status().message();
+  EXPECT_EQ(job.value().plans().plans().front().input_colorspace(),
+            "ACES - ACEScg");
+}
+
+/*!
+ * \brief Rejects a plan that omits sequence.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedPlanSequence_ReturnsUserError) {
+  // Prepare
+  const char* plans_yaml =
+      "plans:\n"
+      "  - id: \"plate\"\n"
+      "    input_colorspace: \"ACES - ACEScg\"\n";
+  const std::filesystem::path yaml =
+      write_plan_contract_job("omitted_plan_sequence.yaml", plans_yaml);
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_122));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_122));
+}
+
+/*!
+ * \brief Rejects a sequence that omits path.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedPlanSequencePath_ReturnsUserError) {
+  // Prepare
+  const char* plans_yaml =
+      "plans:\n"
+      "  - id: \"plate\"\n"
+      "    input_colorspace: \"ACES - ACEScg\"\n"
+      "    sequence:\n"
+      "      frame_start: 1001\n"
+      "      frame_end: 1003\n";
+  const std::filesystem::path yaml =
+      write_plan_contract_job("omitted_plan_seq_path.yaml", plans_yaml);
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_123));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_123));
+}
+
+/*!
+ * \brief Rejects a sequence path that is not a quoted string.
+ */
+TEST(JobLoader, ValidateJobSchema_UnquotedPlanSequencePath_ReturnsUserError) {
+  // Prepare
+  const char* plans_yaml =
+      "plans:\n"
+      "  - id: \"plate\"\n"
+      "    input_colorspace: \"ACES - ACEScg\"\n"
+      "    sequence:\n"
+      "      path: /tmp/plate.%04d.png\n"
+      "      frame_start: 1001\n"
+      "      frame_end: 1003\n";
+  const std::filesystem::path yaml =
+      write_plan_contract_job("unquoted_plan_seq_path.yaml", plans_yaml);
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_124));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_124));
+}
+
+/*!
+ * \brief Rejects a sequence path that is an empty quoted string.
+ */
+TEST(JobLoader, ValidateJobSchema_EmptyPlanSequencePath_ReturnsUserError) {
+  // Prepare
+  const char* plans_yaml =
+      "plans:\n"
+      "  - id: \"plate\"\n"
+      "    input_colorspace: \"ACES - ACEScg\"\n"
+      "    sequence:\n"
+      "      path: \"\"\n"
+      "      frame_start: 1001\n"
+      "      frame_end: 1003\n";
+  const std::filesystem::path yaml =
+      write_plan_contract_job("empty_plan_seq_path.yaml", plans_yaml);
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_124));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_124));
+}
+
+/*!
+ * \brief Accepts a quoted sequence path and stores it on the plan.
+ */
+TEST(JobLoader, ValidateJobSchema_PresentPlanSequencePath_Succeeds) {
+  // Prepare
+  const char* plans_yaml =
+      "plans:\n"
+      "  - id: \"plate\"\n"
+      "    input_colorspace: \"ACES - ACEScg\"\n"
+      "    sequence:\n"
+      "      path: \"/tmp/plate.%04d.png\"\n"
+      "      frame_start: 1001\n"
+      "      frame_end: 1003\n";
+  const std::filesystem::path yaml =
+      write_plan_contract_job("present_plan_seq_path.yaml", plans_yaml);
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  ASSERT_TRUE(schema.ok()) << schema.message();
+  ASSERT_TRUE(job.ok()) << job.status().message();
+  EXPECT_EQ(job.value().plans().plans().front().sequence().path(),
+            "/tmp/plate.%04d.png");
+}
+
+/*!
+ * \brief Rejects a sequence that omits frame_start.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedPlanFrameStart_ReturnsUserError) {
+  // Prepare
+  const char* plans_yaml =
+      "plans:\n"
+      "  - id: \"plate\"\n"
+      "    input_colorspace: \"ACES - ACEScg\"\n"
+      "    sequence:\n"
+      "      path: \"/tmp/plate.%04d.png\"\n"
+      "      frame_end: 1003\n";
+  const std::filesystem::path yaml =
+      write_plan_contract_job("omitted_plan_frame_start.yaml", plans_yaml);
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_125));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_125));
+}
+
+/*!
+ * \brief Rejects a frame_start that is not an integer.
+ */
+TEST(JobLoader, ValidateJobSchema_NotIntegerPlanFrameStart_ReturnsUserError) {
+  // Prepare
+  const char* plans_yaml =
+      "plans:\n"
+      "  - id: \"plate\"\n"
+      "    input_colorspace: \"ACES - ACEScg\"\n"
+      "    sequence:\n"
+      "      path: \"/tmp/plate.%04d.png\"\n"
+      "      frame_start: \"1001\"\n"
+      "      frame_end: 1003\n";
+  const std::filesystem::path yaml =
+      write_plan_contract_job("not_int_plan_frame_start.yaml", plans_yaml);
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_126));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_126));
+}
+
+/*!
+ * \brief Rejects a frame_start that is a non-integer number.
+ */
+TEST(JobLoader, ValidateJobSchema_PlanFrameStartNotInteger_ReturnsUserError) {
+  // Prepare
+  const char* plans_yaml =
+      "plans:\n"
+      "  - id: \"plate\"\n"
+      "    input_colorspace: \"ACES - ACEScg\"\n"
+      "    sequence:\n"
+      "      path: \"/tmp/plate.%04d.png\"\n"
+      "      frame_start: 1.5\n"
+      "      frame_end: 1003\n";
+  const std::filesystem::path yaml =
+      write_plan_contract_job("plan_frame_start_not_int.yaml", plans_yaml);
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_126));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_126));
+}
+
+/*!
+ * \brief Accepts an integer frame_start and stores it on the sequence.
+ */
+TEST(JobLoader, ValidateJobSchema_PresentPlanFrameStart_Succeeds) {
+  // Prepare
+  const char* plans_yaml =
+      "plans:\n"
+      "  - id: \"plate\"\n"
+      "    input_colorspace: \"ACES - ACEScg\"\n"
+      "    sequence:\n"
+      "      path: \"/tmp/plate.%04d.png\"\n"
+      "      frame_start: 1001\n"
+      "      frame_end: 1003\n";
+  const std::filesystem::path yaml =
+      write_plan_contract_job("present_plan_frame_start.yaml", plans_yaml);
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  ASSERT_TRUE(schema.ok()) << schema.message();
+  ASSERT_TRUE(job.ok()) << job.status().message();
+  EXPECT_EQ(job.value().plans().plans().front().sequence().frame_start(), 1001);
+}
+
+/*!
+ * \brief Rejects a sequence that omits frame_end.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedPlanFrameEnd_ReturnsUserError) {
+  // Prepare
+  const char* plans_yaml =
+      "plans:\n"
+      "  - id: \"plate\"\n"
+      "    input_colorspace: \"ACES - ACEScg\"\n"
+      "    sequence:\n"
+      "      path: \"/tmp/plate.%04d.png\"\n"
+      "      frame_start: 1001\n";
+  const std::filesystem::path yaml =
+      write_plan_contract_job("omitted_plan_frame_end.yaml", plans_yaml);
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_127));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_127));
+}
+
+/*!
+ * \brief Rejects a frame_end that is not an integer.
+ */
+TEST(JobLoader, ValidateJobSchema_NotIntegerPlanFrameEnd_ReturnsUserError) {
+  // Prepare
+  const char* plans_yaml =
+      "plans:\n"
+      "  - id: \"plate\"\n"
+      "    input_colorspace: \"ACES - ACEScg\"\n"
+      "    sequence:\n"
+      "      path: \"/tmp/plate.%04d.png\"\n"
+      "      frame_start: 1001\n"
+      "      frame_end: 1003.5\n";
+  const std::filesystem::path yaml =
+      write_plan_contract_job("not_int_plan_frame_end.yaml", plans_yaml);
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_128));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_128));
+}
+
+/*!
+ * \brief Rejects a frame_end that is a non-integer number.
+ */
+TEST(JobLoader, ValidateJobSchema_PlanFrameEndNotInteger_ReturnsUserError) {
+  // Prepare
+  const char* plans_yaml =
+      "plans:\n"
+      "  - id: \"plate\"\n"
+      "    input_colorspace: \"ACES - ACEScg\"\n"
+      "    sequence:\n"
+      "      path: \"/tmp/plate.%04d.png\"\n"
+      "      frame_start: 1001\n"
+      "      frame_end: 1.5\n";
+  const std::filesystem::path yaml =
+      write_plan_contract_job("plan_frame_end_not_int.yaml", plans_yaml);
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_128));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_128));
+}
+
+/*!
+ * \brief Accepts an integer frame_end and stores it on the sequence.
+ */
+TEST(JobLoader, ValidateJobSchema_PresentPlanFrameEnd_Succeeds) {
+  // Prepare
+  const char* plans_yaml =
+      "plans:\n"
+      "  - id: \"plate\"\n"
+      "    input_colorspace: \"ACES - ACEScg\"\n"
+      "    sequence:\n"
+      "      path: \"/tmp/plate.%04d.png\"\n"
+      "      frame_start: 1001\n"
+      "      frame_end: 1003\n";
+  const std::filesystem::path yaml =
+      write_plan_contract_job("present_plan_frame_end.yaml", plans_yaml);
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  ASSERT_TRUE(schema.ok()) << schema.message();
+  ASSERT_TRUE(job.ok()) << job.status().message();
+  EXPECT_EQ(job.value().plans().plans().front().sequence().frame_end(), 1003);
+}
+
+/*!
+ * \brief Omits sequence handles and defaults head and tail to zero.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedPlanSequenceHandles_Succeeds) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_contract_job("omitted_plan_seq_handles.yaml");
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  ASSERT_TRUE(schema.ok()) << schema.message();
+  ASSERT_TRUE(job.ok()) << job.status().message();
+  const dailyboy::JobSequence& sequence =
+      job.value().plans().plans().front().sequence();
+  EXPECT_EQ(sequence.handle_head(), 0);
+  EXPECT_EQ(sequence.handle_tail(), 0);
+}
+
+/*!
+ * \brief Accepts sequence handles and stores head and tail on the plan.
+ */
+TEST(JobLoader, ValidateJobSchema_PresentPlanSequenceHandles_Succeeds) {
+  // Prepare
+  const char* plans_yaml =
+      "plans:\n"
+      "  - id: \"plate\"\n"
+      "    input_colorspace: \"ACES - ACEScg\"\n"
+      "    sequence:\n"
+      "      path: \"/tmp/plate.%04d.png\"\n"
+      "      frame_start: 1001\n"
+      "      frame_end: 1003\n"
+      "      handles:\n"
+      "        head: 8\n"
+      "        tail: 4\n";
+  const std::filesystem::path yaml =
+      write_plan_contract_job("present_plan_seq_handles.yaml", plans_yaml);
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  ASSERT_TRUE(schema.ok()) << schema.message();
+  ASSERT_TRUE(job.ok()) << job.status().message();
+  const dailyboy::JobSequence& sequence =
+      job.value().plans().plans().front().sequence();
+  EXPECT_EQ(sequence.handle_head(), 8);
+  EXPECT_EQ(sequence.handle_tail(), 4);
+}
+
+/*!
+ * \brief Rejects a handle head that is not an integer.
+ */
+TEST(JobLoader, ValidateJobSchema_PlanHandleHeadNotInteger_ReturnsUserError) {
+  // Prepare
+  const char* plans_yaml =
+      "plans:\n"
+      "  - id: \"plate\"\n"
+      "    input_colorspace: \"ACES - ACEScg\"\n"
+      "    sequence:\n"
+      "      path: \"/tmp/plate.%04d.png\"\n"
+      "      frame_start: 1001\n"
+      "      frame_end: 1003\n"
+      "      handles:\n"
+      "        head: \"8\"\n";
+  const std::filesystem::path yaml =
+      write_plan_contract_job("handle_head_not_int.yaml", plans_yaml);
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_140));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_140));
+}
+
+/*!
+ * \brief Rejects a handle head below zero.
+ */
+TEST(JobLoader, ValidateJobSchema_PlanHandleHeadBelow0_ReturnsUserError) {
+  // Prepare
+  const char* plans_yaml =
+      "plans:\n"
+      "  - id: \"plate\"\n"
+      "    input_colorspace: \"ACES - ACEScg\"\n"
+      "    sequence:\n"
+      "      path: \"/tmp/plate.%04d.png\"\n"
+      "      frame_start: 1001\n"
+      "      frame_end: 1003\n"
+      "      handles:\n"
+      "        head: -1\n";
+  const std::filesystem::path yaml =
+      write_plan_contract_job("handle_head_below_0.yaml", plans_yaml);
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_140));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_140));
+}
+
+/*!
+ * \brief Omits handle head when handles is present and defaults head to zero.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedPlanHandleHead_DefaultsTo0) {
+  // Prepare
+  const char* plans_yaml =
+      "plans:\n"
+      "  - id: \"plate\"\n"
+      "    input_colorspace: \"ACES - ACEScg\"\n"
+      "    sequence:\n"
+      "      path: \"/tmp/plate.%04d.png\"\n"
+      "      frame_start: 1001\n"
+      "      frame_end: 1003\n"
+      "      handles:\n"
+      "        tail: 2\n";
+  const std::filesystem::path yaml =
+      write_plan_contract_job("omitted_handle_head.yaml", plans_yaml);
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  ASSERT_TRUE(schema.ok()) << schema.message();
+  ASSERT_TRUE(job.ok()) << job.status().message();
+  const dailyboy::JobSequence& sequence =
+      job.value().plans().plans().front().sequence();
+  EXPECT_EQ(sequence.handle_head(), 0);
+  EXPECT_EQ(sequence.handle_tail(), 2);
+}
+
+/*!
+ * \brief Rejects a handle tail that is not an integer.
+ */
+TEST(JobLoader, ValidateJobSchema_PlanHandleTailNotInteger_ReturnsUserError) {
+  // Prepare
+  const char* plans_yaml =
+      "plans:\n"
+      "  - id: \"plate\"\n"
+      "    input_colorspace: \"ACES - ACEScg\"\n"
+      "    sequence:\n"
+      "      path: \"/tmp/plate.%04d.png\"\n"
+      "      frame_start: 1001\n"
+      "      frame_end: 1003\n"
+      "      handles:\n"
+      "        tail: 4.5\n";
+  const std::filesystem::path yaml =
+      write_plan_contract_job("handle_tail_not_int.yaml", plans_yaml);
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_141));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_141));
+}
+
+/*!
+ * \brief Rejects a handle tail below zero.
+ */
+TEST(JobLoader, ValidateJobSchema_PlanHandleTailBelow0_ReturnsUserError) {
+  // Prepare
+  const char* plans_yaml =
+      "plans:\n"
+      "  - id: \"plate\"\n"
+      "    input_colorspace: \"ACES - ACEScg\"\n"
+      "    sequence:\n"
+      "      path: \"/tmp/plate.%04d.png\"\n"
+      "      frame_start: 1001\n"
+      "      frame_end: 1003\n"
+      "      handles:\n"
+      "        tail: -2\n";
+  const std::filesystem::path yaml =
+      write_plan_contract_job("handle_tail_below_0.yaml", plans_yaml);
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_141));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_141));
+}
+
+/*!
+ * \brief Omits handle tail when handles is present and defaults tail to zero.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedPlanHandleTail_DefaultsTo0) {
+  // Prepare
+  const char* plans_yaml =
+      "plans:\n"
+      "  - id: \"plate\"\n"
+      "    input_colorspace: \"ACES - ACEScg\"\n"
+      "    sequence:\n"
+      "      path: \"/tmp/plate.%04d.png\"\n"
+      "      frame_start: 1001\n"
+      "      frame_end: 1003\n"
+      "      handles:\n"
+      "        head: 3\n";
+  const std::filesystem::path yaml =
+      write_plan_contract_job("omitted_handle_tail.yaml", plans_yaml);
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  ASSERT_TRUE(schema.ok()) << schema.message();
+  ASSERT_TRUE(job.ok()) << job.status().message();
+  const dailyboy::JobSequence& sequence =
+      job.value().plans().plans().front().sequence();
+  EXPECT_EQ(sequence.handle_head(), 3);
+  EXPECT_EQ(sequence.handle_tail(), 0);
+}
+
+/*!
+ * \brief Omits plan audio and leaves the optional audio unset.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedPlanAudio_Succeeds) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_contract_job("omitted_plan_audio.yaml");
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  ASSERT_TRUE(schema.ok()) << schema.message();
+  ASSERT_TRUE(job.ok()) << job.status().message();
+  EXPECT_FALSE(job.value().plans().plans().front().audio().has_value());
+}
+
+/*!
+ * \brief Rejects an audio block that omits path.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedPlanAudioPath_ReturnsUserError) {
+  // Prepare
+  const char* plans_yaml =
+      "plans:\n"
+      "  - id: \"plate\"\n"
+      "    input_colorspace: \"ACES - ACEScg\"\n"
+      "    audio: {}\n"
+      "    sequence:\n"
+      "      path: \"/tmp/plate.%04d.png\"\n"
+      "      frame_start: 1001\n"
+      "      frame_end: 1003\n";
+  const std::filesystem::path yaml =
+      write_plan_contract_job("omitted_plan_audio_path.yaml", plans_yaml);
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_129));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_129));
+}
+
+/*!
+ * \brief Rejects an audio path that is not a quoted string.
+ */
+TEST(JobLoader, ValidateJobSchema_UnquotedPlanAudioPath_ReturnsUserError) {
+  // Prepare
+  const char* plans_yaml =
+      "plans:\n"
+      "  - id: \"plate\"\n"
+      "    input_colorspace: \"ACES - ACEScg\"\n"
+      "    audio:\n"
+      "      path: /tmp/guide.wav\n"
+      "    sequence:\n"
+      "      path: \"/tmp/plate.%04d.png\"\n"
+      "      frame_start: 1001\n"
+      "      frame_end: 1003\n";
+  const std::filesystem::path yaml =
+      write_plan_contract_job("unquoted_plan_audio_path.yaml", plans_yaml);
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_130));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_130));
+}
+
+/*!
+ * \brief Rejects an audio path that is an empty quoted string.
+ */
+TEST(JobLoader, ValidateJobSchema_EmptyPlanAudioPath_ReturnsUserError) {
+  // Prepare
+  const char* plans_yaml =
+      "plans:\n"
+      "  - id: \"plate\"\n"
+      "    input_colorspace: \"ACES - ACEScg\"\n"
+      "    audio:\n"
+      "      path: \"\"\n"
+      "    sequence:\n"
+      "      path: \"/tmp/plate.%04d.png\"\n"
+      "      frame_start: 1001\n"
+      "      frame_end: 1003\n";
+  const std::filesystem::path yaml =
+      write_plan_contract_job("empty_plan_audio_path.yaml", plans_yaml);
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_130));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_130));
+}
+
+/*!
+ * \brief Accepts a quoted audio path and stores it on the plan.
+ */
+TEST(JobLoader, ValidateJobSchema_PresentPlanAudioPath_Succeeds) {
+  // Prepare
+  const char* plans_yaml =
+      "plans:\n"
+      "  - id: \"plate\"\n"
+      "    input_colorspace: \"ACES - ACEScg\"\n"
+      "    audio:\n"
+      "      path: \"/tmp/guide.wav\"\n"
+      "    sequence:\n"
+      "      path: \"/tmp/plate.%04d.png\"\n"
+      "      frame_start: 1001\n"
+      "      frame_end: 1003\n";
+  const std::filesystem::path yaml =
+      write_plan_contract_job("present_plan_audio_path.yaml", plans_yaml);
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  ASSERT_TRUE(schema.ok()) << schema.message();
+  ASSERT_TRUE(job.ok()) << job.status().message();
+  ASSERT_TRUE(job.value().plans().plans().front().audio().has_value());
+  EXPECT_EQ(job.value().plans().plans().front().audio()->path(),
+            "/tmp/guide.wav");
+}
+
+/*!
+ * \brief Omits plan timecode and leaves the optional timecode unset.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedPlanTimecode_Succeeds) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_contract_job("omitted_plan_timecode.yaml");
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  ASSERT_TRUE(schema.ok()) << schema.message();
+  ASSERT_TRUE(job.ok()) << job.status().message();
+  EXPECT_FALSE(job.value().plans().plans().front().timecode().has_value());
+}
+
+/*!
+ * \brief Rejects a timecode block that omits start.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedPlanTimecodeStart_ReturnsUserError) {
+  // Prepare
+  const char* plans_yaml =
+      "plans:\n"
+      "  - id: \"plate\"\n"
+      "    input_colorspace: \"ACES - ACEScg\"\n"
+      "    timecode: {}\n"
+      "    sequence:\n"
+      "      path: \"/tmp/plate.%04d.png\"\n"
+      "      frame_start: 1001\n"
+      "      frame_end: 1003\n";
+  const std::filesystem::path yaml =
+      write_plan_contract_job("omitted_plan_tc_start.yaml", plans_yaml);
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_101));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_101));
+}
+
+/*!
+ * \brief Rejects a timecode start with the wrong YAML type.
+ */
+TEST(JobLoader, ValidateJobSchema_PlanTimecodeStartWrongType_ReturnsUserError) {
+  // Prepare
+  const char* plans_yaml =
+      "plans:\n"
+      "  - id: \"plate\"\n"
+      "    input_colorspace: \"ACES - ACEScg\"\n"
+      "    timecode:\n"
+      "      start: []\n"
+      "    sequence:\n"
+      "      path: \"/tmp/plate.%04d.png\"\n"
+      "      frame_start: 1001\n"
+      "      frame_end: 1003\n";
+  const std::filesystem::path yaml =
+      write_plan_contract_job("plan_tc_start_wrong_type.yaml", plans_yaml);
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_101));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_101));
+}
+
+/*!
+ * \brief Rejects a timecode start string that is not valid SMPTE.
+ */
+TEST(JobLoader, ValidateJobSchema_PlanTimecodeStartBadFormat_ReturnsUserError) {
+  // Prepare
+  const char* plans_yaml =
+      "plans:\n"
+      "  - id: \"plate\"\n"
+      "    input_colorspace: \"ACES - ACEScg\"\n"
+      "    timecode:\n"
+      "      start: \"01:00:00;00\"\n"
+      "    sequence:\n"
+      "      path: \"/tmp/plate.%04d.png\"\n"
+      "      frame_start: 1001\n"
+      "      frame_end: 1003\n";
+  const std::filesystem::path yaml =
+      write_plan_contract_job("plan_tc_start_bad_format.yaml", plans_yaml);
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_102));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_102));
+}
+
+/*!
+ * \brief Rejects a timecode start integer below zero.
+ */
+TEST(JobLoader, ValidateJobSchema_PlanTimecodeStartBelow0_ReturnsUserError) {
+  // Prepare
+  const char* plans_yaml =
+      "plans:\n"
+      "  - id: \"plate\"\n"
+      "    input_colorspace: \"ACES - ACEScg\"\n"
+      "    timecode:\n"
+      "      start: -1\n"
+      "    sequence:\n"
+      "      path: \"/tmp/plate.%04d.png\"\n"
+      "      frame_start: 1001\n"
+      "      frame_end: 1003\n";
+  const std::filesystem::path yaml =
+      write_plan_contract_job("plan_tc_start_below_0.yaml", plans_yaml);
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_101));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_101));
+}
+
+/*!
+ * \brief Accepts a SMPTE string timecode start and stores it on the plan.
+ */
+TEST(JobLoader, ValidateJobSchema_PresentPlanTimecodeStartString_Succeeds) {
+  // Prepare
+  const char* plans_yaml =
+      "plans:\n"
+      "  - id: \"plate\"\n"
+      "    input_colorspace: \"ACES - ACEScg\"\n"
+      "    timecode:\n"
+      "      start: \"01:00:00:00\"\n"
+      "    sequence:\n"
+      "      path: \"/tmp/plate.%04d.png\"\n"
+      "      frame_start: 1001\n"
+      "      frame_end: 1003\n";
+  const std::filesystem::path yaml =
+      write_plan_contract_job("present_plan_tc_start_str.yaml", plans_yaml);
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  ASSERT_TRUE(schema.ok()) << schema.message();
+  ASSERT_TRUE(job.ok()) << job.status().message();
+  ASSERT_TRUE(job.value().plans().plans().front().timecode().has_value());
+  const dailyboy::JobPlanTimecode::Start& start =
+      job.value().plans().plans().front().timecode()->start();
+  ASSERT_TRUE(std::holds_alternative<std::string>(start));
+  EXPECT_EQ(std::get<std::string>(start), "01:00:00:00");
+}
+
+/*!
+ * \brief Accepts an integer timecode start and stores it on the plan.
+ */
+TEST(JobLoader, ValidateJobSchema_PresentPlanTimecodeStartInt_Succeeds) {
+  // Prepare
+  const char* plans_yaml =
+      "plans:\n"
+      "  - id: \"plate\"\n"
+      "    input_colorspace: \"ACES - ACEScg\"\n"
+      "    timecode:\n"
+      "      start: 0\n"
+      "    sequence:\n"
+      "      path: \"/tmp/plate.%04d.png\"\n"
+      "      frame_start: 1001\n"
+      "      frame_end: 1003\n";
+  const std::filesystem::path yaml =
+      write_plan_contract_job("present_plan_tc_start_int.yaml", plans_yaml);
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  ASSERT_TRUE(schema.ok()) << schema.message();
+  ASSERT_TRUE(job.ok()) << job.status().message();
+  ASSERT_TRUE(job.value().plans().plans().front().timecode().has_value());
+  const dailyboy::JobPlanTimecode::Start& start =
+      job.value().plans().plans().front().timecode()->start();
+  ASSERT_TRUE(std::holds_alternative<int>(start));
+  EXPECT_EQ(std::get<int>(start), 0);
+}
+
+/*!
+ * \brief Omits drop_frame and defaults it to false.
+ */
+TEST(JobLoader,
+     ValidateJobSchema_OmittedPlanTimecodeDropFrame_DefaultsToFalse) {
+  // Prepare
+  const char* plans_yaml =
+      "plans:\n"
+      "  - id: \"plate\"\n"
+      "    input_colorspace: \"ACES - ACEScg\"\n"
+      "    timecode:\n"
+      "      start: \"01:00:00:00\"\n"
+      "    sequence:\n"
+      "      path: \"/tmp/plate.%04d.png\"\n"
+      "      frame_start: 1001\n"
+      "      frame_end: 1003\n";
+  const std::filesystem::path yaml =
+      write_plan_contract_job("omitted_plan_tc_df.yaml", plans_yaml);
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  ASSERT_TRUE(schema.ok()) << schema.message();
+  ASSERT_TRUE(job.ok()) << job.status().message();
+  ASSERT_TRUE(job.value().plans().plans().front().timecode().has_value());
+  EXPECT_FALSE(job.value().plans().plans().front().timecode()->drop_frame());
+}
+
+/*!
+ * \brief Accepts drop_frame true when enabled video fps is 30.
+ */
+TEST(JobLoader, ValidateJobSchema_PresentPlanTimecodeDropFrameTrue_Succeeds) {
+  // Prepare
+  const std::filesystem::path dir =
+      std::filesystem::path(DAILYBOY_TEST_BINARY_DIR) / "timecode_contract";
+  std::filesystem::create_directories(dir);
+  const std::filesystem::path yaml = dir / "drop_frame_true_30.yaml";
+  {
+    std::ofstream out(yaml);
+    out << R"(
+dailyboy_version: 1
+color:
+  ocio_config: "/unused/config.ocio"
+layout:
+  canvas: { width: 8, height: 8 }
+  image: { fit: "contain" }
+output:
+  videos:
+    - id: a
+      enabled: true
+      display_view: { display: "passthrough", view: "passthrough" }
+      signal: { range: tv, matrix: bt709, primaries: bt709, transfer: bt709 }
+      path: /tmp/a.mov
+      fps: 30
+      codec: h264
+plans:
+  - id: "plate"
+    input_colorspace: "ACES - ACEScg"
+    timecode:
+      start: "01:00:00;00"
+      drop_frame: true
+    sequence:
+      path: "/tmp/plate.%04d.png"
+      frame_start: 1001
+      frame_end: 1003
+)";
+  }
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  ASSERT_TRUE(schema.ok()) << schema.message();
+  ASSERT_TRUE(job.ok()) << job.status().message();
+  ASSERT_TRUE(job.value().plans().plans().front().timecode().has_value());
+  EXPECT_TRUE(job.value().plans().plans().front().timecode()->drop_frame());
+}
+
+/*!
+ * \brief Rejects a drop_frame value that is not a boolean.
+ */
+TEST(JobLoader,
+     ValidateJobSchema_PlanTimecodeDropFrameNotBool_ReturnsUserError) {
+  // Prepare
+  const char* plans_yaml =
+      "plans:\n"
+      "  - id: \"plate\"\n"
+      "    input_colorspace: \"ACES - ACEScg\"\n"
+      "    timecode:\n"
+      "      start: \"01:00:00:00\"\n"
+      "      drop_frame: \"yes\"\n"
+      "    sequence:\n"
+      "      path: \"/tmp/plate.%04d.png\"\n"
+      "      frame_start: 1001\n"
+      "      frame_end: 1003\n";
+  const std::filesystem::path yaml =
+      write_plan_contract_job("plan_tc_df_not_bool.yaml", plans_yaml);
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_142));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_142));
+}
+
+/*!
+ * \brief Rejects color.context when it is not a map.
+ */
+TEST(JobLoader, ValidateJobSchema_ContextNotMap_ReturnsUserError) {
+  // Prepare
+  const char* color_yaml =
+      "color:\n"
+      "  ocio_config: \"/unused/config.ocio\"\n"
+      "  context: []\n";
+  const std::filesystem::path yaml =
+      write_contract_job("context_not_map.yaml", {.color_yaml = color_yaml});
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_133));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_133));
+}
+
+/*!
+ * \brief Rejects a color.context key that is an empty quoted string.
+ */
+TEST(JobLoader, ValidateJobSchema_EmptyContextKey_ReturnsUserError) {
+  // Prepare
+  const char* color_yaml =
+      "color:\n"
+      "  ocio_config: \"/unused/config.ocio\"\n"
+      "  context:\n"
+      "    \"\": \"v\"\n";
+  const std::filesystem::path yaml =
+      write_contract_job("empty_context_key.yaml", {.color_yaml = color_yaml});
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_134));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_134));
+}
+
+/*!
+ * \brief Rejects a color.context value that is an empty quoted string.
+ */
+TEST(JobLoader, ValidateJobSchema_EmptyContextValue_ReturnsUserError) {
+  // Prepare
+  const char* color_yaml =
+      "color:\n"
+      "  ocio_config: \"/unused/config.ocio\"\n"
+      "  context:\n"
+      "    \"SHOT\": \"\"\n";
+  const std::filesystem::path yaml = write_contract_job(
+      "empty_context_value.yaml", {.color_yaml = color_yaml});
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_135));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_135));
 }

@@ -54,7 +54,7 @@ layout:
         path: "dailyboy/tests/data/fonts/DejaVuSans.ttf"
         size_px: 22
       box:
-        mode: fill
+        mode: "fill"
         color:
           r: 0
           g: 0
@@ -69,7 +69,7 @@ layout:
         path: "dailyboy/tests/data/fonts/DejaVuSans.ttf"
         size_px: 18
       box:
-        mode: outline
+        mode: "outline"
         color:
           r: 1
           g: 1
@@ -88,7 +88,7 @@ layout:
         path: "dailyboy/tests/data/fonts/DejaVuSans-Bold.ttf"
         size_px: 24
       box:
-        mode: fill
+        mode: "fill"
         color:
           r: 0.1
           g: 0.1
@@ -104,7 +104,7 @@ layout:
         path: "dailyboy/tests/data/fonts/DejaVuSansMono.ttf"
         size_px: 16
       box:
-        mode: outline
+        mode: "outline"
         color:
           r: 0.9
           g: 0.9
@@ -120,7 +120,7 @@ layout:
         path: "dailyboy/tests/data/fonts/DejaVuSans.ttf"
         size_px: 20
       box:
-        mode: fill
+        mode: "fill"
         color:
           r: 0
           g: 0
@@ -139,7 +139,7 @@ layout:
         path: "dailyboy/tests/data/fonts/DejaVuSans.ttf"
         size_px: 14
       box:
-        mode: fill
+        mode: "fill"
         color:
           r: 0
           g: 0
@@ -154,7 +154,7 @@ layout:
         path: "dailyboy/tests/data/fonts/DejaVuSans.ttf"
         size_px: 14
       box:
-        mode: outline
+        mode: "outline"
         color:
           r: 1
           g: 0.5
@@ -218,7 +218,7 @@ layout:
 
 output:
   videos:
-    - id: review_mov
+    - id: "review_mov"
       enabled: true
       display_view:
         display: "passthrough"
@@ -236,13 +236,13 @@ output:
         gop: 24
         pix_fmt: yuv422p
   image_sequences:
-    - id: archive_acescg
+    - id: "archive_acescg"
       enabled: true
       display_view:
         display: "passthrough"
         view: "passthrough"
       path_pattern: "{dailies_root}/archive.%04d.png"
-    - id: share_srgb
+    - id: "share_srgb"
       enabled: false
       display_view:
         display: "passthrough"
@@ -250,8 +250,8 @@ output:
       path_pattern: "{dailies_root}/share.%04d.png"
 
 plans:
-  - id: sh010_plate
-    input_colorspace: ACES - ACEScg
+  - id: "sh010_plate"
+    input_colorspace: "ACES - ACEScg"
     sequence:
       path: "{dailies_root}/plate.%04d.png"
       frame_start: 1001

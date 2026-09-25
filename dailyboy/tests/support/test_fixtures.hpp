@@ -12,6 +12,8 @@
 #include <string>
 #include <system_error>
 
+#include "support/test_fonts.hpp"
+
 namespace dailyboy {
 namespace test {
 
@@ -168,9 +170,6 @@ inline bool write_plate_job_yaml(const std::filesystem::path& yaml_path,
       << "    height: " << canvas_height << "\n"
       << "  image:\n"
       << "    fit: \"contain\"\n"
-      << "  slate:\n"
-      << "    duration_frames: 0\n"
-      << "    lines: []\n"
       << "output:\n"
       << "  videos:\n"
       << "    - id: preview\n"
@@ -187,8 +186,8 @@ inline bool write_plate_job_yaml(const std::filesystem::path& yaml_path,
       << "      codec: " << codec << "\n"
       << "  image_sequences: []\n"
       << "plans:\n"
-      << "  - id: plate\n"
-      << "    input_colorspace: ACES - ACEScg\n"
+      << "  - id: \"plate\"\n"
+      << "    input_colorspace: \"ACES - ACEScg\"\n"
       << "    sequence:\n"
       << "      path: \"" << seq << "\"\n"
       << "      frame_start: " << kPlateFrameStart << "\n"

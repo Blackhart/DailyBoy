@@ -220,30 +220,61 @@ inline StatusOr<std::string> read_quoted_nonempty_string(
 }
 
 /*!
+ * \brief Reads a \c color.context name: a quoted, non-empty YAML string.
+ */
+inline StatusOr<std::string> read_ocio_context_key(const YAML::Node& node) {
+  if (!is_yaml_quoted_string(node)) {
+    std::string detail = "got " + describe_yaml_value(node) + ".";
+    if (node && node.IsScalar()) {
+      detail = "'" + node.as<std::string>() + "' is " +
+               describe_yaml_value(node) + ".";
+    }
+    return Status::User(with_job_error(USER_ERROR_JOB_52, detail));
+  }
+  std::string key = node.as<std::string>();
+  if (key.empty()) {
+    return Status::User(with_job_error(USER_ERROR_JOB_134));
+  }
+  return key;
+}
+
+/*!
+ * \brief Reads a \c color.context value: a quoted, non-empty YAML string.
+ */
+inline StatusOr<std::string> read_ocio_context_value(const YAML::Node& node,
+                                                     const std::string& key) {
+  const std::string loc = format_context_value_loc(key);
+  if (!is_yaml_quoted_string(node)) {
+    return Status::User(with_job_error(
+        USER_ERROR_JOB_53, loc + " is " + describe_yaml_value(node) + "."));
+  }
+  std::string value = node.as<std::string>();
+  if (value.empty()) {
+    return Status::User(with_job_error(USER_ERROR_JOB_135, loc + " is empty."));
+  }
+  return value;
+}
+
+/*!
  * \brief Reads \c color.context; keys and values must be quoted YAML strings.
  */
 inline StatusOr<std::map<std::string, std::string>> read_ocio_context(
     const YAML::Node& node) {
+  if (!node || !node.IsMap()) {
+    return Status::User(
+        with_job_error(USER_ERROR_JOB_133,
+                       "color.context is " + describe_yaml_value(node) + "."));
+  }
   if (node.size() == 0) {
     return Status::User(with_job_error(USER_ERROR_JOB_51));
   }
   std::map<std::string, std::string> out;
   for (const auto& kv : node) {
-    if (!is_yaml_quoted_string(kv.first)) {
-      std::string detail = "got " + describe_yaml_value(kv.first) + ".";
-      if (kv.first && kv.first.IsScalar()) {
-        detail = "'" + kv.first.as<std::string>() + "' is " +
-                 describe_yaml_value(kv.first) + ".";
-      }
-      return Status::User(with_job_error(USER_ERROR_JOB_52, detail));
-    }
-    const std::string key = kv.first.as<std::string>();
-    if (!is_yaml_quoted_string(kv.second)) {
-      return Status::User(with_job_error(
-          USER_ERROR_JOB_53, format_context_value_loc(key) + " is " +
-                                 describe_yaml_value(kv.second) + "."));
-    }
-    out[key] = kv.second.as<std::string>();
+    DAILYBOY_ASSIGN_OR_RETURN(const std::string key,
+                              read_ocio_context_key(kv.first));
+    DAILYBOY_ASSIGN_OR_RETURN(const std::string value,
+                              read_ocio_context_value(kv.second, key));
+    out[key] = value;
   }
   return out;
 }

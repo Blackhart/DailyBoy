@@ -41,12 +41,14 @@ target_include_directories(
     PRIVATE
         ${_dailyboy_engine}/include
         ${_dailyboy_engine}/src
+        ${_dailyboy_tests_root}
 )
 target_compile_definitions(
     job_loader_test
     PRIVATE
         "DAILYBOY_TEST_DATA_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}/job/data\""
         "DAILYBOY_TEST_BINARY_DIR=\"${CMAKE_CURRENT_BINARY_DIR}\""
+        "DAILYBOY_TEST_FONTS_DIR=\"${CMAKE_SOURCE_DIR}/dailyboy/tests/data/fonts\""
 )
 target_link_libraries(job_loader_test PRIVATE dailyboy GTest::gtest_main)
 target_link_directories(job_loader_test PRIVATE ${_dailyboy_dep_lib_dirs})

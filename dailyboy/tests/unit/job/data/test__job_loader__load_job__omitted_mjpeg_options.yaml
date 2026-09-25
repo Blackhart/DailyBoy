@@ -7,12 +7,9 @@ layout:
     height: 8
   image:
     fit: "contain"
-  slate:
-    duration_frames: 0
-    lines: []
 output:
   videos:
-    - id: preview
+    - id: "preview"
       enabled: true
       display_view:
         display: "passthrough"
@@ -22,13 +19,13 @@ output:
         matrix: bt709
         primaries: bt709
         transfer: bt709
-      path: /tmp/dailyboy_omit_mjpeg_options.mov
+      path: "/tmp/dailyboy_omit_mjpeg_options.mov"
       codec: mjpeg
   image_sequences: []
 plans:
-  - id: plate
-    input_colorspace: ACES - ACEScg
+  - id: "plate"
+    input_colorspace: "ACES - ACEScg"
     sequence:
-      path: /tmp/plate.%04d.png
+      path: "/tmp/plate.%04d.png"
       frame_start: 1001
       frame_end: 1003

@@ -596,16 +596,15 @@ inline constexpr std::string_view USER_ERROR_JOB_78 =
  * \brief Message when \c position.anchor is set and \c mode is not layout.
  */
 inline constexpr std::string_view USER_ERROR_JOB_79 =
-    "layout.burn_ins[].position: anchor is only valid when mode is "
-    "\"layout\".";
+    "layout: position.anchor is only valid when mode is \"layout\".";
 
 /*!
  * \var USER_ERROR_JOB_80
  * \brief Message when \c position.x or \c y is set and \c mode is layout.
  */
 inline constexpr std::string_view USER_ERROR_JOB_80 =
-    "layout.burn_ins[].position: x and y are only valid when mode is "
-    "\"pixel\" or \"percent\".";
+    "layout: position.x and y are only valid when mode is \"pixel\" or "
+    "\"percent\".";
 
 /*!
  * \var USER_ERROR_JOB_81
@@ -785,6 +784,293 @@ inline constexpr std::string_view USER_ERROR_JOB_103 =
  */
 inline constexpr std::string_view USER_ERROR_JOB_104 =
     "plans[].timecode: all enabled output.videos[] must share the same fps.";
+
+/*!
+ * \var USER_ERROR_JOB_105
+ * \brief Message when burn-in \c box.mode is not a quoted string.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_105 =
+    "layout.burn_ins[].box.mode: must be a quoted string (\"fill\" or "
+    "\"outline\").";
+
+/*!
+ * \var USER_ERROR_JOB_106
+ * \brief Message when burn-in \c box.color is not an r/g/b map.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_106 =
+    "layout.burn_ins[].box.color: must be a map with keys r, g, and b only.";
+
+/*!
+ * \var USER_ERROR_JOB_107
+ * \brief Message when a burn-in box color channel is outside [0, 1].
+ */
+inline constexpr std::string_view USER_ERROR_JOB_107 =
+    "layout.burn_ins[].box.color: r, g, and b must be numbers in [0, 1].";
+
+/*!
+ * \var USER_ERROR_JOB_108
+ * \brief Message when burn-in \c box.opacity is outside [0, 1].
+ */
+inline constexpr std::string_view USER_ERROR_JOB_108 =
+    "layout.burn_ins[].box.opacity: must be a number in [0, 1].";
+
+/*!
+ * \var USER_ERROR_JOB_109
+ * \brief Message when burn-in \c box.margin is not an int >= 0 or side map.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_109 =
+    "layout.burn_ins[].box.margin: must be an integer >= 0 (or a per-side "
+    "map of top, right, bottom, left).";
+
+/*!
+ * \var USER_ERROR_JOB_110
+ * \brief Message when \c layout.slate omits \c duration_frames.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_110 =
+    "layout.slate.duration_frames: missing required key. Set an integer "
+    ">= 0.";
+
+/*!
+ * \var USER_ERROR_JOB_111
+ * \brief Message when \c layout.slate.duration_frames is not an integer.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_111 =
+    "layout.slate.duration_frames: must be an unquoted integer.";
+
+/*!
+ * \var USER_ERROR_JOB_112
+ * \brief Message when \c layout.slate.duration_frames is negative.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_112 =
+    "layout.slate.duration_frames: must be an integer >= 0.";
+
+/*!
+ * \var USER_ERROR_JOB_113
+ * \brief Message when \c layout.slate.lines is missing or empty.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_113 =
+    "layout.slate.lines: add at least one line, or omit the slate block.";
+
+/*!
+ * \var USER_ERROR_JOB_114
+ * \brief Message when a slate line omits \c text.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_114 =
+    "layout.slate.lines[].text: missing required key. Set a quoted text "
+    "string.";
+
+/*!
+ * \var USER_ERROR_JOB_115
+ * \brief Message when a slate line omits \c position.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_115 =
+    "layout.slate.lines[].position: missing required key. Add a position "
+    "block.";
+
+/*!
+ * \var USER_ERROR_JOB_116
+ * \brief Message when a slate line omits \c font.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_116 =
+    "layout.slate.lines[].font: missing required key. Add a font block with "
+    "path and size_px.";
+
+/*!
+ * \var USER_ERROR_JOB_117
+ * \brief Message when a slate line \c text is not a quoted string.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_117 =
+    "layout.slate.lines[].text: must be a quoted string (e.g. \"Shot "
+    "{shot}\").";
+
+/*!
+ * \var USER_ERROR_JOB_118
+ * \brief Message when a plan omits \c id.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_118 =
+    "plans[].id: missing required key. Set a quoted non-empty id.";
+
+/*!
+ * \var USER_ERROR_JOB_119
+ * \brief Message when a plan \c id is not a quoted non-empty string.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_119 =
+    "plans[].id: must be a quoted non-empty string (e.g. \"plate\").";
+
+/*!
+ * \var USER_ERROR_JOB_120
+ * \brief Message when a plan omits \c input_colorspace.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_120 =
+    "plans[].input_colorspace: missing required key. Set a quoted OCIO "
+    "colorspace name.";
+
+/*!
+ * \var USER_ERROR_JOB_121
+ * \brief Message when \c input_colorspace is not a quoted non-empty string.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_121 =
+    "plans[].input_colorspace: must be a quoted non-empty string.";
+
+/*!
+ * \var USER_ERROR_JOB_122
+ * \brief Message when a plan omits \c sequence.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_122 =
+    "plans[].sequence: missing required key. Add sequence with path, "
+    "frame_start, and frame_end.";
+
+/*!
+ * \var USER_ERROR_JOB_123
+ * \brief Message when \c sequence.path is missing.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_123 =
+    "plans[].sequence.path: missing required key. Set a quoted file sequence "
+    "pattern.";
+
+/*!
+ * \var USER_ERROR_JOB_124
+ * \brief Message when \c sequence.path is not a quoted non-empty string.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_124 =
+    "plans[].sequence.path: must be a quoted non-empty string (e.g. "
+    "\"plate.%04d.png\").";
+
+/*!
+ * \var USER_ERROR_JOB_125
+ * \brief Message when \c sequence.frame_start is missing.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_125 =
+    "plans[].sequence.frame_start: missing required key. Set an unquoted "
+    "integer.";
+
+/*!
+ * \var USER_ERROR_JOB_126
+ * \brief Message when \c sequence.frame_start is not an integer.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_126 =
+    "plans[].sequence.frame_start: must be an unquoted integer.";
+
+/*!
+ * \var USER_ERROR_JOB_127
+ * \brief Message when \c sequence.frame_end is missing.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_127 =
+    "plans[].sequence.frame_end: missing required key. Set an unquoted "
+    "integer.";
+
+/*!
+ * \var USER_ERROR_JOB_128
+ * \brief Message when \c sequence.frame_end is not an integer.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_128 =
+    "plans[].sequence.frame_end: must be an unquoted integer.";
+
+/*!
+ * \var USER_ERROR_JOB_129
+ * \brief Message when \c audio is present without \c path.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_129 =
+    "plans[].audio.path: missing required key. Set a quoted audio file path.";
+
+/*!
+ * \var USER_ERROR_JOB_130
+ * \brief Message when \c audio.path is not a quoted non-empty string.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_130 =
+    "plans[].audio.path: must be a quoted non-empty string.";
+
+/*!
+ * \var USER_ERROR_JOB_131
+ * \brief Message when \c dailyboy_version is not an integer.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_131 =
+    "dailyboy_version: must be the unquoted integer 1 (e.g. "
+    "dailyboy_version: 1).";
+
+/*!
+ * \var USER_ERROR_JOB_132
+ * \brief Message when \c layout.pixel_aspect is not strictly positive.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_132 =
+    "layout.pixel_aspect: must be a number > 0 (e.g. 1.0).";
+
+/*!
+ * \var USER_ERROR_JOB_133
+ * \brief Message when \c color.context is not a map.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_133 =
+    "color.context: must be a map of quoted name: value (e.g. \"SHOT\": "
+    "\"sh010\").";
+
+/*!
+ * \var USER_ERROR_JOB_134
+ * \brief Message when a \c color.context key is empty.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_134 =
+    "color.context: names must be non-empty quoted strings (e.g. \"SHOT\").";
+
+/*!
+ * \var USER_ERROR_JOB_135
+ * \brief Message when a \c color.context value is empty.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_135 =
+    "color.context: values must be non-empty quoted strings (e.g. \"sh010\").";
+
+/*!
+ * \var USER_ERROR_JOB_136
+ * \brief Message when a text position omits \c mode.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_136 =
+    "layout: position.mode: missing required key. Set \"layout\", \"pixel\", "
+    "or \"percent\".";
+
+/*!
+ * \var USER_ERROR_JOB_137
+ * \brief Message when a text font omits \c path.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_137 =
+    "layout: font.path: missing required key. Set a quoted path to a .ttf or "
+    ".otf file.";
+
+/*!
+ * \var USER_ERROR_JOB_138
+ * \brief Message when a text font omits \c size_px.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_138 =
+    "layout: font.size_px: missing required key. Set an unquoted integer "
+    ">= 4 (e.g. 18).";
+
+/*!
+ * \var USER_ERROR_JOB_139
+ * \brief Message when a font file path does not exist on disk.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_139 =
+    "layout: font.path: file not found. Set a path to an existing .ttf or "
+    ".otf file (after resolving substitutions).";
+
+/*!
+ * \var USER_ERROR_JOB_140
+ * \brief Message when \c handles.head is not an integer >= 0.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_140 =
+    "plans[].sequence.handles.head: must be an unquoted integer >= 0 (e.g. "
+    "8).";
+
+/*!
+ * \var USER_ERROR_JOB_141
+ * \brief Message when \c handles.tail is not an integer >= 0.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_141 =
+    "plans[].sequence.handles.tail: must be an unquoted integer >= 0 (e.g. "
+    "8).";
+
+/*!
+ * \var USER_ERROR_JOB_142
+ * \brief Message when \c timecode.drop_frame is not a boolean.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_142 =
+    "plans[].timecode.drop_frame: must be a boolean (true or false).";
 
 /*!
  * \var INTERNAL_ERROR_JOB_1

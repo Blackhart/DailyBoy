@@ -297,8 +297,8 @@ TEST(H264Writer, Open_WithSlate_StartsWithSilenceThenAac) {
 TEST(Parse, ParsePlans_WithAudioPath_SetsAudio) {
   // Prepare
   const YAML::Node node = YAML::Load(R"(
-- id: plate
-  input_colorspace: ACES - ACEScg
+- id: "plate"
+  input_colorspace: "ACES - ACEScg"
   sequence:
     path: "/tmp/plate.%04d.exr"
     frame_start: 1001

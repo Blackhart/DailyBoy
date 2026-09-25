@@ -744,7 +744,7 @@
         "path": {
           "type": "string",
           "minLength": 1,
-          "description": "Quoted YAML string. Path to a .ttf or .otf file."
+          "description": "Quoted YAML string. Path to an existing .ttf or .otf file (checked after substitutions resolve; skip check while tokens remain)."
         },
         "size_px": {
           "type": "integer",
@@ -831,6 +831,8 @@
         "duration_frames": { "type": "integer", "minimum": 0 },
         "lines": {
           "type": "array",
+          "minItems": 1,
+          "description": "At least one line when slate is present. Omit the whole slate block to skip the slate.",
           "items": {
             "type": "object",
             "additionalProperties": false,
@@ -838,7 +840,7 @@
             "properties": {
               "text": {
                 "type": "string",
-                "description": "Text or template (same convention as burn-ins)."
+                "description": "Quoted YAML text or template (same convention as burn-ins)."
               },
               "position": {
                 "$ref": "#/$defs/burnInPosition",
@@ -846,7 +848,7 @@
               },
               "font": {
                 "$ref": "#/$defs/burnInFont",
-                "description": "Same structure as layout.burn_ins[].font."
+                "description": "Same structure as layout.burn_ins[].font. path must exist after resolving substitutions."
               }
             }
           }
