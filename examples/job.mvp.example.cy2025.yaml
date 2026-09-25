@@ -275,13 +275,13 @@ output:
         compression_level: 6
 
 plans:
-  - id: sh010_bg
+  - id: "sh010_bg"
     input_colorspace: "ACEScg"
     timecode:
       start: 101
     sequence:
-      path: examples/frames/2048x1080/plate.%04d.png
+      path: "examples/frames/2048x1080/plate.%04d.png"
       frame_start: 1001
       frame_end: 1048
     audio:
-      path: examples/audio/sh010_bg_guide.wav
+      path: "examples/audio/sh010_bg_guide.wav"

@@ -89,9 +89,6 @@ bool write_pipeline_yaml(const std::filesystem::path& yaml_path,
       << "      position: {mode: \"layout\", anchor: \"bottom_center\"}\n"
       << "      font: {path: \"" << dailyboy::test::kDejaVuSans
       << "\", size_px: 16}\n"
-      << "  slate:\n"
-      << "    duration_frames: 0\n"
-      << "    lines: []\n"
       << "output:\n";
   if (output == PipelineOutput::Png) {
     out << "  image_sequences:\n"
@@ -122,8 +119,8 @@ bool write_pipeline_yaml(const std::filesystem::path& yaml_path,
         << "        faststart: false\n";
   }
   out << "plans:\n"
-      << "  - id: sh010_bg\n"
-      << "    input_colorspace: ACES - ACEScg\n"
+      << "  - id: \"sh010_bg\"\n"
+      << "    input_colorspace: \"ACES - ACEScg\"\n"
       << "    sequence:\n"
       << "      path: \"" << (plate_dir / "plate.%04d.png").string() << "\"\n"
       << "      frame_start: " << dailyboy::test::kPerfPlateFrameStart << "\n"

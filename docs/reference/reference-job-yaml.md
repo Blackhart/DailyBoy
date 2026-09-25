@@ -177,44 +177,45 @@ DailyBoy provides certain automatic tokens that can be used in templates for sla
 The `plans` section defines which shot(s) will be processed in this job. Currently, one plan (shot) per job is supported, specified as a single item in a YAML list.
 
 Each plan is required to specify:
-- a unique identifier (`id`)
-- the colorspace of its images (`input_colorspace`)
-- the image sequence location and range (`sequence`)
+- a unique identifier (`id`) — quoted non-empty string
+- the colorspace of its images (`input_colorspace`) — quoted non-empty string
+- the image sequence location and range (`sequence`), with `sequence.path` as a quoted non-empty string
 
-You may also add audio and handles for more advanced cases.
+Optional `audio.path` (when the `audio` block is present) must also be a quoted non-empty string. You may also add handles and timecode for more advanced cases.
 
 <a id="plans-id"></a>
 
 ### 4.1 `id`
 
-| Field | Required | Type               | Description                                 |
-| ----- | -------- | ------------------ | ------------------------------------------- |
-| `id`  | yes      | string (non-empty) | Unique, non-empty identifier for this shot. |
+| Field | Required | Type                              | Description                                 |
+| ----- | -------- | --------------------------------- | ------------------------------------------- |
+| `id`  | yes      | quoted string (non-empty)         | Unique, non-empty identifier for this shot. |
 
-The `id` is required, must not be empty, and is used for `{plan_id}` substitution tokens.
+The `id` is required, must be a **quoted** non-empty YAML string (e.g. `"plate"`), and is used for `{plan_id}` substitution tokens. Unquoted or empty values fail with `plans[].id: must be a quoted non-empty string (e.g. "plate").`.
 
 <a id="plans-input-colorspace"></a>
 
 ### 4.2 `input_colorspace`
 
-| Field              | Required | Type                                     | Description                                                       |
-| ------------------ | -------- | ---------------------------------------- | ----------------------------------------------------------------- |
-| `input_colorspace` | yes      | string (OCIO colorspace name, non-empty) | Plate image colorspace as defined in your OCIO config.            |
+| Field              | Required | Type                                              | Description                                                       |
+| ------------------ | -------- | ------------------------------------------------- | ----------------------------------------------------------------- |
+| `input_colorspace` | yes      | quoted string (OCIO colorspace name, non-empty)   | Plate image colorspace as defined in your OCIO config.            |
 
-This must exactly match one of the colorspaces in your OCIO configuration (e.g. `ACEScg`, `Linear Rec.709 (sRGB)`, `AlexaV3LogC`).
+Must be a **quoted** non-empty YAML string that exactly matches a colorspace in your OCIO configuration (e.g. `"ACEScg"`, `"Linear Rec.709 (sRGB)"`, `"AlexaV3LogC"`). Invalid values fail with `plans[].input_colorspace: must be a quoted non-empty string.`.
 
 <a id="plans-sequence"></a>
 
 ### 4.3 `sequence`
 
-| Sub-field     | Required | Type               | Description                                                 |
-| ------------- | -------- | ------------------ | ----------------------------------------------------------- |
-| `path`        | yes      | string (non-empty) | File pattern for the image sequence.                        |
-| `frame_start` | yes      | integer            | First hero frame (inclusive, used for overlays/tokens).     |
-| `frame_end`   | yes      | integer            | Last hero frame (inclusive).                                |
-| `handles`     | no       | object             | Optional extra source frames before/after hero range.       |
+| Sub-field     | Required | Type                      | Description                                                 |
+| ------------- | -------- | ------------------------- | ----------------------------------------------------------- |
+| `path`        | yes      | quoted string (non-empty) | File pattern for the image sequence.                        |
+| `frame_start` | yes      | integer                   | First hero frame (inclusive, used for overlays/tokens).     |
+| `frame_end`   | yes      | integer                   | Last hero frame (inclusive).                                |
+| `handles`     | no       | object                    | Optional extra source frames before/after hero range.       |
 
 **Sequence Paths:**
+- `path` must be a **quoted** non-empty YAML string (e.g. `"plate.%04d.png"`). Unquoted or empty values fail with `plans[].sequence.path: must be a quoted non-empty string (e.g. "plate.%04d.png").`.
 - Patterns (`%04d`, `####`, `@@@@`, `$F4`, or explicit ranges like `file.1001-1050.exr`) are supported.
 - You can embed substitutions like `{dailies_root}` in the path.
 - `frame_start` and `frame_end` are the main (hero) range. Slate/burn-in tokens `{frame_start}` and `{frame_end}` use these values.
@@ -229,19 +230,21 @@ Optional `handles` allow including additional plates before the first and/or aft
 | `head`              | no       | integer ≥ 0   | `0`     | Frames before `frame_start` to include (`frame_start - head` ... `frame_start - 1`).   |
 | `tail`              | no       | integer ≥ 0   | `0`     | Frames after `frame_end` to include (`frame_end + 1` ... `frame_end + tail`).          |
 
-- If handles are omitted, the job processes only the hero range.
+- If `handles` is omitted, or a side is omitted, that side defaults to `0` (hero range only for that side).
 - If handles are set, **the processed range becomes** `frame_start - handles.head` through `frame_end + handles.tail`.
 - If any frame in this full range is missing, that is a hard error.
+- `head` / `tail` must be unquoted integers ≥ 0. Invalid values fail with `plans[].sequence.handles.head: must be an unquoted integer >= 0 (e.g. 8).` or the matching `…handles.tail…` message. A non-object `handles` value fails with `plans[].sequence.handles: head and tail must be integers >= 0.`.
 
 <a id="plans-audio"></a>
 
 ### 4.4 `audio`
 
-| Sub-field | Required | Type               | Description                                                                                                            |
-| --------- | -------- | ------------------ | ---------------------------------------------------------------------------------------------------------------------- |
-| `path`    | yes      | string (non-empty) | Path to a guide audio track (WAV PCM, AAC in `.wav` / `.aac` / `.m4a`, or audio-only `.mov`). Metadata tokens allowed.  |
+| Sub-field | Required | Type                      | Description                                                                                                            |
+| --------- | -------- | ------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `path`    | yes      | quoted string (non-empty) | Path to a guide audio track (WAV PCM, AAC in `.wav` / `.aac` / `.m4a`, or audio-only `.mov`). Metadata tokens allowed.  |
 
 **Audio is optional.**  
+When present, `path` must be a **quoted** non-empty YAML string. Unquoted or empty values fail with `plans[].audio.path: must be a quoted non-empty string.`.  
 If present for any plan, _all_ generated MOVs for this job include a shared AAC-LC stereo 48 kHz guide track at **192 kbps**.  
 Audio behavior per plan:
 1. **Slate duration**: MOVs always begin with silence for `layout.slate.duration_frames`, regardless of audio.
@@ -257,7 +260,7 @@ The `timecode` block is optional. It specifies a SMPTE timecode clock for overla
 | Field        | Required (if `timecode` is present) | Type | Default | Description |
 | ------------ | ----------------------------------- | ---- | ------- | ----------- |
 | `start`      | yes | string `HH:MM:SS:FF` **or** integer ≥ 0 | — | The timecode at the hero `sequence.frame_start`. Strings are SMPTE format, e.g. `01:00:00:00`. Integers specify the frame count from `00:00:00:00` at the resolved frame rate. If `drop_frame` is `true`, use a semicolon before the frame number (`;FF`) as per SMPTE practice. |
-| `drop_frame` | no  | boolean | `false` | Whether to use drop-frame timecode counting. **Must only be `true` at `30` or `60` fps.** |
+| `drop_frame` | no  | boolean | `false` | Drop-frame counting. Omit for `false`. Must be a YAML boolean (`true` / `false`); other types fail with `plans[].timecode.drop_frame: must be a boolean (true or false).`. **`true` is valid only when the resolved fps is `30` or `60`**; otherwise DailyBoy rejects the job with `plans[].timecode.drop_frame: true requires resolved fps 30 or 60.`. |
 
 **Frame Rate Resolution (How the timecode "fps" is chosen):**
 - There is *no* explicit `rate` field in the job.
@@ -275,14 +278,14 @@ The `timecode` block is optional. It specifies a SMPTE timecode clock for overla
 
 ```yaml
 plans:
-  - id: sh010_bg
+  - id: "sh010_bg"
     input_colorspace: "ACEScg"
     timecode:
       start: "01:00:00:00"
       # drop_frame: false
       # You can also use: start: 86400   # (frame count at 24 fps)
     sequence:
-      path: /shots/sh010/renders/v003/bg.%04d.png
+      path: "/shots/sh010/renders/v003/bg.%04d.png"
       frame_start: 1001
       frame_end: 1048
       handles:
@@ -372,9 +375,9 @@ Common sizes: `1920x1080` (HD), `2048x1080` (2K DCI), `2560x1350` (QHD+), `2840x
 
 | Field          | Required | Type                        | Description |
 | -------------- | -------- | --------------------------- | ----------- |
-| `pixel_aspect` | no       | number (> 0, default `1.0`) | Pixel aspect ratio. Default is square pixels (`1.0`). |
+| `pixel_aspect` | no       | number (> 0, default `1.0`) | Pixel aspect ratio. Must be strictly greater than 0 (`exclusiveMinimum: 0`). Default when omitted is square pixels (`1.0`). |
 
-You can leave out the `pixel_aspect` field unless your output images use non-square pixels (for example, if you are matching legacy formats or anamorphic material). For most modern workflows, the default value `1.0` (square pixels) is correct and you do not need to include this field.
+You can leave out the `pixel_aspect` field unless your output images use non-square pixels (for example, if you are matching legacy formats or anamorphic material). For most modern workflows, the default value `1.0` (square pixels) is correct and you do not need to include this field. Zero or negative values fail with `layout.pixel_aspect: must be a number > 0 (e.g. 1.0).`.
 
 <a id="layout-image"></a>
 
@@ -442,7 +445,7 @@ Each entry:
 
 | Sub-field | Required | Type               | Description             |
 | --------- | -------- | ------------------ | ----------------------- |
-| `path`    | yes      | quoted string (non-empty) | Font file path.         |
+| `path`    | yes      | quoted string (non-empty) | Path to an existing `.ttf` or `.otf` file. After substitutions resolve, the file must exist on disk. Existence is **not** checked while the path still contains `{` or `$` substitution tokens (those resolve later). Missing resolved files fail with `layout: font.path: file not found. Set a path to an existing .ttf or .otf file (after resolving substitutions).`. |
 | `size_px` | yes      | integer (≥ 4)      | Font size in pixels.    |
 | `color`   | no       | object (r, g, b in `[0, 1]`) | Text color in display RGB. Omitted block or channel defaults to `1` (white). If present, keys must be only `r`, `g`, and `b`. |
 
@@ -459,20 +462,20 @@ Each entry:
 
 ### 6.6 `slate` (optional)
 
-Defines a title card prepended to each enabled movie and image sequence. Omit the whole block to skip the slate. Sequence files use frame numbers immediately before the first processed plate (`plans[].sequence.frame_start - plans[].sequence.handles.head`, or `frame_start` when handles are omitted); plate files keep source numbers.
+Defines a title card prepended to each enabled movie and image sequence. **Omit the whole `slate` block to skip the slate** — do not use `lines: []`. When `slate` is present, `lines` must contain **at least one** entry (`minItems: 1`); an empty list fails with `layout.slate.lines: add at least one line, or omit the slate block.`. Sequence files use frame numbers immediately before the first processed plate (`plans[].sequence.frame_start - plans[].sequence.handles.head`, or `frame_start` when handles are omitted); plate files keep source numbers.
 
-| Field             | Required | Type             | Description                  |
-| ----------------- | -------- | ---------------- | ---------------------------- |
-| `duration_frames` | yes      | integer (≥ 0)    | Number of identical head frames to write. `0` writes none. |
-| `lines`           | yes      | array of objects | Text lines for the slate. Empty keeps the background canvas only. |
+| Field             | Required | Type                          | Description                  |
+| ----------------- | -------- | ----------------------------- | ---------------------------- |
+| `duration_frames` | yes      | integer (≥ 0)                 | Number of identical head frames to write. `0` writes none. |
+| `lines`           | yes      | array of objects (min 1 item) | Text lines for the slate. At least one line when the block is present. |
 
 Each `lines[]` entry:
 
 | Sub-field  | Required | Type   | Description                                                      |
 | ---------- | -------- | ------ | ---------------------------------------------------------------- |
-| `text`     | yes      | string | Text for the line, substitutions and tokens allowed.             |
+| `text`     | yes      | quoted string | Text for the line, substitutions and tokens allowed.      |
 | `position` | yes      | object | Positioning; same as for burn-ins.                               |
-| `font`     | yes      | object | Font declaration; same as for burn-ins.                          |
+| `font`     | yes      | object | Font declaration; same as for burn-ins (including `font.path` existence rules). |
 
 <a id="layout-example"></a>
 
@@ -787,14 +790,14 @@ metadata:
     dailies_root: "/path/to/output/folder"
 
 plans:
-  - id: my_shot
+  - id: "my_shot"
     input_colorspace: "ACEScg"   # CHANGE_ME: OCIO input colorspace
     timecode:
       start: "01:00:00:00"       # optional; omit block if unused
     sequence:
-      path: /path/to/frames/plate.%04d.png   # CHANGE_ME
-      frame_start: 1001                      # CHANGE_ME
-      frame_end: 1048                        # CHANGE_ME
+      path: "/path/to/frames/plate.%04d.png"   # CHANGE_ME
+      frame_start: 1001                         # CHANGE_ME
+      frame_end: 1048                           # CHANGE_ME
     # audio:                               # optional guide track for MOVs
     #   path: "{dailies_root}/audio/guide.wav"
 
@@ -813,9 +816,7 @@ layout:
     g: 0
     b: 0
   # burn_ins: omit this key if none; if present, at least one item
-  slate:
-    duration_frames: 0
-    lines: []
+  # slate: omit this block to skip the slate; if present, lines needs ≥ 1 item
 
 output:
   videos:
@@ -836,7 +837,7 @@ output:
 ```
 
 - To add overlays (burn-ins), populate `burn_ins` with template(s) from the example above.
-- To add a slate page, present `layout.slate` with `duration_frames` greater than 0 and the desired `lines`.
+- To add a slate page, add `layout.slate` with `duration_frames` and at least one `lines[]` entry (see §6.6). To skip the slate, omit the whole `slate` block — never use `lines: []`.
 - To output image sequences (in addition to or instead of a movie), add `image_sequences` similarly to the example in §7.3, ensuring that at least one output is `enabled: true`.
 
 A more complete example is available per year: [cy2026](../../examples/job.mvp.example.cy2026.yaml), [cy2025](../../examples/job.mvp.example.cy2025.yaml), [cy2024](../../examples/job.mvp.example.cy2024.yaml).

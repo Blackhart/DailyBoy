@@ -51,8 +51,8 @@ TEST(Parse, ParseRgbColor_MissingBlue_UsesDefault) {
 TEST(Parse, ParsePlans_OnePlan_SetsIdAndRange) {
   // Prepare
   const YAML::Node node = YAML::Load(R"(
-- id: plate
-  input_colorspace: ACES - ACEScg
+- id: "plate"
+  input_colorspace: "ACES - ACEScg"
   sequence:
     path: "/tmp/plate.%04d.exr"
     frame_start: 1001
@@ -76,8 +76,8 @@ TEST(Parse, ParsePlans_OnePlan_SetsIdAndRange) {
 TEST(Parse, ParsePlans_TimecodeStart_StringAndInteger) {
   // Prepare
   const YAML::Node string_node = YAML::Load(R"(
-- id: plate
-  input_colorspace: ACES - ACEScg
+- id: "plate"
+  input_colorspace: "ACES - ACEScg"
   timecode:
     start: "01:00:00:00"
   sequence:
@@ -86,8 +86,8 @@ TEST(Parse, ParsePlans_TimecodeStart_StringAndInteger) {
     frame_end: 1003
 )");
   const YAML::Node int_node = YAML::Load(R"(
-- id: plate
-  input_colorspace: ACES - ACEScg
+- id: "plate"
+  input_colorspace: "ACES - ACEScg"
   timecode:
     start: 86400
     drop_frame: false
