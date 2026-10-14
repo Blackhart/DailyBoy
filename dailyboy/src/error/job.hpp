@@ -6,6 +6,15 @@ namespace dailyboy {
 
 /*! \defgroup job_errors Job YAML contract errors
  *  @{
+ *
+ *  \note Message style (USER_ERROR_JOB_*):
+ *  - Format: `<field_path>: <constraint>[. <fix_hint>].`
+ *  - `field_path` uses contract paths with `[]` (e.g. `output.videos[]`).
+ *  - String enums quote YAML values (`"fill"`, `"h264"`).
+ *  - Templates: quoted non-empty / quoted enum / `unsupported value. Use …` /
+ *    unquoted integer ranges / `missing required key. Set …`.
+ *  - Keep `job:` only for generic fallbacks (JOB_10/11/18/25/40–44).
+ *  - IDs are stable; do not renumber.
  */
 
 /*!
@@ -29,8 +38,8 @@ inline constexpr std::string_view USER_ERROR_JOB_2 =
  *        map.
  */
 inline constexpr std::string_view USER_ERROR_JOB_3 =
-    "metadata.substitutions: values must be a quoted string (e.g. \"103\") or "
-    "a frame map.";
+    "metadata.substitutions: values must be a quoted string (e.g. \"103\") "
+    "or a frame map.";
 
 /*!
  * \var USER_ERROR_JOB_4
@@ -45,16 +54,16 @@ inline constexpr std::string_view USER_ERROR_JOB_4 =
  * \brief Message when \c metadata is present without \c substitutions.
  */
 inline constexpr std::string_view USER_ERROR_JOB_5 =
-    "metadata: missing required key 'substitutions'. Add at least one name "
-    "(e.g. shot: \"sh010\"), or remove the metadata block.";
+    "metadata: missing required key. Set substitutions with at least one "
+    "name (e.g. shot: \"sh010\"), or omit the metadata block.";
 
 /*!
  * \var USER_ERROR_JOB_6
  * \brief Message when \c metadata.substitutions is an empty map.
  */
 inline constexpr std::string_view USER_ERROR_JOB_6 =
-    "metadata.substitutions: add at least one name (e.g. shot: \"sh010\"), or "
-    "remove the metadata block.";
+    "metadata.substitutions: add at least one name (e.g. shot: \"sh010\"), "
+    "or omit the metadata block.";
 
 /*!
  * \var USER_ERROR_JOB_7
@@ -69,15 +78,15 @@ inline constexpr std::string_view USER_ERROR_JOB_7 =
  * \brief Message when a file sequence pattern is empty.
  */
 inline constexpr std::string_view USER_ERROR_JOB_8 =
-    "sequence: empty file sequence pattern. Set a path with padding (e.g. "
-    "plate.%04d.png).";
+    "file sequence path: empty pattern. Set a path with padding (e.g. "
+    "\"plate.%04d.png\").";
 
 /*!
  * \var USER_ERROR_JOB_9
  * \brief Message when libfileseq rejects a sequence pattern.
  */
 inline constexpr std::string_view USER_ERROR_JOB_9 =
-    "sequence: invalid file sequence pattern. Use ShotGrid/libfileseq padding "
+    "file sequence path: invalid pattern. Use ShotGrid/libfileseq padding "
     "(#, @, %04d, $F4).";
 
 /*!
@@ -85,8 +94,8 @@ inline constexpr std::string_view USER_ERROR_JOB_9 =
  * \brief Message when a field is not the YAML type required by the contract.
  */
 inline constexpr std::string_view USER_ERROR_JOB_10 =
-    "job: this field has the wrong YAML type. Use a map or list as required "
-    "by the job YAML reference.";
+    "job: wrong YAML type for this field. Use a map or list as required by "
+    "the job YAML reference.";
 
 /*!
  * \var USER_ERROR_JOB_11
@@ -137,14 +146,15 @@ inline constexpr std::string_view USER_ERROR_JOB_16 =
  * \brief Message when \c color omits \c ocio_config.
  */
 inline constexpr std::string_view USER_ERROR_JOB_17 =
-    "color.ocio_config: missing required key. Set it to a config.ocio path.";
+    "color.ocio_config: missing required key. Set a quoted config.ocio "
+    "path.";
 
 /*!
  * \var USER_ERROR_JOB_18
  * \brief Message when a YAML scalar cannot be converted to the expected type.
  */
 inline constexpr std::string_view USER_ERROR_JOB_18 =
-    "job: this field has an invalid value. Check the type in the job YAML "
+    "job: invalid value for this field. Check the type in the job YAML "
     "reference.";
 
 /*!
@@ -152,23 +162,26 @@ inline constexpr std::string_view USER_ERROR_JOB_18 =
  * \brief Message when a layout anchor is not one of the nine-point names.
  */
 inline constexpr std::string_view USER_ERROR_JOB_19 =
-    "layout: unsupported position anchor. Use top_left, top_center, "
-    "top_right, center_left, center_center, center_right, bottom_left, "
-    "bottom_center, or bottom_right.";
+    "layout.position.anchor: unsupported value. Use \"top_left\", "
+    "\"top_center\", \"top_right\", \"center_left\", \"center_center\", "
+    "\"center_right\", \"bottom_left\", \"bottom_center\", or "
+    "\"bottom_right\".";
 
 /*!
  * \var USER_ERROR_JOB_20
  * \brief Message when a text position mode is not layout, pixel, or percent.
  */
 inline constexpr std::string_view USER_ERROR_JOB_20 =
-    "layout: unsupported position mode. Use layout, pixel, or percent.";
+    "layout.position.mode: unsupported value. Use \"layout\", \"pixel\", or "
+    "\"percent\".";
 
 /*!
  * \var USER_ERROR_JOB_21
  * \brief Message when a burn-in box mode is not fill or outline.
  */
 inline constexpr std::string_view USER_ERROR_JOB_21 =
-    "layout: unsupported burn-in box mode. Use fill or outline.";
+    "layout.burn_ins[].box.mode: unsupported value. Use \"fill\" or "
+    "\"outline\".";
 
 /*!
  * \var USER_ERROR_JOB_22
@@ -190,7 +203,8 @@ inline constexpr std::string_view USER_ERROR_JOB_23 =
  * \brief Message when H.264 sets both \c crf and \c bitrate_kbps.
  */
 inline constexpr std::string_view USER_ERROR_JOB_24 =
-    "output: crf and bitrate_kbps are mutually exclusive. Keep only one.";
+    "output.videos[].codec_options: crf and bitrate_kbps are mutually "
+    "exclusive. Keep only one.";
 
 /*!
  * \var USER_ERROR_JOB_25
@@ -205,66 +219,72 @@ inline constexpr std::string_view USER_ERROR_JOB_25 =
  * \brief Message when H.264 \c high422 is used without \c yuv422p.
  */
 inline constexpr std::string_view USER_ERROR_JOB_26 =
-    "output: profile high422 requires pix_fmt yuv422p.";
+    "output.videos[].codec_options: profile \"high422\" requires pix_fmt "
+    "\"yuv422p\".";
 
 /*!
  * \var USER_ERROR_JOB_27
  * \brief Message when H.264 \c yuv422p is used without \c high422.
  */
 inline constexpr std::string_view USER_ERROR_JOB_27 =
-    "output: pix_fmt yuv422p requires profile high422.";
+    "output.videos[].codec_options: pix_fmt \"yuv422p\" requires profile "
+    "\"high422\".";
 
 /*!
  * \var USER_ERROR_JOB_28
  * \brief Message when H.264 \c level is not a YAML scalar.
  */
 inline constexpr std::string_view USER_ERROR_JOB_28 =
-    "output: level must be a scalar (e.g. 4.1).";
+    "output.videos[].codec_options.level: must be a scalar (e.g. 4.1 or "
+    "\"4.1\").";
 
 /*!
  * \var USER_ERROR_JOB_29
  * \brief Message when MJPEG \c qscale is outside 1..31.
  */
 inline constexpr std::string_view USER_ERROR_JOB_29 =
-    "output: qscale must be an integer in [1, 31].";
+    "output.videos[].codec_options.qscale: must be an unquoted integer in "
+    "[1, 31] (e.g. 3).";
 
 /*!
  * \var USER_ERROR_JOB_30
  * \brief Message when DNxHR sets \c bitrate_kbps.
  */
 inline constexpr std::string_view USER_ERROR_JOB_30 =
-    "output: bitrate_kbps is only valid when profile is dnxhd. Remove it for "
-    "DNxHR.";
+    "output.videos[].codec_options.bitrate_kbps: only valid when profile is "
+    "\"dnxhd\". Remove it for DNxHR.";
 
 /*!
  * \var USER_ERROR_JOB_31
  * \brief Message when DNxHD omits \c bitrate_kbps.
  */
 inline constexpr std::string_view USER_ERROR_JOB_31 =
-    "output: bitrate_kbps is required when profile is dnxhd.";
+    "output.videos[].codec_options.bitrate_kbps: missing required key when "
+    "profile is \"dnxhd\".";
 
 /*!
  * \var USER_ERROR_JOB_32
  * \brief Message when DNxHD \c bitrate_kbps is less than 1.
  */
 inline constexpr std::string_view USER_ERROR_JOB_32 =
-    "output: bitrate_kbps must be an integer >= 1.";
+    "output.videos[].codec_options.bitrate_kbps: must be an unquoted "
+    "integer >= 1 (e.g. 8000).";
 
 /*!
  * \var USER_ERROR_JOB_33
  * \brief Message when DNxHD/HR \c pix_fmt does not match the profile.
  */
 inline constexpr std::string_view USER_ERROR_JOB_33 =
-    "output: pix_fmt is incompatible with this DNxHD/HR profile. Check the "
-    "job YAML reference.";
+    "output.videos[].codec_options.pix_fmt: incompatible with this DNxHD/HR "
+    "profile. Check the job YAML reference.";
 
 /*!
  * \var USER_ERROR_JOB_34
  * \brief Message when DNxHR sets \c interlaced: true.
  */
 inline constexpr std::string_view USER_ERROR_JOB_34 =
-    "output: interlaced is only valid when profile is dnxhd. Set interlaced: "
-    "false or omit it.";
+    "output.videos[].codec_options.interlaced: only valid when profile is "
+    "\"dnxhd\". Set interlaced: false or omit it.";
 
 /*!
  * \var USER_ERROR_JOB_35
@@ -307,7 +327,8 @@ inline constexpr std::string_view USER_ERROR_JOB_39 =
  * \brief Message when a key is forbidden by \c additionalProperties: false.
  */
 inline constexpr std::string_view USER_ERROR_JOB_40 =
-    "job: this key is not allowed. Remove it or check the job YAML reference.";
+    "job: this key is not allowed. Remove it or check the job YAML "
+    "reference.";
 
 /*!
  * \var USER_ERROR_JOB_41
@@ -360,16 +381,16 @@ inline constexpr std::string_view USER_ERROR_JOB_46 =
  * \brief Message when a frame-map key is neither a frame nor a frame range.
  */
 inline constexpr std::string_view USER_ERROR_JOB_47 =
-    "metadata.substitutions: frame map keys must be a frame (e.g. \"1001\") or "
-    "a frame range (e.g. \"1005-1010\").";
+    "metadata.substitutions: frame map keys must be a frame (e.g. \"1001\") "
+    "or a frame range (e.g. \"1005-1010\").";
 
 /*!
  * \var USER_ERROR_JOB_48
  * \brief Message when \c color.ocio_config is not a quoted non-empty string.
  */
 inline constexpr std::string_view USER_ERROR_JOB_48 =
-    "color.ocio_config: must be a quoted string (e.g. \"/path/config.ocio\"), "
-    "not empty.";
+    "color.ocio_config: must be a quoted non-empty string (e.g. "
+    "\"/path/config.ocio\").";
 
 /*!
  * \var USER_ERROR_JOB_49
@@ -377,32 +398,24 @@ inline constexpr std::string_view USER_ERROR_JOB_48 =
  *        string.
  */
 inline constexpr std::string_view USER_ERROR_JOB_49 =
-    "color.working_colorspace: must be a quoted string (e.g. "
-    "\"ACES - ACEScg\"), not empty.";
-
-/*!
- * \var USER_ERROR_JOB_50
- * \brief Message when a \c display_view.display or \c view is not a quoted
- *        non-empty string.
- */
-inline constexpr std::string_view USER_ERROR_JOB_50 =
-    "display_view: display and view must be quoted non-empty strings.";
+    "color.working_colorspace: must be a quoted non-empty string (e.g. "
+    "\"ACES - ACEScg\").";
 
 /*!
  * \var USER_ERROR_JOB_51
  * \brief Message when \c color.context is present but empty.
  */
 inline constexpr std::string_view USER_ERROR_JOB_51 =
-    "color.context: add at least one key (e.g. \"SHOT\": \"sh010\"), or omit "
-    "context.";
+    "color.context: add at least one key (e.g. \"SHOT\": \"sh010\"), or "
+    "omit context.";
 
 /*!
  * \var USER_ERROR_JOB_52
  * \brief Message when a \c color.context key is not a quoted YAML string.
  */
 inline constexpr std::string_view USER_ERROR_JOB_52 =
-    "color.context: names must be quoted strings (e.g. \"SHOT\"), not numbers "
-    "or booleans.";
+    "color.context: names must be quoted strings (e.g. \"SHOT\"), not "
+    "numbers or booleans.";
 
 /*!
  * \var USER_ERROR_JOB_53
@@ -416,7 +429,7 @@ inline constexpr std::string_view USER_ERROR_JOB_53 =
  * \brief Message when \c layout omits \c canvas.
  */
 inline constexpr std::string_view USER_ERROR_JOB_54 =
-    "layout: missing required key 'canvas'. Add canvas with even width and "
+    "layout.canvas: missing required key. Add canvas with even width and "
     "height.";
 
 /*!
@@ -424,30 +437,30 @@ inline constexpr std::string_view USER_ERROR_JOB_54 =
  * \brief Message when \c layout.canvas omits \c width.
  */
 inline constexpr std::string_view USER_ERROR_JOB_55 =
-    "layout.canvas.width: missing required key. Set an even integer (e.g. "
-    "1920).";
+    "layout.canvas.width: missing required key. Set an even unquoted "
+    "integer (e.g. 1920).";
 
 /*!
  * \var USER_ERROR_JOB_56
  * \brief Message when \c layout.canvas.width is not an integer.
  */
 inline constexpr std::string_view USER_ERROR_JOB_56 =
-    "layout.canvas.width: must be an integer (e.g. 1920).";
+    "layout.canvas.width: must be an unquoted integer (e.g. 1920).";
 
 /*!
  * \var USER_ERROR_JOB_57
  * \brief Message when \c layout.canvas omits \c height.
  */
 inline constexpr std::string_view USER_ERROR_JOB_57 =
-    "layout.canvas.height: missing required key. Set an even integer (e.g. "
-    "1080).";
+    "layout.canvas.height: missing required key. Set an even unquoted "
+    "integer (e.g. 1080).";
 
 /*!
  * \var USER_ERROR_JOB_58
  * \brief Message when \c layout.canvas.height is not an integer.
  */
 inline constexpr std::string_view USER_ERROR_JOB_58 =
-    "layout.canvas.height: must be an integer (e.g. 1080).";
+    "layout.canvas.height: must be an unquoted integer (e.g. 1080).";
 
 /*!
  * \var USER_ERROR_JOB_59
@@ -461,22 +474,22 @@ inline constexpr std::string_view USER_ERROR_JOB_59 =
  * \brief Message when \c layout.canvas.width is less than 2.
  */
 inline constexpr std::string_view USER_ERROR_JOB_60 =
-    "layout.canvas.width: must be at least 2 (e.g. 1920).";
+    "layout.canvas.width: must be an unquoted integer >= 2 (e.g. 1920).";
 
 /*!
  * \var USER_ERROR_JOB_61
  * \brief Message when \c layout.canvas.height is less than 2.
  */
 inline constexpr std::string_view USER_ERROR_JOB_61 =
-    "layout.canvas.height: must be at least 2 (e.g. 1080).";
+    "layout.canvas.height: must be an unquoted integer >= 2 (e.g. 1080).";
 
 /*!
  * \var USER_ERROR_JOB_62
  * \brief Message when \c layout omits \c image.
  */
 inline constexpr std::string_view USER_ERROR_JOB_62 =
-    "layout: missing required key 'image'. Add image with fit contain or "
-    "cover.";
+    "layout.image: missing required key. Add image with fit \"contain\" or "
+    "\"cover\".";
 
 /*!
  * \var USER_ERROR_JOB_64
@@ -490,15 +503,14 @@ inline constexpr std::string_view USER_ERROR_JOB_64 =
  * \brief Message when \c layout.image.fit is not a quoted YAML string.
  */
 inline constexpr std::string_view USER_ERROR_JOB_65 =
-    "layout.image.fit: must be a quoted string (e.g. \"contain\" or "
-    "\"cover\").";
+    "layout.image.fit: must be a quoted string (\"contain\" or \"cover\").";
 
 /*!
  * \var USER_ERROR_JOB_66
  * \brief Message when \c layout.image.filter is not a quoted YAML string.
  */
 inline constexpr std::string_view USER_ERROR_JOB_66 =
-    "layout.image.filter: must be a quoted string (e.g. \"bilinear\" or "
+    "layout.image.filter: must be a quoted string (\"bilinear\" or "
     "\"lanczos3\").";
 
 /*!
@@ -514,29 +526,31 @@ inline constexpr std::string_view USER_ERROR_JOB_67 =
  * \brief Message when a \c min_margin_px side is not an unquoted integer.
  */
 inline constexpr std::string_view USER_ERROR_JOB_68 =
-    "layout.image.min_margin_px: each side must be an integer (e.g. top: 8).";
+    "layout.image.min_margin_px: each side must be an unquoted integer (e.g. "
+    "top: 8).";
 
 /*!
  * \var USER_ERROR_JOB_69
  * \brief Message when a \c min_margin_px side is less than 0.
  */
 inline constexpr std::string_view USER_ERROR_JOB_69 =
-    "layout.image.min_margin_px: each side must be at least 0 (e.g. top: 8).";
+    "layout.image.min_margin_px: each side must be an unquoted integer >= 0 "
+    "(e.g. top: 8).";
 
 /*!
  * \var USER_ERROR_JOB_70
  * \brief Message when \c layout.background is not a map.
  */
 inline constexpr std::string_view USER_ERROR_JOB_70 =
-    "layout.background: must be a map of r, g, and b.";
+    "layout.background: must be a map with keys r, g, and b only.";
 
 /*!
  * \var USER_ERROR_JOB_71
  * \brief Message when a \c layout.background channel is not a number in [0, 1].
  */
 inline constexpr std::string_view USER_ERROR_JOB_71 =
-    "layout.background: each channel must be a number between 0 and 1 "
-    "(e.g. r: 0.12).";
+    "layout.background: r, g, and b must be numbers in [0, 1] (e.g. r: "
+    "0.12).";
 
 /*!
  * \var USER_ERROR_JOB_72
@@ -558,52 +572,53 @@ inline constexpr std::string_view USER_ERROR_JOB_73 =
  * \brief Message when a burn-in omits \c position.
  */
 inline constexpr std::string_view USER_ERROR_JOB_74 =
-    "layout.burn_ins[].position: missing required key. Add a position block.";
+    "layout.burn_ins[].position: missing required key. Add a position "
+    "block.";
 
 /*!
  * \var USER_ERROR_JOB_75
  * \brief Message when a burn-in omits \c font.
  */
 inline constexpr std::string_view USER_ERROR_JOB_75 =
-    "layout.burn_ins[].font: missing required key. Add a font block with path "
-    "and size_px.";
+    "layout.burn_ins[].font: missing required key. Add a font block with "
+    "path and size_px.";
 
 /*!
  * \var USER_ERROR_JOB_76
  * \brief Message when a burn-in \c template is not a quoted YAML string.
  */
 inline constexpr std::string_view USER_ERROR_JOB_76 =
-    "layout.burn_ins[].template: must be a quoted string (e.g. \"{frame}\").";
+    "layout.burn_ins[].template: must be a quoted string (e.g. "
+    "\"{frame}\").";
 
 /*!
  * \var USER_ERROR_JOB_77
  * \brief Message when \c position.mode is not a quoted YAML string.
  */
 inline constexpr std::string_view USER_ERROR_JOB_77 =
-    "layout.burn_ins[].position.mode: must be a quoted string (e.g. "
-    "\"layout\", \"pixel\", or \"percent\").";
+    "layout.position.mode: must be a quoted string (\"layout\", \"pixel\", "
+    "or \"percent\").";
 
 /*!
  * \var USER_ERROR_JOB_78
  * \brief Message when \c position.anchor is not a quoted YAML string.
  */
 inline constexpr std::string_view USER_ERROR_JOB_78 =
-    "layout.burn_ins[].position.anchor: must be a quoted string (e.g. "
-    "\"top_left\").";
+    "layout.position.anchor: must be a quoted string (e.g. \"top_left\").";
 
 /*!
  * \var USER_ERROR_JOB_79
  * \brief Message when \c position.anchor is set and \c mode is not layout.
  */
 inline constexpr std::string_view USER_ERROR_JOB_79 =
-    "layout: position.anchor is only valid when mode is \"layout\".";
+    "layout.position.anchor: only valid when mode is \"layout\".";
 
 /*!
  * \var USER_ERROR_JOB_80
  * \brief Message when \c position.x or \c y is set and \c mode is layout.
  */
 inline constexpr std::string_view USER_ERROR_JOB_80 =
-    "layout: position.x and y are only valid when mode is \"pixel\" or "
+    "layout.position: x and y are only valid when mode is \"pixel\" or "
     "\"percent\".";
 
 /*!
@@ -611,37 +626,37 @@ inline constexpr std::string_view USER_ERROR_JOB_80 =
  * \brief Message when \c position.x is not an unquoted integer.
  */
 inline constexpr std::string_view USER_ERROR_JOB_81 =
-    "layout.burn_ins[].position.x: must be an integer.";
+    "layout.position.x: must be an unquoted integer.";
 
 /*!
  * \var USER_ERROR_JOB_82
  * \brief Message when \c position.y is not an unquoted integer.
  */
 inline constexpr std::string_view USER_ERROR_JOB_82 =
-    "layout.burn_ins[].position.y: must be an integer.";
+    "layout.position.y: must be an unquoted integer.";
 
 /*!
  * \var USER_ERROR_JOB_83
  * \brief Message when pixel \c position.x is outside \c [0, canvas.width].
  */
 inline constexpr std::string_view USER_ERROR_JOB_83 =
-    "layout.burn_ins[].position.x: must be between 0 and layout.canvas.width "
-    "when mode is \"pixel\".";
+    "layout.position.x: must be an unquoted integer in [0, "
+    "layout.canvas.width] when mode is \"pixel\".";
 
 /*!
  * \var USER_ERROR_JOB_84
  * \brief Message when pixel \c position.y is outside \c [0, canvas.height].
  */
 inline constexpr std::string_view USER_ERROR_JOB_84 =
-    "layout.burn_ins[].position.y: must be between 0 and layout.canvas.height "
-    "when mode is \"pixel\".";
+    "layout.position.y: must be an unquoted integer in [0, "
+    "layout.canvas.height] when mode is \"pixel\".";
 
 /*!
  * \var USER_ERROR_JOB_85
  * \brief Message when percent \c position.x is outside \c [0, 100].
  */
 inline constexpr std::string_view USER_ERROR_JOB_85 =
-    "layout.burn_ins[].position.x: must be between 0 and 100 when mode is "
+    "layout.position.x: must be an unquoted integer in [0, 100] when mode is "
     "\"percent\".";
 
 /*!
@@ -649,7 +664,7 @@ inline constexpr std::string_view USER_ERROR_JOB_85 =
  * \brief Message when percent \c position.y is outside \c [0, 100].
  */
 inline constexpr std::string_view USER_ERROR_JOB_86 =
-    "layout.burn_ins[].position.y: must be between 0 and 100 when mode is "
+    "layout.position.y: must be an unquoted integer in [0, 100] when mode is "
     "\"percent\".";
 
 /*!
@@ -657,7 +672,7 @@ inline constexpr std::string_view USER_ERROR_JOB_86 =
  * \brief Message when a burn-in \c font.path is not a quoted YAML string.
  */
 inline constexpr std::string_view USER_ERROR_JOB_87 =
-    "layout.burn_ins[].font.path: must be a quoted string (e.g. "
+    "layout.font.path: must be a quoted non-empty string (e.g. "
     "\"dailyboy/tests/data/fonts/DejaVuSans.ttf\").";
 
 /*!
@@ -665,44 +680,46 @@ inline constexpr std::string_view USER_ERROR_JOB_87 =
  * \brief Message when a burn-in \c font.size_px is not an unquoted integer.
  */
 inline constexpr std::string_view USER_ERROR_JOB_88 =
-    "layout.burn_ins[].font.size_px: must be an integer (e.g. 18).";
+    "layout.font.size_px: must be an unquoted integer (e.g. 18).";
 
 /*!
  * \var USER_ERROR_JOB_89
  * \brief Message when a burn-in \c font.size_px is below 4.
  */
 inline constexpr std::string_view USER_ERROR_JOB_89 =
-    "layout.burn_ins[].font.size_px: must be at least 4 (e.g. 18).";
+    "layout.font.size_px: must be an unquoted integer >= 4 (e.g. 18).";
 
 /*!
  * \var USER_ERROR_JOB_90
  * \brief Message when a burn-in \c font.color is not a map of r, g, b.
  */
 inline constexpr std::string_view USER_ERROR_JOB_90 =
-    "layout.burn_ins[].font.color: must be a map of r, g, and b.";
+    "layout.burn_ins[].font.color: must be a map with keys r, g, and b "
+    "only.";
 
 /*!
  * \var USER_ERROR_JOB_91
  * \brief Message when a burn-in \c font.color channel is outside [0, 1].
  */
 inline constexpr std::string_view USER_ERROR_JOB_91 =
-    "layout.burn_ins[].font.color: each channel must be a number between 0 "
-    "and 1 (e.g. r: 0.12).";
+    "layout.burn_ins[].font.color: r, g, and b must be numbers in [0, 1] "
+    "(e.g. r: 0.12).";
 
 /*!
  * \var USER_ERROR_JOB_92
  * \brief Message when \c signal is missing or has an invalid field.
  */
 inline constexpr std::string_view USER_ERROR_JOB_92 =
-    "output.videos[].signal: requires range, matrix, primaries, and transfer.";
+    "output.videos[].signal: missing required key. Set range, matrix, "
+    "primaries, and transfer.";
 
 /*!
  * \var USER_ERROR_JOB_93
  * \brief Message when \c format_options is set but the path extension is unknown.
  */
 inline constexpr std::string_view USER_ERROR_JOB_93 =
-    "output.image_sequences[].format_options: path_pattern extension must be "
-    "png, jpg/jpeg, tif/tiff, exr, or heif/heic/avif.";
+    "output.image_sequences[].format_options: path_pattern extension must "
+    "be png, jpg/jpeg, tif/tiff, exr, or heif/heic/avif.";
 
 /*!
  * \var USER_ERROR_JOB_94
@@ -710,66 +727,72 @@ inline constexpr std::string_view USER_ERROR_JOB_93 =
  *        compression.
  */
 inline constexpr std::string_view USER_ERROR_JOB_94 =
-    "output.image_sequences[].format_options: compression_level is only valid "
-    "for zip, zips, dwaa, or dwab.";
+    "output.image_sequences[].format_options.compression_level: only valid "
+    "for compression \"zip\", \"zips\", \"dwaa\", or \"dwab\".";
 
 /*!
  * \var USER_ERROR_JOB_95
  * \brief Message when ProRes \c pix_fmt does not match the profile.
  */
 inline constexpr std::string_view USER_ERROR_JOB_95 =
-    "output: pix_fmt is incompatible with this ProRes profile. Check the job "
-    "YAML reference.";
+    "output.videos[].codec_options.pix_fmt: incompatible with this ProRes "
+    "profile. Check the job YAML reference.";
 
 /*!
  * \var USER_ERROR_JOB_96
  * \brief Message when ProRes \c vendor is not exactly four ASCII characters.
  */
 inline constexpr std::string_view USER_ERROR_JOB_96 =
-    "output: vendor must be exactly four ASCII characters (e.g. apl0).";
+    "output.videos[].codec_options.vendor: must be a quoted string of "
+    "exactly four ASCII characters (e.g. \"apl0\").";
 
 /*!
  * \var USER_ERROR_JOB_97
  * \brief Message when ProRes \c alpha_bits is set (alpha is not supported).
  */
 inline constexpr std::string_view USER_ERROR_JOB_97 =
-    "output: ProRes alpha_bits is not supported (source images have no alpha).";
+    "output.videos[].codec_options.alpha_bits: not supported (source images "
+    "have no alpha).";
 
 /*!
  * \var USER_ERROR_JOB_98
  * \brief Message when ProRes \c bits_per_mb is outside 0..8192.
  */
 inline constexpr std::string_view USER_ERROR_JOB_98 =
-    "output: bits_per_mb must be an integer in [0, 8192].";
+    "output.videos[].codec_options.bits_per_mb: must be an unquoted integer "
+    "in [0, 8192] (e.g. 0).";
 
 /*!
  * \var USER_ERROR_JOB_99
  * \brief Message when ProRes \c mbs_per_slice is outside 1..8.
  */
 inline constexpr std::string_view USER_ERROR_JOB_99 =
-    "output: mbs_per_slice must be an integer in [1, 8].";
+    "output.videos[].codec_options.mbs_per_slice: must be an unquoted "
+    "integer in [1, 8] (e.g. 8).";
 
 /*!
  * \var USER_ERROR_JOB_100
  * \brief Message when \c plans[].sequence.handles.head or \c tail is negative.
  */
 inline constexpr std::string_view USER_ERROR_JOB_100 =
-    "plans[].sequence.handles: head and tail must be integers >= 0.";
+    "plans[].sequence.handles: must be a map; head and tail must be "
+    "unquoted integers >= 0.";
 
 /*!
  * \var USER_ERROR_JOB_101
  * \brief Message when \c plans[].timecode.start is missing or wrong type.
  */
 inline constexpr std::string_view USER_ERROR_JOB_101 =
-    "plans[].timecode.start: required string (HH:MM:SS:FF) or integer >= 0.";
+    "plans[].timecode.start: missing required key. Set a string "
+    "(HH:MM:SS:FF) or an unquoted integer >= 0.";
 
 /*!
  * \var USER_ERROR_JOB_102
  * \brief Message when \c plans[].timecode.start SMPTE string is invalid.
  */
 inline constexpr std::string_view USER_ERROR_JOB_102 =
-    "plans[].timecode.start: invalid SMPTE timecode "
-    "(expected HH:MM:SS:FF or HH:MM:SS;FF with drop_frame).";
+    "plans[].timecode.start: invalid SMPTE timecode (expected HH:MM:SS:FF "
+    "or HH:MM:SS;FF with drop_frame).";
 
 /*!
  * \var USER_ERROR_JOB_103
@@ -805,30 +828,31 @@ inline constexpr std::string_view USER_ERROR_JOB_106 =
  * \brief Message when a burn-in box color channel is outside [0, 1].
  */
 inline constexpr std::string_view USER_ERROR_JOB_107 =
-    "layout.burn_ins[].box.color: r, g, and b must be numbers in [0, 1].";
+    "layout.burn_ins[].box.color: r, g, and b must be numbers in [0, 1] "
+    "(e.g. r: 0.12).";
 
 /*!
  * \var USER_ERROR_JOB_108
  * \brief Message when burn-in \c box.opacity is outside [0, 1].
  */
 inline constexpr std::string_view USER_ERROR_JOB_108 =
-    "layout.burn_ins[].box.opacity: must be a number in [0, 1].";
+    "layout.burn_ins[].box.opacity: must be a number in [0, 1] (e.g. 0.45).";
 
 /*!
  * \var USER_ERROR_JOB_109
  * \brief Message when burn-in \c box.margin is not an int >= 0 or side map.
  */
 inline constexpr std::string_view USER_ERROR_JOB_109 =
-    "layout.burn_ins[].box.margin: must be an integer >= 0 (or a per-side "
-    "map of top, right, bottom, left).";
+    "layout.burn_ins[].box.margin: must be an unquoted integer >= 0 or a "
+    "per-side map of top, right, bottom, left.";
 
 /*!
  * \var USER_ERROR_JOB_110
  * \brief Message when \c layout.slate omits \c duration_frames.
  */
 inline constexpr std::string_view USER_ERROR_JOB_110 =
-    "layout.slate.duration_frames: missing required key. Set an integer "
-    ">= 0.";
+    "layout.slate.duration_frames: missing required key. Set an unquoted "
+    "integer >= 0.";
 
 /*!
  * \var USER_ERROR_JOB_111
@@ -842,7 +866,7 @@ inline constexpr std::string_view USER_ERROR_JOB_111 =
  * \brief Message when \c layout.slate.duration_frames is negative.
  */
 inline constexpr std::string_view USER_ERROR_JOB_112 =
-    "layout.slate.duration_frames: must be an integer >= 0.";
+    "layout.slate.duration_frames: must be an unquoted integer >= 0.";
 
 /*!
  * \var USER_ERROR_JOB_113
@@ -910,7 +934,8 @@ inline constexpr std::string_view USER_ERROR_JOB_120 =
  * \brief Message when \c input_colorspace is not a quoted non-empty string.
  */
 inline constexpr std::string_view USER_ERROR_JOB_121 =
-    "plans[].input_colorspace: must be a quoted non-empty string.";
+    "plans[].input_colorspace: must be a quoted non-empty string (e.g. "
+    "\"ACEScg\").";
 
 /*!
  * \var USER_ERROR_JOB_122
@@ -925,8 +950,8 @@ inline constexpr std::string_view USER_ERROR_JOB_122 =
  * \brief Message when \c sequence.path is missing.
  */
 inline constexpr std::string_view USER_ERROR_JOB_123 =
-    "plans[].sequence.path: missing required key. Set a quoted file sequence "
-    "pattern.";
+    "plans[].sequence.path: missing required key. Set a quoted file "
+    "sequence pattern.";
 
 /*!
  * \var USER_ERROR_JOB_124
@@ -971,14 +996,16 @@ inline constexpr std::string_view USER_ERROR_JOB_128 =
  * \brief Message when \c audio is present without \c path.
  */
 inline constexpr std::string_view USER_ERROR_JOB_129 =
-    "plans[].audio.path: missing required key. Set a quoted audio file path.";
+    "plans[].audio.path: missing required key. Set a quoted audio file "
+    "path.";
 
 /*!
  * \var USER_ERROR_JOB_130
  * \brief Message when \c audio.path is not a quoted non-empty string.
  */
 inline constexpr std::string_view USER_ERROR_JOB_130 =
-    "plans[].audio.path: must be a quoted non-empty string.";
+    "plans[].audio.path: must be a quoted non-empty string (e.g. "
+    "\"/audio/guide.wav\").";
 
 /*!
  * \var USER_ERROR_JOB_131
@@ -1015,14 +1042,15 @@ inline constexpr std::string_view USER_ERROR_JOB_134 =
  * \brief Message when a \c color.context value is empty.
  */
 inline constexpr std::string_view USER_ERROR_JOB_135 =
-    "color.context: values must be non-empty quoted strings (e.g. \"sh010\").";
+    "color.context: values must be non-empty quoted strings (e.g. "
+    "\"sh010\").";
 
 /*!
  * \var USER_ERROR_JOB_136
  * \brief Message when a text position omits \c mode.
  */
 inline constexpr std::string_view USER_ERROR_JOB_136 =
-    "layout: position.mode: missing required key. Set \"layout\", \"pixel\", "
+    "layout.position.mode: missing required key. Set \"layout\", \"pixel\", "
     "or \"percent\".";
 
 /*!
@@ -1030,7 +1058,7 @@ inline constexpr std::string_view USER_ERROR_JOB_136 =
  * \brief Message when a text font omits \c path.
  */
 inline constexpr std::string_view USER_ERROR_JOB_137 =
-    "layout: font.path: missing required key. Set a quoted path to a .ttf or "
+    "layout.font.path: missing required key. Set a quoted path to a .ttf or "
     ".otf file.";
 
 /*!
@@ -1038,15 +1066,15 @@ inline constexpr std::string_view USER_ERROR_JOB_137 =
  * \brief Message when a text font omits \c size_px.
  */
 inline constexpr std::string_view USER_ERROR_JOB_138 =
-    "layout: font.size_px: missing required key. Set an unquoted integer "
-    ">= 4 (e.g. 18).";
+    "layout.font.size_px: missing required key. Set an unquoted integer >= 4 "
+    "(e.g. 18).";
 
 /*!
  * \var USER_ERROR_JOB_139
  * \brief Message when a font file path does not exist on disk.
  */
 inline constexpr std::string_view USER_ERROR_JOB_139 =
-    "layout: font.path: file not found. Set a path to an existing .ttf or "
+    "layout.font.path: file not found. Set a path to an existing .ttf or "
     ".otf file (after resolving substitutions).";
 
 /*!
@@ -1379,8 +1407,8 @@ inline constexpr std::string_view USER_ERROR_JOB_182 =
  * \brief Message when H.264 \c level is not a supported level.
  */
 inline constexpr std::string_view USER_ERROR_JOB_184 =
-    "output.videos[].codec_options.level: unsupported value. Use 3.0, 3.1, "
-    "4.0, 4.1, 4.2, 5.0, 5.1, or 5.2.";
+    "output.videos[].codec_options.level: unsupported value. Use \"3.0\", "
+    "\"3.1\", \"4.0\", \"4.1\", \"4.2\", \"5.0\", \"5.1\", or \"5.2\".";
 
 /*!
  * \var USER_ERROR_JOB_185

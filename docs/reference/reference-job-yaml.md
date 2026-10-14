@@ -201,7 +201,7 @@ The `id` is required, must be a **quoted** non-empty YAML string (e.g. `"plate"`
 | ------------------ | -------- | ------------------------------------------------- | ----------------------------------------------------------------- |
 | `input_colorspace` | yes      | quoted string (OCIO colorspace name, non-empty)   | Plate image colorspace as defined in your OCIO config.            |
 
-Must be a **quoted** non-empty YAML string that exactly matches a colorspace in your OCIO configuration (e.g. `"ACEScg"`, `"Linear Rec.709 (sRGB)"`, `"AlexaV3LogC"`). Invalid values fail with `plans[].input_colorspace: must be a quoted non-empty string.`.
+Must be a **quoted** non-empty YAML string that exactly matches a colorspace in your OCIO configuration (e.g. `"ACEScg"`, `"Linear Rec.709 (sRGB)"`, `"AlexaV3LogC"`). Invalid values fail with `plans[].input_colorspace: must be a quoted non-empty string (e.g. "ACEScg").`.
 
 <a id="plans-sequence"></a>
 
@@ -233,7 +233,7 @@ Optional `handles` allow including additional plates before the first and/or aft
 - If `handles` is omitted, or a side is omitted, that side defaults to `0` (hero range only for that side).
 - If handles are set, **the processed range becomes** `frame_start - handles.head` through `frame_end + handles.tail`.
 - If any frame in this full range is missing, that is a hard error.
-- `head` / `tail` must be unquoted integers ≥ 0. Invalid values fail with `plans[].sequence.handles.head: must be an unquoted integer >= 0 (e.g. 8).` or the matching `…handles.tail…` message. A non-object `handles` value fails with `plans[].sequence.handles: head and tail must be integers >= 0.`.
+- `head` / `tail` must be unquoted integers ≥ 0. Invalid values fail with `plans[].sequence.handles.head: must be an unquoted integer >= 0 (e.g. 8).` or the matching `…handles.tail…` message. A non-object `handles` value fails with `plans[].sequence.handles: must be a map; head and tail must be unquoted integers >= 0.`.
 
 <a id="plans-audio"></a>
 
@@ -244,7 +244,7 @@ Optional `handles` allow including additional plates before the first and/or aft
 | `path`    | yes      | quoted string (non-empty) | Path to a guide audio track (WAV PCM, AAC in `.wav` / `.aac` / `.m4a`, or audio-only `.mov`). Metadata tokens allowed.  |
 
 **Audio is optional.**  
-When present, `path` must be a **quoted** non-empty YAML string. Unquoted or empty values fail with `plans[].audio.path: must be a quoted non-empty string.`.  
+When present, `path` must be a **quoted** non-empty YAML string. Unquoted or empty values fail with `plans[].audio.path: must be a quoted non-empty string (e.g. "/audio/guide.wav").`.  
 If present for any plan, _all_ generated MOVs for this job include a shared AAC-LC stereo 48 kHz guide track at **192 kbps**.  
 Audio behavior per plan:
 1. **Slate duration**: MOVs always begin with silence for `layout.slate.duration_frames`, regardless of audio.
@@ -445,7 +445,7 @@ Each entry:
 
 | Sub-field | Required | Type               | Description             |
 | --------- | -------- | ------------------ | ----------------------- |
-| `path`    | yes      | quoted string (non-empty) | Path to an existing `.ttf` or `.otf` file. After substitutions resolve, the file must exist on disk. Existence is **not** checked while the path still contains `{` or `$` substitution tokens (those resolve later). Missing resolved files fail with `layout: font.path: file not found. Set a path to an existing .ttf or .otf file (after resolving substitutions).`. |
+| `path`    | yes      | quoted string (non-empty) | Path to an existing `.ttf` or `.otf` file. After substitutions resolve, the file must exist on disk. Existence is **not** checked while the path still contains `{` or `$` substitution tokens (those resolve later). Missing resolved files fail with `layout.font.path: file not found. Set a path to an existing .ttf or .otf file (after resolving substitutions).`. |
 | `size_px` | yes      | integer (≥ 4)      | Font size in pixels.    |
 | `color`   | no       | object (r, g, b in `[0, 1]`) | Text color in display RGB. Omitted block or channel defaults to `1` (white). If present, keys must be only `r`, `g`, and `b`. |
 
@@ -587,7 +587,7 @@ Required on every `videos[]` entry. Tags written into the bitstream / container 
 | `primaries`  | yes      | quoted `"bt709"`    | Color primaries metadata |
 | `transfer`   | yes      | quoted `"bt709"`    | Transfer characteristic metadata |
 
-Each `signal` key must be a **quoted** string. Missing keys, wrong types, and unsupported values fail with dedicated `output.videos[].signal.<field>:` messages (for example `output.videos[].signal.range: unsupported value. Use "tv" or "pc".`). If the whole `signal` block is omitted, parse fails with `output.videos[].signal: requires range, matrix, primaries, and transfer.`
+Each `signal` key must be a **quoted** string. Missing keys, wrong types, and unsupported values fail with dedicated `output.videos[].signal.<field>:` messages (for example `output.videos[].signal.range: unsupported value. Use "tv" or "pc".`). If the whole `signal` block is omitted, parse fails with `output.videos[].signal: missing required key. Set range, matrix, primaries, and transfer.`
 
 `display_view` selects the OCIO DisplayView that produces the review RGB sent to the encoder; `signal` describes how that RGB is tagged and converted to YCbCr. They are independent fields.
 
