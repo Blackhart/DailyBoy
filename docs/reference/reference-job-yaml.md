@@ -367,7 +367,7 @@ Defines the output image size.
 | `width`   | yes      | even integer (≥ 2) | Width of the output image, in pixels. Must be even so video codecs can encode the canvas as-is. |
 | `height`  | yes      | even integer (≥ 2) | Height of the output image, in pixels. Must be even so video codecs can encode the canvas as-is. |
 
-Common sizes: `1920x1080` (HD), `2048x1080` (2K DCI), `2560x1350` (QHD+), `2840x2160` (UHD), `4096x1716` (4K DCI), `4096x2160` (full 4K), `1024x768` (XGA), `1280x720` (HD 720p), `2560x1440` (1440p/QHD).
+Common sizes: `1920x1080` (HD), `2048x1080` (2K DCI), `2560x1350` (QHD+), `3840x2160` (UHD), `4096x1716` (4K DCI), `4096x2160` (full 4K), `1024x768` (XGA), `1280x720` (HD 720p), `2560x1440` (1440p/QHD).
 
 <a id="layout-pixel-aspect"></a>
 
@@ -599,14 +599,14 @@ Optional. If not specified, defaults are used. Only set either `crf` or `bitrate
 
 | Field          | Required | Values                                                                 | Default                  | Description                                 |
 | -------------- | -------- | ---------------------------------------------------------------------- | ------------------------ | ------------------------------------------- |
-| `preset`       | no       | `ultrafast`, `superfast`, `veryfast`, `faster`, `fast`, `medium`, `slow` | `medium`                | Encoding speed / efficiency tradeoff.       |
+| `preset`       | no       | quoted `"ultrafast"`, `"superfast"`, `"veryfast"`, `"faster"`, `"fast"`, `"medium"`, `"slow"` | `medium` | Encoding speed / efficiency tradeoff. |
 | `crf`          | no       | number 0–51                                                            | `23` (if bitrate omitted)| Constant Rate Factor (quality).             |
 | `bitrate_kbps` | no       | integer ≥ 1                                                            | unused                   | Target bitrate (alternative to crf).        |
 | `gop`          | no       | unquoted integer ≥ 1                                                   | `250`                    | Keyframe interval (FFmpeg `-g`).            |
-| `pix_fmt`      | no       | `yuv420p`, `yuv422p`                                                   | `yuv420p`                | Pixel format.                               |
-| `tune`         | no       | `film`, `animation`, `grain`, `stillimage`, `fastdecode`, `zerolatency` | not set                  | Optional encoder hint.                      |
-| `profile`      | no       | `baseline`, `main`, `high`, `high422`                                  | auto based on pix_fmt    | H.264 feature set.                          |
-| `level`        | no       | `3.0`, `3.1`, `4.0`, `4.1`, `4.2`, `5.0`, `5.1`, `5.2`               | auto                     | Decoder limits (resolution, bitrate).       |
+| `pix_fmt`      | no       | quoted `"yuv420p"`, `"yuv422p"`                                        | `yuv420p`                | Pixel format.                               |
+| `tune`         | no       | quoted `"film"`, `"animation"`, `"grain"`, `"stillimage"`, `"fastdecode"`, `"zerolatency"` | not set | Optional encoder hint. |
+| `profile`      | no       | quoted `"baseline"`, `"main"`, `"high"`, `"high422"`                   | auto based on pix_fmt    | H.264 feature set (`high422` requires `pix_fmt: "yuv422p"`). |
+| `level`        | no       | quoted `"3.0"`…`"5.2"` (YAML number also accepted)                     | auto                     | Decoder limits (resolution, bitrate).       |
 | `faststart`    | no       | `true`, `false`                                                        | `true`                   | Store moov atom at file head.               |
 
 <a id="output-codec-options-mjpeg"></a>
@@ -618,8 +618,8 @@ Optional. If not specified, defaults are used.
 | Field         | Required | Values                          | Default    | Description                                  |
 | ------------- | -------- | ------------------------------- | ---------- | -------------------------------------------- |
 | `qscale`      | no       | integer 1–31                    | `3`        | JPEG quality (lower is better quality/larger)|
-| `pix_fmt`     | no       | `yuv420p`, `yuv422p`, `yuv444p` | `yuv422p`  | Pixel format                                 |
-| `huffman`     | no       | `default`, `optimal`            | `optimal`  | JPEG table type                              |
+| `pix_fmt`     | no       | quoted `"yuv420p"`, `"yuv422p"`, `"yuv444p"` | `yuv422p` | Pixel format |
+| `huffman`     | no       | quoted `"default"`, `"optimal"` | `optimal`  | JPEG table type                              |
 | `faststart`   | no       | `true`, `false`                 | `true`     | Store moov atom at file head                 |
 
 <a id="output-codec-options-dnxhd"></a>
@@ -632,9 +632,9 @@ Optional. If not specified, defaults are used.
 
 | Field           | Required                    | Values                                                              | Default      | Description                                |
 | --------------- | -------------------------- | ------------------------------------------------------------------- | ------------ | ------------------------------------------ |
-| `profile`       | no                         | `dnxhd`, `dnxhr_lb`, `dnxhr_sq`, `dnxhr_hq`, `dnxhr_hqx`, `dnxhr_444` | `dnxhr_hq`  | Codec profile                              |
-| `pix_fmt`       | no                         | `yuv422p`, `yuv422p10`, `yuv444p10`                                | by profile   | Pixel format                               |
-| `bitrate_kbps`  | yes if `profile: dnxhd`    | integer ≥ 1                                                         | N/A          | Bitrate (DNxHD only)                       |
+| `profile`       | no                         | quoted `"dnxhd"`, `"dnxhr_lb"`, `"dnxhr_sq"`, `"dnxhr_hq"`, `"dnxhr_hqx"`, `"dnxhr_444"` | `dnxhr_hq` | Codec profile |
+| `pix_fmt`       | no                         | quoted `"yuv422p"`, `"yuv422p10"`, `"yuv444p10"`                    | by profile   | Pixel format                               |
+| `bitrate_kbps`  | yes if `profile: "dnxhd"`  | integer ≥ 1                                                         | N/A          | Bitrate (DNxHD only)                       |
 | `interlaced`    | no                         | `true`, `false`                                                     | `false`      | Interlacing (DNxHD only)                   |
 | `nitris_compat` | no                         | `true`, `false`                                                     | `false`      | Nitris compatibility (padding)             |
 | `faststart`     | no                         | `true`, `false`                                                     | `true`       | Store moov atom at file head               |
@@ -645,14 +645,14 @@ Optional. If not specified, defaults are used.
 
 Optional. If not specified, defaults are used. Encoding uses FFmpeg `prores_ks`. Source images have no alpha plane; `yuva444p10` / `alpha_bits` are not accepted.
 
-- Profiles `proxy` / `lt` / `standard` / `hq` require `pix_fmt: yuv422p10`.
-- Profiles `4444` / `4444xq` use `yuv444p10`.
+- Profiles `proxy` / `lt` / `standard` / `hq` require `pix_fmt: "yuv422p10"`.
+- Profiles `4444` / `4444xq` use `pix_fmt: "yuv444p10"`.
 
 | Field           | Required | Values                                                          | Default      | Description                                      |
 | --------------- | -------- | --------------------------------------------------------------- | ------------ | ------------------------------------------------ |
-| `profile`       | no       | `proxy`, `lt`, `standard`, `hq`, `4444`, `4444xq`               | `hq`         | ProRes profile (YAML `4444` may be unquoted) |
-| `pix_fmt`       | no       | `yuv422p10`, `yuv444p10`                                        | by profile   | Pixel format (10-bit); float ImageBuf → RGB48 → YUV |
-| `quant_mat`     | no       | `auto`, `proxy`, `lt`, `standard`, `hq`, `default`              | `auto`       | Quantization matrix                              |
+| `profile`       | no       | quoted `"proxy"`, `"lt"`, `"standard"`, `"hq"`, `"4444"`, `"4444xq"` | `hq` | ProRes profile (YAML `4444` may be unquoted) |
+| `pix_fmt`       | no       | quoted `"yuv422p10"`, `"yuv444p10"`                             | by profile   | Pixel format (10-bit); float ImageBuf → RGB48 → YUV |
+| `quant_mat`     | no       | quoted `"auto"`, `"proxy"`, `"lt"`, `"standard"`, `"hq"`, `"default"` | `auto` | Quantization matrix |
 | `bits_per_mb`   | no       | integer 0–8192                                                  | `0`          | Bits per macroblock (`0` = encoder default)      |
 | `mbs_per_slice` | no       | integer 1–8                                                     | `8`          | Macroblocks per slice                            |
 | `vendor`        | no       | quoted string, exactly 4 ASCII characters                       | `apl0`       | ProRes vendor ID in the bitstream. Must be a quoted YAML string when set (e.g. `vendor: "apl0"`). |
@@ -695,7 +695,7 @@ The file extension of `path_pattern` selects the OpenImageIO writer and which `f
 | ----- | -------- | ------ | ------- | ----------- |
 | `bit_depth` | no | `8` | `8` | Pixel bit depth |
 | `compression_level` | no | 1–100 | `98` | JPEG quality (`CompressionQuality`) |
-| `subsampling` | no | `4:4:4`, `4:2:2`, `4:2:0`, `4:1:1` | libjpeg default | Chroma subsampling |
+| `subsampling` | no | quoted `"4:4:4"`, `"4:2:2"`, `"4:2:0"`, `"4:1:1"` | libjpeg default | Chroma subsampling |
 | `progressive` | no | `true`, `false` | `false` | Progressive JPEG |
 
 <a id="output-format-options-tiff"></a>

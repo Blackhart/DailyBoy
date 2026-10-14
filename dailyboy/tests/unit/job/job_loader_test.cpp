@@ -3440,6 +3440,44 @@ TEST(JobLoader, ValidateJobSchema_BackgroundRNotNumber_ReturnsUserError) {
 }
 
 /*!
+ * \brief Rejects \c background.g that is not a number.
+ */
+TEST(JobLoader, ValidateJobSchema_BackgroundGNotNumber_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_background_contract_job("background_g_not_number.yaml",
+                                    "  background:\n"
+                                    "    g: \"x\"\n");
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_71));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_71));
+}
+
+/*!
+ * \brief Rejects \c background.b that is not a number.
+ */
+TEST(JobLoader, ValidateJobSchema_BackgroundBNotNumber_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_background_contract_job("background_b_not_number.yaml",
+                                    "  background:\n"
+                                    "    b: \"x\"\n");
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_71));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_71));
+}
+
+/*!
  * \brief Rejects \c g that is not a number between 0 and 1.
  */
 TEST(JobLoader, ValidateJobSchema_BackgroundGNotInRange_ReturnsUserError) {
@@ -3785,6 +3823,37 @@ TEST(JobLoader, ValidateJobSchema_OmittedBurnInBoxMode_DefaultsToFill) {
 }
 
 /*!
+ * \brief Stores quoted \c box.mode outline on the Job.
+ */
+TEST(JobLoader, ValidateJobSchema_BurnInBoxModeOutline_Succeeds) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_burn_in_box_job("burn_in_box_mode_outline.yaml",
+                            "        mode: \"outline\"\n"
+                            "        color:\n"
+                            "          r: 1\n"
+                            "          g: 1\n"
+                            "          b: 1\n"
+                            "        opacity: 0.85\n"
+                            "        margin:\n"
+                            "          top: 4\n"
+                            "          right: 12\n"
+                            "          bottom: 4\n"
+                            "          left: 8\n");
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  ASSERT_TRUE(schema.ok()) << schema.message();
+  ASSERT_TRUE(job.ok()) << job.status().message();
+  const auto& box = job.value().layout().burn_ins().burn_ins().front().box();
+  ASSERT_TRUE(box.has_value());
+  expect_burn_in_box_outline(*box, 1.0, 1.0, 1.0, 0.85, 4, 12, 4, 8);
+}
+
+/*!
  * \brief Rejects \c box.mode as an unquoted YAML scalar.
  */
 TEST(JobLoader, ValidateJobSchema_UnquotedBurnInBoxMode_ReturnsUserError) {
@@ -3859,6 +3928,65 @@ TEST(JobLoader, ValidateJobSchema_BurnInBoxColorRNotInRange_ReturnsUserError) {
 }
 
 /*!
+ * \brief Rejects \c box.color.g outside \c [0, 1].
+ */
+TEST(JobLoader, ValidateJobSchema_BurnInBoxColorGNotInRange_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_burn_in_box_job("burn_in_box_color_g_out_of_range.yaml",
+                            "        mode: \"fill\"\n"
+                            "        color:\n"
+                            "          g: 2\n");
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_107));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_107));
+}
+
+/*!
+ * \brief Rejects \c box.color.b outside \c [0, 1].
+ */
+TEST(JobLoader, ValidateJobSchema_BurnInBoxColorBNotInRange_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_burn_in_box_job("burn_in_box_color_b_out_of_range.yaml",
+                            "        mode: \"fill\"\n"
+                            "        color:\n"
+                            "          b: 2\n");
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_107));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_107));
+}
+
+/*!
+ * \brief Rejects \c box.color that is not an r/g/b map.
+ */
+TEST(JobLoader, ValidateJobSchema_BurnInBoxColorNotMap_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_burn_in_box_job("burn_in_box_color_not_map.yaml",
+                            "        mode: \"fill\"\n"
+                            "        color: 0.5\n");
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_106));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_106));
+}
+
+/*!
  * \brief Defaults omitted \c box.opacity to 1.
  */
 TEST(JobLoader, ValidateJobSchema_OmittedBurnInBoxOpacity_DefaultsTo1) {
@@ -3915,6 +4043,54 @@ TEST(JobLoader, ValidateJobSchema_OmittedBurnInBoxMargin_Succeeds) {
   const auto& box = job.value().layout().burn_ins().burn_ins().front().box();
   ASSERT_TRUE(box.has_value());
   expect_margin_all(box->margin(), 0);
+}
+
+/*!
+ * \brief Stores a uniform integer \c box.margin on the Job.
+ */
+TEST(JobLoader, ValidateJobSchema_BurnInBoxMarginInteger_Succeeds) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_burn_in_box_job("burn_in_box_margin_integer.yaml",
+                            "        mode: \"fill\"\n"
+                            "        margin: 6\n");
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  ASSERT_TRUE(schema.ok()) << schema.message();
+  ASSERT_TRUE(job.ok()) << job.status().message();
+  const auto& box = job.value().layout().burn_ins().burn_ins().front().box();
+  ASSERT_TRUE(box.has_value());
+  expect_margin_all(box->margin(), 6);
+}
+
+/*!
+ * \brief Stores a per-side \c box.margin map on the Job.
+ */
+TEST(JobLoader, ValidateJobSchema_BurnInBoxMarginMap_Succeeds) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_burn_in_box_job("burn_in_box_margin_map.yaml",
+                            "        mode: \"fill\"\n"
+                            "        margin:\n"
+                            "          top: 1\n"
+                            "          right: 2\n"
+                            "          bottom: 3\n"
+                            "          left: 4\n");
+
+  // Test
+  dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  ASSERT_TRUE(schema.ok()) << schema.message();
+  ASSERT_TRUE(job.ok()) << job.status().message();
+  const auto& box = job.value().layout().burn_ins().burn_ins().front().box();
+  ASSERT_TRUE(box.has_value());
+  expect_margin(box->margin(), 1, 2, 3, 4);
 }
 
 /*!
@@ -8870,6 +9046,37 @@ TEST(JobLoader, ValidateJobSchema_PresentVideoSignal_Succeeds) {
 }
 
 /*!
+ * \brief Stores signal.range pc on an H.264 video Job.
+ */
+TEST(JobLoader, ValidateJobSchema_SignalRangePc_Succeeds) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_h264_output_job("signal_range_pc.yaml",
+                            "    - id: \"preview\"\n"
+                            "      enabled: true\n"
+                            "      display_view:\n"
+                            "        display: \"passthrough\"\n"
+                            "        view: \"passthrough\"\n"
+                            "      signal:\n"
+                            "        range: \"pc\"\n"
+                            "        matrix: \"bt709\"\n"
+                            "        primaries: \"bt709\"\n"
+                            "        transfer: \"bt709\"\n"
+                            "      path: \"/tmp/dailyboy_h264.mov\"\n"
+                            "      codec: \"h264\"\n");
+
+  // Test
+  const dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  ASSERT_TRUE(schema.ok()) << schema.message();
+  ASSERT_TRUE(job.ok()) << job.status().message();
+  EXPECT_EQ(job.value().output().videos().videos().front().signal().range(),
+            dailyboy::JobOutputVideoSignal::RangeValue::Pc);
+}
+
+/*!
  * \brief Rejects a video that omits path.
  */
 TEST(JobLoader, ValidateJobSchema_OmittedVideoPath_ReturnsUserError) {
@@ -9179,6 +9386,63 @@ TEST(JobLoader, ValidateJobSchema_PresentVideoCodec_Succeeds) {
   ASSERT_TRUE(job.ok()) << job.status().message();
   EXPECT_EQ(job.value().output().videos().videos().front().codec(),
             dailyboy::JobOutputVideo::JobOutputVideoCodecValue::H264);
+}
+
+/*!
+ * \brief Stores a quoted mjpeg codec on the Job.
+ */
+TEST(JobLoader, ValidateJobSchema_VideoCodecMjpeg_Succeeds) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_mjpeg_output_job("video_codec_mjpeg.yaml");
+
+  // Test
+  const dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  ASSERT_TRUE(schema.ok()) << schema.message();
+  ASSERT_TRUE(job.ok()) << job.status().message();
+  EXPECT_EQ(job.value().output().videos().videos().front().codec(),
+            dailyboy::JobOutputVideo::JobOutputVideoCodecValue::Mjpeg);
+}
+
+/*!
+ * \brief Stores a quoted dnxhd codec on the Job.
+ */
+TEST(JobLoader, ValidateJobSchema_VideoCodecDnxhd_Succeeds) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_dnxhd_output_job("video_codec_dnxhd.yaml");
+
+  // Test
+  const dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  ASSERT_TRUE(schema.ok()) << schema.message();
+  ASSERT_TRUE(job.ok()) << job.status().message();
+  EXPECT_EQ(job.value().output().videos().videos().front().codec(),
+            dailyboy::JobOutputVideo::JobOutputVideoCodecValue::Dnxhd);
+}
+
+/*!
+ * \brief Stores a quoted prores codec on the Job.
+ */
+TEST(JobLoader, ValidateJobSchema_VideoCodecProres_Succeeds) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_prores_job("video_codec_prores.yaml", "");
+
+  // Test
+  const dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  ASSERT_TRUE(schema.ok()) << schema.message();
+  ASSERT_TRUE(job.ok()) << job.status().message();
+  EXPECT_EQ(job.value().output().videos().videos().front().codec(),
+            dailyboy::JobOutputVideo::JobOutputVideoCodecValue::Prores);
 }
 
 /*!
@@ -9523,6 +9787,36 @@ TEST(JobLoader, ValidateJobSchema_UnsupportedH264Profile_ReturnsUserError) {
   // Test
   // Assert
   expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_182);
+}
+
+/*!
+ * \brief Rejects H.264 high422 when pix_fmt is not yuv422p.
+ */
+TEST(JobLoader, ValidateJobSchema_H264High422RequiresYuv422p_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_h264_codec_options_job("h264_high422_yuv420p.yaml",
+                                   "        profile: \"high422\"\n"
+                                   "        pix_fmt: \"yuv420p\"\n");
+
+  // Test
+  // Assert
+  expect_schema_fails_load_user_error(yaml, dailyboy::USER_ERROR_JOB_26);
+}
+
+/*!
+ * \brief Rejects H.264 yuv422p when profile is not high422.
+ */
+TEST(JobLoader, ValidateJobSchema_H264Yuv422pRequiresHigh422_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_h264_codec_options_job("h264_yuv422p_high.yaml",
+                                   "        profile: \"high\"\n"
+                                   "        pix_fmt: \"yuv422p\"\n");
+
+  // Test
+  // Assert
+  expect_schema_fails_load_user_error(yaml, dailyboy::USER_ERROR_JOB_27);
 }
 
 /*!
@@ -10999,6 +11293,26 @@ TEST(JobLoader,
                                "        display: \"passthrough\"\n"
                                "        view: \"passthrough\"\n"
                                "      path_pattern: \"\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_214);
+}
+
+/*!
+ * \brief Rejects an image sequence path_pattern that is not a quoted string.
+ */
+TEST(JobLoader,
+     ValidateJobSchema_UnquotedImageSequencePathPattern_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_image_sequence_job("unquoted_image_sequence_path_pattern.yaml",
+                               "    - id: \"archive\"\n"
+                               "      enabled: true\n"
+                               "      display_view:\n"
+                               "        display: \"passthrough\"\n"
+                               "        view: \"passthrough\"\n"
+                               "      path_pattern: /tmp/archive.%04d.png\n");
 
   // Test
   // Assert
@@ -13020,6 +13334,52 @@ TEST(JobLoader, ValidateJobSchema_PresentPlanSequenceHandles_Succeeds) {
       job.value().plans().plans().front().sequence();
   EXPECT_EQ(sequence.handle_head(), 8);
   EXPECT_EQ(sequence.handle_tail(), 4);
+}
+
+/*!
+ * \brief Rejects sequence handles that are not a map.
+ */
+TEST(JobLoader, ValidateJobSchema_PlanSequenceHandlesNotMap_ReturnsUserError) {
+  // Prepare
+  const char* plans_yaml =
+      "plans:\n"
+      "  - id: \"plate\"\n"
+      "    input_colorspace: \"ACES - ACEScg\"\n"
+      "    sequence:\n"
+      "      path: \"/tmp/plate.%04d.png\"\n"
+      "      frame_start: 1001\n"
+      "      frame_end: 1003\n"
+      "      handles: 8\n";
+  const std::filesystem::path yaml =
+      write_plan_contract_job("handles_not_map.yaml", plans_yaml);
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_100);
+}
+
+/*!
+ * \brief Rejects an unknown key under sequence handles.
+ */
+TEST(JobLoader, ValidateJobSchema_PlanHandlesUnknownKey_ReturnsUserError) {
+  // Prepare
+  const char* plans_yaml =
+      "plans:\n"
+      "  - id: \"plate\"\n"
+      "    input_colorspace: \"ACES - ACEScg\"\n"
+      "    sequence:\n"
+      "      path: \"/tmp/plate.%04d.png\"\n"
+      "      frame_start: 1001\n"
+      "      frame_end: 1003\n"
+      "      handles:\n"
+      "        head: 1\n"
+      "        middle: 1\n";
+  const std::filesystem::path yaml =
+      write_plan_contract_job("handles_unknown_key.yaml", plans_yaml);
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_40);
 }
 
 /*!

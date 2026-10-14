@@ -261,7 +261,27 @@
           "default": true,
           "description": "MOV muxer movflags +faststart."
         }
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "profile": { "const": "high422" } },
+            "required": ["profile"]
+          },
+          "then": {
+            "properties": { "pix_fmt": { "const": "yuv422p" } }
+          }
+        },
+        {
+          "if": {
+            "properties": { "pix_fmt": { "const": "yuv422p" } },
+            "required": ["pix_fmt"]
+          },
+          "then": {
+            "properties": { "profile": { "const": "high422" } }
+          }
+        }
+      ]
     },
     "dnxhdCodecOptions": {
       "type": "object",
