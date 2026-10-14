@@ -133,6 +133,7 @@ class JobOutputVideoH264 {
   };
 
   static constexpr int kDefaultCrf = 23;
+  static constexpr int kDefaultGop = 250;
 
   JobOutputVideoH264() = default;
   JobOutputVideoH264PresetValue preset() const { return preset_; }
@@ -170,7 +171,7 @@ class JobOutputVideoH264 {
   JobOutputVideoH264PresetValue preset_ = JobOutputVideoH264PresetValue::Medium;
   int crf_ = kDefaultCrf;
   int bitrate_kbps_ = 0;
-  int gop_ = 0;
+  int gop_ = kDefaultGop;
   JobOutputVideoH264PixFmtValue pix_fmt_ =
       JobOutputVideoH264PixFmtValue::Yuv420p;
   JobOutputVideoH264TuneValue tune_ = JobOutputVideoH264TuneValue::Unspecified;

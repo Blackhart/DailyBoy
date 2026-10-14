@@ -15,19 +15,19 @@ output:
         display: "passthrough"
         view: "passthrough"
       signal:
-        range: tv
-        matrix: bt709
-        primaries: bt709
-        transfer: bt709
+        range: "tv"
+        matrix: "bt709"
+        primaries: "bt709"
+        transfer: "bt709"
       path: "/tmp/dailyboy_prores_options.mov"
-      codec: prores
+      codec: "prores"
       codec_options:
-        profile: 4444
-        pix_fmt: yuv444p10
-        quant_mat: hq
+        profile: "4444"
+        pix_fmt: "yuv444p10"
+        quant_mat: "hq"
         bits_per_mb: 8000
         mbs_per_slice: 4
-        vendor: Lavc
+        vendor: "Lavc"
         faststart: false
   image_sequences: []
 plans:

@@ -15,16 +15,16 @@ output:
         display: "passthrough"
         view: "passthrough"
       signal:
-        range: tv
-        matrix: bt709
-        primaries: bt709
-        transfer: bt709
+        range: "tv"
+        matrix: "bt709"
+        primaries: "bt709"
+        transfer: "bt709"
       path: "/tmp/dailyboy_mjpeg_options.mov"
-      codec: mjpeg
+      codec: "mjpeg"
       codec_options:
         qscale: 5
-        pix_fmt: yuv420p
-        huffman: default
+        pix_fmt: "yuv420p"
+        huffman: "default"
   image_sequences: []
 plans:
   - id: "plate"

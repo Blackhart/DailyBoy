@@ -1073,6 +1073,769 @@ inline constexpr std::string_view USER_ERROR_JOB_142 =
     "plans[].timecode.drop_frame: must be a boolean (true or false).";
 
 /*!
+ * \var USER_ERROR_JOB_143
+ * \brief Message when an output video omits \c id.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_143 =
+    "output.videos[].id: missing required key. Set a quoted non-empty id.";
+
+/*!
+ * \var USER_ERROR_JOB_144
+ * \brief Message when an output video \c id is not a quoted non-empty string.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_144 =
+    "output.videos[].id: must be a quoted non-empty string (e.g. \"review\").";
+
+/*!
+ * \var USER_ERROR_JOB_145
+ * \brief Message when an output video omits \c enabled.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_145 =
+    "output.videos[].enabled: missing required key. Set true or false.";
+
+/*!
+ * \var USER_ERROR_JOB_146
+ * \brief Message when an output video \c enabled is not a boolean.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_146 =
+    "output.videos[].enabled: must be a boolean (true or false).";
+
+/*!
+ * \var USER_ERROR_JOB_147
+ * \brief Message when an output video omits \c display_view.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_147 =
+    "output.videos[].display_view: missing required key. Add a display_view "
+    "block with display and view.";
+
+/*!
+ * \var USER_ERROR_JOB_148
+ * \brief Message when an output video omits \c display_view.display.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_148 =
+    "output.videos[].display_view.display: missing required key. Set a quoted "
+    "OCIO display name.";
+
+/*!
+ * \var USER_ERROR_JOB_149
+ * \brief Message when an output video \c display is not a quoted non-empty
+ *        string.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_149 =
+    "output.videos[].display_view.display: must be a quoted non-empty string "
+    "(e.g. \"Rec.1886 Rec.709 - Display\").";
+
+/*!
+ * \var USER_ERROR_JOB_150
+ * \brief Message when an output video omits \c display_view.view.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_150 =
+    "output.videos[].display_view.view: missing required key. Set a quoted "
+    "OCIO view name.";
+
+/*!
+ * \var USER_ERROR_JOB_151
+ * \brief Message when an output video \c view is not a quoted non-empty string.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_151 =
+    "output.videos[].display_view.view: must be a quoted non-empty string "
+    "(e.g. \"ACES 2.0 - SDR 100 nits (Rec.709)\").";
+
+/*!
+ * \var USER_ERROR_JOB_153
+ * \brief Message when an output video signal omits \c range.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_153 =
+    "output.videos[].signal.range: missing required key. Set \"tv\" or "
+    "\"pc\".";
+
+/*!
+ * \var USER_ERROR_JOB_154
+ * \brief Message when an output video \c signal.range is not a quoted string.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_154 =
+    "output.videos[].signal.range: must be a quoted string (\"tv\" or "
+    "\"pc\").";
+
+/*!
+ * \var USER_ERROR_JOB_155
+ * \brief Message when an output video \c signal.range is not tv or pc.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_155 =
+    "output.videos[].signal.range: unsupported value. Use \"tv\" or \"pc\".";
+
+/*!
+ * \var USER_ERROR_JOB_156
+ * \brief Message when an output video signal omits \c matrix.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_156 =
+    "output.videos[].signal.matrix: missing required key. Set \"bt709\".";
+
+/*!
+ * \var USER_ERROR_JOB_157
+ * \brief Message when an output video \c signal.matrix is not a quoted string.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_157 =
+    "output.videos[].signal.matrix: must be a quoted string (\"bt709\").";
+
+/*!
+ * \var USER_ERROR_JOB_158
+ * \brief Message when an output video \c signal.matrix is not bt709.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_158 =
+    "output.videos[].signal.matrix: unsupported value. Use \"bt709\".";
+
+/*!
+ * \var USER_ERROR_JOB_159
+ * \brief Message when an output video signal omits \c primaries.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_159 =
+    "output.videos[].signal.primaries: missing required key. Set \"bt709\".";
+
+/*!
+ * \var USER_ERROR_JOB_160
+ * \brief Message when an output video \c signal.primaries is not a quoted
+ *        string.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_160 =
+    "output.videos[].signal.primaries: must be a quoted string (\"bt709\").";
+
+/*!
+ * \var USER_ERROR_JOB_161
+ * \brief Message when an output video \c signal.primaries is not bt709.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_161 =
+    "output.videos[].signal.primaries: unsupported value. Use \"bt709\".";
+
+/*!
+ * \var USER_ERROR_JOB_162
+ * \brief Message when an output video signal omits \c transfer.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_162 =
+    "output.videos[].signal.transfer: missing required key. Set \"bt709\".";
+
+/*!
+ * \var USER_ERROR_JOB_163
+ * \brief Message when an output video \c signal.transfer is not a quoted
+ *        string.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_163 =
+    "output.videos[].signal.transfer: must be a quoted string (\"bt709\").";
+
+/*!
+ * \var USER_ERROR_JOB_164
+ * \brief Message when an output video \c signal.transfer is not bt709.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_164 =
+    "output.videos[].signal.transfer: unsupported value. Use \"bt709\".";
+
+/*!
+ * \var USER_ERROR_JOB_165
+ * \brief Message when an output video omits \c path.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_165 =
+    "output.videos[].path: missing required key. Set a quoted .mov path.";
+
+/*!
+ * \var USER_ERROR_JOB_166
+ * \brief Message when an output video \c path is not a quoted non-empty string.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_166 =
+    "output.videos[].path: must be a quoted non-empty string (e.g. "
+    "\"/out/review.mov\").";
+
+/*!
+ * \var USER_ERROR_JOB_167
+ * \brief Message when an output video \c path does not end with \c .mov.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_167 =
+    "output.videos[].path: must end with .mov (case-insensitive) after "
+    "resolving tokens.";
+
+/*!
+ * \var USER_ERROR_JOB_168
+ * \brief Message when an output video \c fps is not an integer \c >= 1.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_168 =
+    "output.videos[].fps: must be an unquoted integer >= 1 (e.g. 24).";
+
+/*!
+ * \var USER_ERROR_JOB_169
+ * \brief Message when an output video omits \c codec.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_169 =
+    "output.videos[].codec: missing required key. Set \"h264\", \"mjpeg\", "
+    "\"dnxhd\", or \"prores\".";
+
+/*!
+ * \var USER_ERROR_JOB_170
+ * \brief Message when an output video \c codec is not a quoted non-empty
+ *        string.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_170 =
+    "output.videos[].codec: must be a quoted non-empty string (e.g. "
+    "\"h264\").";
+
+/*!
+ * \var USER_ERROR_JOB_171
+ * \brief Message when an output video \c codec is not a supported encoder.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_171 =
+    "output.videos[].codec: unsupported value. Use \"h264\", \"mjpeg\", "
+    "\"dnxhd\", or \"prores\".";
+
+/*!
+ * \var USER_ERROR_JOB_172
+ * \brief Message when H.264 \c preset is not a quoted string.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_172 =
+    "output.videos[].codec_options.preset: must be a quoted string (e.g. "
+    "\"medium\").";
+
+/*!
+ * \var USER_ERROR_JOB_173
+ * \brief Message when H.264 \c preset is not a supported x264 preset.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_173 =
+    "output.videos[].codec_options.preset: unsupported value. Use "
+    "\"ultrafast\", \"superfast\", \"veryfast\", \"faster\", \"fast\", "
+    "\"medium\", or \"slow\".";
+
+/*!
+ * \var USER_ERROR_JOB_174
+ * \brief Message when H.264 \c crf is not a number in \c [0, 51].
+ */
+inline constexpr std::string_view USER_ERROR_JOB_174 =
+    "output.videos[].codec_options.crf: must be a number in [0, 51] (e.g. "
+    "23).";
+
+/*!
+ * \var USER_ERROR_JOB_175
+ * \brief Message when H.264 \c bitrate_kbps is not an integer \c >= 1.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_175 =
+    "output.videos[].codec_options.bitrate_kbps: must be an unquoted integer "
+    ">= 1 (e.g. 8000).";
+
+/*!
+ * \var USER_ERROR_JOB_176
+ * \brief Message when H.264 \c gop is not an integer \c >= 1.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_176 =
+    "output.videos[].codec_options.gop: must be an unquoted integer >= 1 "
+    "(e.g. 250).";
+
+/*!
+ * \var USER_ERROR_JOB_177
+ * \brief Message when H.264 \c pix_fmt is not a quoted string.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_177 =
+    "output.videos[].codec_options.pix_fmt: must be a quoted string "
+    "(\"yuv420p\" or \"yuv422p\").";
+
+/*!
+ * \var USER_ERROR_JOB_178
+ * \brief Message when H.264 \c pix_fmt is not yuv420p or yuv422p.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_178 =
+    "output.videos[].codec_options.pix_fmt: unsupported value. Use "
+    "\"yuv420p\" or \"yuv422p\".";
+
+/*!
+ * \var USER_ERROR_JOB_179
+ * \brief Message when H.264 \c tune is not a quoted string.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_179 =
+    "output.videos[].codec_options.tune: must be a quoted string (e.g. "
+    "\"film\").";
+
+/*!
+ * \var USER_ERROR_JOB_180
+ * \brief Message when H.264 \c tune is not a supported x264 tune.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_180 =
+    "output.videos[].codec_options.tune: unsupported value. Use \"film\", "
+    "\"animation\", \"grain\", \"stillimage\", \"fastdecode\", or "
+    "\"zerolatency\".";
+
+/*!
+ * \var USER_ERROR_JOB_181
+ * \brief Message when H.264 \c profile is not a quoted string.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_181 =
+    "output.videos[].codec_options.profile: must be a quoted string (e.g. "
+    "\"high\").";
+
+/*!
+ * \var USER_ERROR_JOB_182
+ * \brief Message when H.264 \c profile is not a supported profile.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_182 =
+    "output.videos[].codec_options.profile: unsupported value. Use "
+    "\"baseline\", \"main\", \"high\", or \"high422\".";
+
+/*!
+ * \var USER_ERROR_JOB_184
+ * \brief Message when H.264 \c level is not a supported level.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_184 =
+    "output.videos[].codec_options.level: unsupported value. Use 3.0, 3.1, "
+    "4.0, 4.1, 4.2, 5.0, 5.1, or 5.2.";
+
+/*!
+ * \var USER_ERROR_JOB_185
+ * \brief Message when \c codec_options.faststart is not a boolean.
+ *
+ * Shared by H.264, MJPEG, DNxHD, and ProRes.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_185 =
+    "output.videos[].codec_options.faststart: must be a boolean (true or "
+    "false).";
+
+/*!
+ * \var USER_ERROR_JOB_186
+ * \brief Message when MJPEG \c pix_fmt is not a quoted string.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_186 =
+    "output.videos[].codec_options.pix_fmt: must be a quoted string "
+    "(\"yuv420p\", \"yuv422p\", or \"yuv444p\").";
+
+/*!
+ * \var USER_ERROR_JOB_187
+ * \brief Message when MJPEG \c pix_fmt is not a supported value.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_187 =
+    "output.videos[].codec_options.pix_fmt: unsupported value. Use "
+    "\"yuv420p\", \"yuv422p\", or \"yuv444p\".";
+
+/*!
+ * \var USER_ERROR_JOB_188
+ * \brief Message when MJPEG \c huffman is not a quoted string.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_188 =
+    "output.videos[].codec_options.huffman: must be a quoted string "
+    "(\"default\" or \"optimal\").";
+
+/*!
+ * \var USER_ERROR_JOB_189
+ * \brief Message when MJPEG \c huffman is not default or optimal.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_189 =
+    "output.videos[].codec_options.huffman: unsupported value. Use "
+    "\"default\" or \"optimal\".";
+
+/*!
+ * \var USER_ERROR_JOB_190
+ * \brief Message when DNxHD \c profile is not a quoted string.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_190 =
+    "output.videos[].codec_options.profile: must be a quoted string (e.g. "
+    "\"dnxhr_hq\").";
+
+/*!
+ * \var USER_ERROR_JOB_191
+ * \brief Message when DNxHD \c profile is not a supported value.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_191 =
+    "output.videos[].codec_options.profile: unsupported value. Use "
+    "\"dnxhd\", \"dnxhr_lb\", \"dnxhr_sq\", \"dnxhr_hq\", \"dnxhr_hqx\", or "
+    "\"dnxhr_444\".";
+
+/*!
+ * \var USER_ERROR_JOB_192
+ * \brief Message when DNxHD \c pix_fmt is not a quoted string.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_192 =
+    "output.videos[].codec_options.pix_fmt: must be a quoted string "
+    "(\"yuv422p\", \"yuv422p10\", or \"yuv444p10\").";
+
+/*!
+ * \var USER_ERROR_JOB_193
+ * \brief Message when DNxHD \c pix_fmt is not a supported value.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_193 =
+    "output.videos[].codec_options.pix_fmt: unsupported value. Use "
+    "\"yuv422p\", \"yuv422p10\", or \"yuv444p10\".";
+
+/*!
+ * \var USER_ERROR_JOB_194
+ * \brief Message when DNxHD \c interlaced is not a boolean.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_194 =
+    "output.videos[].codec_options.interlaced: must be a boolean (true or "
+    "false).";
+
+/*!
+ * \var USER_ERROR_JOB_195
+ * \brief Message when DNxHD \c nitris_compat is not a boolean.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_195 =
+    "output.videos[].codec_options.nitris_compat: must be a boolean (true or "
+    "false).";
+
+/*!
+ * \var USER_ERROR_JOB_196
+ * \brief Message when DNxHD uses \c signal.range pc.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_196 =
+    "output.videos[].signal.range: \"pc\" is not allowed with codec "
+    "\"dnxhd\". Use \"tv\".";
+
+/*!
+ * \var USER_ERROR_JOB_197
+ * \brief Message when ProRes \c profile is not a quoted string (or 4444).
+ */
+inline constexpr std::string_view USER_ERROR_JOB_197 =
+    "output.videos[].codec_options.profile: must be a quoted string (e.g. "
+    "\"hq\") or the unquoted integer 4444.";
+
+/*!
+ * \var USER_ERROR_JOB_198
+ * \brief Message when ProRes \c profile is not a supported value.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_198 =
+    "output.videos[].codec_options.profile: unsupported value. Use "
+    "\"proxy\", \"lt\", \"standard\", \"hq\", \"4444\", or \"4444xq\".";
+
+/*!
+ * \var USER_ERROR_JOB_199
+ * \brief Message when ProRes \c pix_fmt is not a quoted string.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_199 =
+    "output.videos[].codec_options.pix_fmt: must be a quoted string "
+    "(\"yuv422p10\" or \"yuv444p10\").";
+
+/*!
+ * \var USER_ERROR_JOB_200
+ * \brief Message when ProRes \c pix_fmt is not a supported value.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_200 =
+    "output.videos[].codec_options.pix_fmt: unsupported value. Use "
+    "\"yuv422p10\" or \"yuv444p10\".";
+
+/*!
+ * \var USER_ERROR_JOB_201
+ * \brief Message when ProRes \c quant_mat is not a quoted string.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_201 =
+    "output.videos[].codec_options.quant_mat: must be a quoted string (e.g. "
+    "\"auto\").";
+
+/*!
+ * \var USER_ERROR_JOB_202
+ * \brief Message when ProRes \c quant_mat is not a supported value.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_202 =
+    "output.videos[].codec_options.quant_mat: unsupported value. Use "
+    "\"auto\", \"proxy\", \"lt\", \"standard\", \"hq\", or \"default\".";
+
+/*!
+ * \var USER_ERROR_JOB_203
+ * \brief Message when ProRes \c vendor is not a quoted string.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_203 =
+    "output.videos[].codec_options.vendor: must be a quoted string of exactly "
+    "four ASCII characters (e.g. \"apl0\").";
+
+/*!
+ * \var USER_ERROR_JOB_204
+ * \brief Message when an image sequence omits \c id.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_204 =
+    "output.image_sequences[].id: missing required key. Set a quoted "
+    "non-empty id.";
+
+/*!
+ * \var USER_ERROR_JOB_205
+ * \brief Message when an image sequence \c id is not a quoted non-empty string.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_205 =
+    "output.image_sequences[].id: must be a quoted non-empty string (e.g. "
+    "\"archive\").";
+
+/*!
+ * \var USER_ERROR_JOB_206
+ * \brief Message when an image sequence omits \c enabled.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_206 =
+    "output.image_sequences[].enabled: missing required key. Set true or "
+    "false.";
+
+/*!
+ * \var USER_ERROR_JOB_207
+ * \brief Message when an image sequence \c enabled is not a boolean.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_207 =
+    "output.image_sequences[].enabled: must be a boolean (true or false).";
+
+/*!
+ * \var USER_ERROR_JOB_208
+ * \brief Message when an image sequence omits \c display_view.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_208 =
+    "output.image_sequences[].display_view: missing required key. Add a "
+    "display_view block with display and view.";
+
+/*!
+ * \var USER_ERROR_JOB_209
+ * \brief Message when an image sequence omits \c display_view.display.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_209 =
+    "output.image_sequences[].display_view.display: missing required key. Set "
+    "a quoted OCIO display name.";
+
+/*!
+ * \var USER_ERROR_JOB_210
+ * \brief Message when an image sequence \c display is not a quoted non-empty
+ *        string.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_210 =
+    "output.image_sequences[].display_view.display: must be a quoted "
+    "non-empty string (e.g. \"Rec.1886 Rec.709 - Display\").";
+
+/*!
+ * \var USER_ERROR_JOB_211
+ * \brief Message when an image sequence omits \c display_view.view.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_211 =
+    "output.image_sequences[].display_view.view: missing required key. Set a "
+    "quoted OCIO view name.";
+
+/*!
+ * \var USER_ERROR_JOB_212
+ * \brief Message when an image sequence \c view is not a quoted non-empty
+ *        string.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_212 =
+    "output.image_sequences[].display_view.view: must be a quoted non-empty "
+    "string (e.g. \"ACES 2.0 - SDR 100 nits (Rec.709)\").";
+
+/*!
+ * \var USER_ERROR_JOB_213
+ * \brief Message when an image sequence omits \c path_pattern.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_213 =
+    "output.image_sequences[].path_pattern: missing required key. Set a "
+    "quoted path pattern.";
+
+/*!
+ * \var USER_ERROR_JOB_214
+ * \brief Message when an image sequence \c path_pattern is not a quoted
+ *        non-empty string.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_214 =
+    "output.image_sequences[].path_pattern: must be a quoted non-empty string "
+    "(e.g. \"/out/plate.####.exr\").";
+
+/*!
+ * \var USER_ERROR_JOB_215
+ * \brief Message when \c format_options is an empty map.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_215 =
+    "output.image_sequences[].format_options: must not be an empty map. Omit "
+    "the key or set at least one option.";
+
+/*!
+ * \var USER_ERROR_JOB_216
+ * \brief Message when PNG \c bit_depth is not 8 or 16.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_216 =
+    "output.image_sequences[].format_options.bit_depth: must be 8 or 16.";
+
+/*!
+ * \var USER_ERROR_JOB_217
+ * \brief Message when PNG \c compression is not a quoted string.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_217 =
+    "output.image_sequences[].format_options.compression: must be a quoted "
+    "string (e.g. \"default\").";
+
+/*!
+ * \var USER_ERROR_JOB_218
+ * \brief Message when PNG \c compression is not a supported value.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_218 =
+    "output.image_sequences[].format_options.compression: unsupported value. "
+    "Use \"default\", \"filtered\", \"huffman\", \"rle\", \"fixed\", "
+    "\"pngfast\", or \"none\".";
+
+/*!
+ * \var USER_ERROR_JOB_219
+ * \brief Message when PNG \c compression_level is outside 0..6.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_219 =
+    "output.image_sequences[].format_options.compression_level: must be an "
+    "unquoted integer in [0, 6].";
+
+/*!
+ * \var USER_ERROR_JOB_220
+ * \brief Message when PNG \c filter is outside 0..4.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_220 =
+    "output.image_sequences[].format_options.filter: must be an unquoted "
+    "integer in [0, 4].";
+
+/*!
+ * \var USER_ERROR_JOB_221
+ * \brief Message when JPEG \c bit_depth is not 8.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_221 =
+    "output.image_sequences[].format_options.bit_depth: must be 8.";
+
+/*!
+ * \var USER_ERROR_JOB_222
+ * \brief Message when JPEG \c compression_level is outside 1..100.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_222 =
+    "output.image_sequences[].format_options.compression_level: must be an "
+    "unquoted integer in [1, 100].";
+
+/*!
+ * \var USER_ERROR_JOB_223
+ * \brief Message when JPEG \c subsampling is not a quoted string.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_223 =
+    "output.image_sequences[].format_options.subsampling: must be a quoted "
+    "string (e.g. \"4:2:0\").";
+
+/*!
+ * \var USER_ERROR_JOB_224
+ * \brief Message when JPEG \c subsampling is not a supported value.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_224 =
+    "output.image_sequences[].format_options.subsampling: unsupported value. "
+    "Use \"4:4:4\", \"4:2:2\", \"4:2:0\", or \"4:1:1\".";
+
+/*!
+ * \var USER_ERROR_JOB_225
+ * \brief Message when JPEG \c progressive is not a boolean.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_225 =
+    "output.image_sequences[].format_options.progressive: must be a boolean "
+    "(true or false).";
+
+/*!
+ * \var USER_ERROR_JOB_226
+ * \brief Message when TIFF \c bit_depth is not a supported value.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_226 =
+    "output.image_sequences[].format_options.bit_depth: unsupported value. "
+    "Use 1, 2, 4, 6, 8, 10, 12, 14, 16, 24, 32, 64, \"h16\", or \"f32\".";
+
+/*!
+ * \var USER_ERROR_JOB_227
+ * \brief Message when TIFF \c bigtiff is not a boolean.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_227 =
+    "output.image_sequences[].format_options.bigtiff: must be a boolean (true "
+    "or false).";
+
+/*!
+ * \var USER_ERROR_JOB_228
+ * \brief Message when TIFF \c compression is not a quoted string.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_228 =
+    "output.image_sequences[].format_options.compression: must be a quoted "
+    "string (e.g. \"zip\").";
+
+/*!
+ * \var USER_ERROR_JOB_229
+ * \brief Message when TIFF \c compression is not a supported value.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_229 =
+    "output.image_sequences[].format_options.compression: unsupported value. "
+    "Use \"none\", \"lzw\", \"zip\", \"ccittrle\", or \"packbits\".";
+
+/*!
+ * \var USER_ERROR_JOB_230
+ * \brief Message when TIFF \c compression_level is outside 1..9.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_230 =
+    "output.image_sequences[].format_options.compression_level: must be an "
+    "unquoted integer in [1, 9].";
+
+/*!
+ * \var USER_ERROR_JOB_231
+ * \brief Message when EXR \c bit_depth is not a quoted string.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_231 =
+    "output.image_sequences[].format_options.bit_depth: must be a quoted "
+    "string (\"h16\" or \"f32\").";
+
+/*!
+ * \var USER_ERROR_JOB_232
+ * \brief Message when EXR \c bit_depth is not h16 or f32.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_232 =
+    "output.image_sequences[].format_options.bit_depth: unsupported value. "
+    "Use \"h16\" or \"f32\".";
+
+/*!
+ * \var USER_ERROR_JOB_233
+ * \brief Message when EXR \c compression is not a quoted string.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_233 =
+    "output.image_sequences[].format_options.compression: must be a quoted "
+    "string (e.g. \"zip\").";
+
+/*!
+ * \var USER_ERROR_JOB_234
+ * \brief Message when EXR \c compression is not a supported value.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_234 =
+    "output.image_sequences[].format_options.compression: unsupported value. "
+    "Use \"none\", \"rle\", \"zips\", \"zip\", \"piz\", \"pxr24\", \"b44\", "
+    "\"b44a\", \"dwaa\", or \"dwab\".";
+
+/*!
+ * \var USER_ERROR_JOB_235
+ * \brief Message when EXR \c compression_level is invalid for zip/zips.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_235 =
+    "output.image_sequences[].format_options.compression_level: must be an "
+    "unquoted integer in [1, 9] for zip/zips.";
+
+/*!
+ * \var USER_ERROR_JOB_236
+ * \brief Message when EXR \c compression_level is negative for dwaa/dwab.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_236 =
+    "output.image_sequences[].format_options.compression_level: must be an "
+    "unquoted integer >= 0 for dwaa/dwab.";
+
+/*!
+ * \var USER_ERROR_JOB_237
+ * \brief Message when HEIF \c bit_depth is not 8.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_237 =
+    "output.image_sequences[].format_options.bit_depth: must be 8.";
+
+/*!
+ * \var USER_ERROR_JOB_238
+ * \brief Message when HEIF \c compression is not a quoted string.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_238 =
+    "output.image_sequences[].format_options.compression: must be a quoted "
+    "string (\"heic\" or \"avif\").";
+
+/*!
+ * \var USER_ERROR_JOB_239
+ * \brief Message when HEIF \c compression is not heic or avif.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_239 =
+    "output.image_sequences[].format_options.compression: unsupported value. "
+    "Use \"heic\" or \"avif\" (\"hevc\" is accepted as an alias for "
+    "\"heic\").";
+
+/*!
+ * \var USER_ERROR_JOB_240
+ * \brief Message when HEIF \c compression_level is outside 0..100.
+ */
+inline constexpr std::string_view USER_ERROR_JOB_240 =
+    "output.image_sequences[].format_options.compression_level: must be an "
+    "unquoted integer in [0, 100].";
+
+/*!
  * \var INTERNAL_ERROR_JOB_1
  * \brief Message when schema validation is called with an empty path.
  */

@@ -17,6 +17,7 @@
 #include "error/job.hpp"
 #include "job/parse_colorimetry.hpp"
 #include "job/parse_layout.hpp"
+#include "job/parse_output.hpp"
 #include "job/parse_plans.hpp"
 #include "job/yaml_read.hpp"
 #include "yaml/yml_loader.hpp"
@@ -125,6 +126,71 @@ bool is_plan_yaml_field(const std::string& yaml_path, std::string_view field) {
 }
 
 /*!
+ * \brief True when \a yaml_path is an \c output.videos list item.
+ */
+bool is_output_video_item_path(const std::string& yaml_path) {
+  static const std::regex kVideoItem(R"(^output\.videos\[\d+\]$)");
+  return std::regex_match(yaml_path, kVideoItem);
+}
+
+/*!
+ * \brief True when \a yaml_path is \c output.videos[N].\a field.
+ */
+bool is_output_video_yaml_field(const std::string& yaml_path,
+                                std::string_view field) {
+  const std::regex re(std::string(R"(^output\.videos\[\d+\]\.)") +
+                      std::string(field) + "$");
+  return std::regex_match(yaml_path, re);
+}
+
+/*!
+ * \brief True when \a yaml_path is an \c output.image_sequences list item.
+ */
+bool is_output_image_sequence_item_path(const std::string& yaml_path) {
+  static const std::regex kItem(R"(^output\.image_sequences\[\d+\]$)");
+  return std::regex_match(yaml_path, kItem);
+}
+
+/*!
+ * \brief True when \a yaml_path is \c output.image_sequences[N].\a field.
+ */
+bool is_output_image_sequence_yaml_field(const std::string& yaml_path,
+                                         std::string_view field) {
+  const std::regex re(std::string(R"(^output\.image_sequences\[\d+\]\.)") +
+                      std::string(field) + "$");
+  return std::regex_match(yaml_path, re);
+}
+
+/*!
+ * \brief Codec string for \c output.videos[N] from a nested field path.
+ */
+std::string output_video_codec_at(const nlohmann::json& root,
+                                  const std::string& yaml_path) {
+  static const std::regex kVideo(R"(^output\.videos\[(\d+)\](?:\.|$))");
+  std::smatch match;
+  if (!std::regex_search(yaml_path, match, kVideo) || !root.is_object()) {
+    return {};
+  }
+  const auto output = root.find("output");
+  if (output == root.end() || !output->is_object()) {
+    return {};
+  }
+  const auto videos = output->find("videos");
+  if (videos == output->end() || !videos->is_array()) {
+    return {};
+  }
+  const std::size_t index = static_cast<std::size_t>(std::stoul(match[1]));
+  if (index >= videos->size() || !(*videos)[index].is_object()) {
+    return {};
+  }
+  const auto codec = (*videos)[index].find("codec");
+  if (codec == (*videos)[index].end() || !codec->is_string()) {
+    return {};
+  }
+  return codec->get<std::string>();
+}
+
+/*!
  * \brief True when \a yaml_path is a \c layout.image.min_margin_px side.
  */
 bool is_layout_image_margin_side(const std::string& yaml_path) {
@@ -141,6 +207,13 @@ Status validate_output_contract(const YAML::Node& job_root) {
   const YAML::Node output = job_root["output"];
   if (!output || !output.IsMap()) {
     return Status::Ok();
+  }
+
+  const bool has_videos_key = output["videos"] && !output["videos"].IsNull();
+  const bool has_sequences_key =
+      output["image_sequences"] && !output["image_sequences"].IsNull();
+  if (!has_videos_key && !has_sequences_key) {
+    return Status::User(with_job_error(USER_ERROR_JOB_39));
   }
 
   auto has_enabled = [](const YAML::Node& seq) -> bool {
@@ -529,20 +602,117 @@ std::string missing_plan_option_key_error(const std::string& path,
   return {};
 }
 
+/*!
+ * \brief Message for a missing \c output.videos[N] key.
+ */
+std::string missing_output_video_key_error(const std::string& path,
+                                           const std::string& key) {
+  if (!is_output_video_item_path(path)) {
+    return {};
+  }
+  static const std::map<std::string, std::string_view> kKeys = {
+      {"id", USER_ERROR_JOB_143},           {"enabled", USER_ERROR_JOB_145},
+      {"display_view", USER_ERROR_JOB_147}, {"signal", USER_ERROR_JOB_92},
+      {"path", USER_ERROR_JOB_165},         {"codec", USER_ERROR_JOB_169}};
+  const auto it = kKeys.find(key);
+  return it == kKeys.end() ? std::string() : with_job_error(it->second);
+}
+
+/*!
+ * \brief Message for a missing \c output.videos[N].display_view key.
+ */
+std::string missing_output_video_display_view_key_error(
+    const std::string& path, const std::string& key) {
+  if (!is_output_video_yaml_field(path, "display_view")) {
+    return {};
+  }
+  if (key == "display") {
+    return with_job_error(USER_ERROR_JOB_148);
+  }
+  if (key == "view") {
+    return with_job_error(USER_ERROR_JOB_150);
+  }
+  return {};
+}
+
+/*!
+ * \brief Message for a missing \c output.videos[N].signal key.
+ */
+std::string missing_output_video_signal_key_error(const std::string& path,
+                                                  const std::string& key) {
+  if (!is_output_video_yaml_field(path, "signal")) {
+    return {};
+  }
+  static const std::map<std::string, std::string_view> kKeys = {
+      {"range", USER_ERROR_JOB_153},
+      {"matrix", USER_ERROR_JOB_156},
+      {"primaries", USER_ERROR_JOB_159},
+      {"transfer", USER_ERROR_JOB_162}};
+  const auto it = kKeys.find(key);
+  return it == kKeys.end() ? std::string() : with_job_error(it->second);
+}
+
+/*!
+ * \brief Message for a missing \c output.image_sequences[N] key.
+ */
+std::string missing_output_image_sequence_key_error(const std::string& path,
+                                                    const std::string& key) {
+  if (!is_output_image_sequence_item_path(path)) {
+    return {};
+  }
+  static const std::map<std::string, std::string_view> kKeys = {
+      {"id", USER_ERROR_JOB_204},
+      {"enabled", USER_ERROR_JOB_206},
+      {"display_view", USER_ERROR_JOB_208},
+      {"path_pattern", USER_ERROR_JOB_213}};
+  const auto it = kKeys.find(key);
+  return it == kKeys.end() ? std::string() : with_job_error(it->second);
+}
+
+/*!
+ * \brief Message for a missing \c output.image_sequences[N].display_view key.
+ */
+std::string missing_output_image_sequence_display_view_key_error(
+    const std::string& path, const std::string& key) {
+  if (!is_output_image_sequence_yaml_field(path, "display_view")) {
+    return {};
+  }
+  if (key == "display") {
+    return with_job_error(USER_ERROR_JOB_209);
+  }
+  if (key == "view") {
+    return with_job_error(USER_ERROR_JOB_211);
+  }
+  return {};
+}
+
 std::string missing_required_key_error(const std::string& path,
                                        const std::string& key) {
   using Resolver = std::string (*)(const std::string&, const std::string&);
   static constexpr Resolver kResolvers[] = {
-      &missing_named_key_error,      &missing_layout_key_error,
-      &missing_burn_in_key_error,    &missing_slate_key_error,
-      &missing_slate_line_key_error, &missing_text_overlay_key_error,
-      &missing_plan_key_error,       &missing_plan_sequence_key_error,
-      &missing_plan_option_key_error};
+      &missing_named_key_error,
+      &missing_layout_key_error,
+      &missing_burn_in_key_error,
+      &missing_slate_key_error,
+      &missing_slate_line_key_error,
+      &missing_text_overlay_key_error,
+      &missing_plan_key_error,
+      &missing_plan_sequence_key_error,
+      &missing_plan_option_key_error,
+      &missing_output_video_key_error,
+      &missing_output_video_display_view_key_error,
+      &missing_output_video_signal_key_error,
+      &missing_output_image_sequence_key_error,
+      &missing_output_image_sequence_display_view_key_error};
   for (Resolver resolve : kResolvers) {
     const std::string message = resolve(path, key);
     if (!message.empty()) {
       return message;
     }
+  }
+  if (key == "bitrate_kbps" &&
+      is_output_video_yaml_field(path, "codec_options")) {
+    return with_job_error(USER_ERROR_JOB_31);
   }
   return with_job_error(USER_ERROR_JOB_11, path + " '" + key + "'.");
 }
@@ -678,6 +848,9 @@ std::string property_count_error(const std::string& yaml_path,
   if (yaml_path == "color.context") {
     return with_job_error(USER_ERROR_JOB_51);
   }
+  if (is_output_image_sequence_yaml_field(yaml_path, "format_options")) {
+    return with_job_error(USER_ERROR_JOB_215);
+  }
   return {};
 }
 
@@ -781,6 +954,36 @@ std::string plan_below_minimum_error(const std::string& yaml_path,
 }
 
 /*!
+ * \brief Message for an \c output.videos field below its minimum, or empty.
+ */
+std::string output_video_below_minimum_error(const std::string& yaml_path,
+                                             const nlohmann::json& instance) {
+  const std::string detail = got_detail(yaml_path, instance);
+  if (is_output_video_yaml_field(yaml_path, "fps")) {
+    return with_job_error(USER_ERROR_JOB_168, detail);
+  }
+  if (is_output_video_yaml_field(yaml_path, "codec_options.crf")) {
+    return with_job_error(USER_ERROR_JOB_174, detail);
+  }
+  if (is_output_video_yaml_field(yaml_path, "codec_options.bitrate_kbps")) {
+    return with_job_error(USER_ERROR_JOB_175, detail);
+  }
+  if (is_output_video_yaml_field(yaml_path, "codec_options.gop")) {
+    return with_job_error(USER_ERROR_JOB_176, detail);
+  }
+  if (is_output_video_yaml_field(yaml_path, "codec_options.qscale")) {
+    return with_job_error(USER_ERROR_JOB_29, detail);
+  }
+  if (is_output_video_yaml_field(yaml_path, "codec_options.bits_per_mb")) {
+    return with_job_error(USER_ERROR_JOB_98, detail);
+  }
+  if (is_output_video_yaml_field(yaml_path, "codec_options.mbs_per_slice")) {
+    return with_job_error(USER_ERROR_JOB_99, detail);
+  }
+  return {};
+}
+
+/*!
  * \brief Message for any field below its schema minimum, or empty.
  */
 std::string below_minimum_error(const std::string& yaml_path,
@@ -791,6 +994,9 @@ std::string below_minimum_error(const std::string& yaml_path,
   }
   if (message.empty()) {
     message = plan_below_minimum_error(yaml_path, instance);
+  }
+  if (message.empty()) {
+    message = output_video_below_minimum_error(yaml_path, instance);
   }
   return message;
 }
@@ -806,6 +1012,18 @@ std::string exceeds_maximum_error(const std::string& yaml_path,
   }
   if (is_burn_in_font_color_channel(yaml_path)) {
     return with_job_error(USER_ERROR_JOB_91, detail);
+  }
+  if (is_output_video_yaml_field(yaml_path, "codec_options.crf")) {
+    return with_job_error(USER_ERROR_JOB_174, detail);
+  }
+  if (is_output_video_yaml_field(yaml_path, "codec_options.qscale")) {
+    return with_job_error(USER_ERROR_JOB_29, detail);
+  }
+  if (is_output_video_yaml_field(yaml_path, "codec_options.bits_per_mb")) {
+    return with_job_error(USER_ERROR_JOB_98, detail);
+  }
+  if (is_output_video_yaml_field(yaml_path, "codec_options.mbs_per_slice")) {
+    return with_job_error(USER_ERROR_JOB_99, detail);
   }
   return burn_in_box_range_error(yaml_path, detail);
 }
@@ -943,28 +1161,217 @@ std::string plan_type_error(const std::string& yaml_path,
 }
 
 /*!
+ * \brief Type message for codec-specific \c codec_options fields, or empty.
+ */
+std::string codec_options_type_error(const std::string& yaml_path,
+                                     const std::string& codec,
+                                     const std::string& detail) {
+  if (is_output_video_yaml_field(yaml_path, "codec_options.qscale")) {
+    return with_job_error(USER_ERROR_JOB_29, detail);
+  }
+  if (is_output_video_yaml_field(yaml_path, "codec_options.huffman")) {
+    return with_job_error(USER_ERROR_JOB_188, detail);
+  }
+  if (is_output_video_yaml_field(yaml_path, "codec_options.interlaced")) {
+    return with_job_error(USER_ERROR_JOB_194, detail);
+  }
+  if (is_output_video_yaml_field(yaml_path, "codec_options.nitris_compat")) {
+    return with_job_error(USER_ERROR_JOB_195, detail);
+  }
+  if (is_output_video_yaml_field(yaml_path, "codec_options.quant_mat")) {
+    return with_job_error(USER_ERROR_JOB_201, detail);
+  }
+  if (is_output_video_yaml_field(yaml_path, "codec_options.bits_per_mb")) {
+    return with_job_error(USER_ERROR_JOB_98, detail);
+  }
+  if (is_output_video_yaml_field(yaml_path, "codec_options.mbs_per_slice")) {
+    return with_job_error(USER_ERROR_JOB_99, detail);
+  }
+  if (is_output_video_yaml_field(yaml_path, "codec_options.vendor")) {
+    return with_job_error(USER_ERROR_JOB_203, detail);
+  }
+  if (is_output_video_yaml_field(yaml_path, "codec_options.faststart")) {
+    return with_job_error(USER_ERROR_JOB_185, detail);
+  }
+  if (is_output_video_yaml_field(yaml_path, "codec_options.pix_fmt")) {
+    if (codec == "mjpeg") {
+      return with_job_error(USER_ERROR_JOB_186, detail);
+    }
+    if (codec == "dnxhd") {
+      return with_job_error(USER_ERROR_JOB_192, detail);
+    }
+    if (codec == "prores") {
+      return with_job_error(USER_ERROR_JOB_199, detail);
+    }
+    return with_job_error(USER_ERROR_JOB_177, detail);
+  }
+  if (is_output_video_yaml_field(yaml_path, "codec_options.profile")) {
+    if (codec == "dnxhd") {
+      return with_job_error(USER_ERROR_JOB_190, detail);
+    }
+    if (codec == "prores") {
+      return with_job_error(USER_ERROR_JOB_197, detail);
+    }
+    return with_job_error(USER_ERROR_JOB_181, detail);
+  }
+  return {};
+}
+
+/*!
+ * \brief Message for a wrong-typed \c output.videos field, or empty.
+ */
+std::string output_video_type_error(const std::string& yaml_path,
+                                    const nlohmann::json& instance,
+                                    const std::string& codec) {
+  static constexpr std::pair<std::string_view, std::string_view> kFields[] = {
+      {"id", USER_ERROR_JOB_144},
+      {"enabled", USER_ERROR_JOB_146},
+      {"display_view.display", USER_ERROR_JOB_149},
+      {"display_view.view", USER_ERROR_JOB_151},
+      {"signal.range", USER_ERROR_JOB_154},
+      {"signal.matrix", USER_ERROR_JOB_157},
+      {"signal.primaries", USER_ERROR_JOB_160},
+      {"signal.transfer", USER_ERROR_JOB_163},
+      {"path", USER_ERROR_JOB_166},
+      {"fps", USER_ERROR_JOB_168},
+      {"codec", USER_ERROR_JOB_170},
+      {"codec_options.preset", USER_ERROR_JOB_172},
+      {"codec_options.crf", USER_ERROR_JOB_174},
+      {"codec_options.gop", USER_ERROR_JOB_176},
+      {"codec_options.tune", USER_ERROR_JOB_179}};
+  const std::string detail = is_detail(yaml_path, instance);
+  for (const auto& field : kFields) {
+    if (is_output_video_yaml_field(yaml_path, field.first)) {
+      return with_job_error(field.second, detail);
+    }
+  }
+  if (is_output_video_yaml_field(yaml_path, "codec_options.bitrate_kbps")) {
+    return with_job_error(
+        codec == "dnxhd" ? USER_ERROR_JOB_32 : USER_ERROR_JOB_175, detail);
+  }
+  return codec_options_type_error(yaml_path, codec, detail);
+}
+
+/*!
+ * \brief Message for a wrong-typed \c output.image_sequences field, or empty.
+ */
+std::string output_image_sequence_type_error(const std::string& yaml_path,
+                                             const nlohmann::json& instance) {
+  static constexpr std::pair<std::string_view, std::string_view> kFields[] = {
+      {"id", USER_ERROR_JOB_205},
+      {"enabled", USER_ERROR_JOB_207},
+      {"display_view.display", USER_ERROR_JOB_210},
+      {"display_view.view", USER_ERROR_JOB_212},
+      {"path_pattern", USER_ERROR_JOB_214}};
+  const std::string detail = is_detail(yaml_path, instance);
+  for (const auto& field : kFields) {
+    if (is_output_image_sequence_yaml_field(yaml_path, field.first)) {
+      return with_job_error(field.second, detail);
+    }
+  }
+  return {};
+}
+
+/*!
  * \brief Message for a field whose JSON type breaks the contract.
  */
 std::string wrong_type_error(const std::string& yaml_path,
-                             const nlohmann::json& instance) {
-  using Resolver = std::string (*)(const std::string&, const nlohmann::json&);
-  static constexpr Resolver kResolvers[] = {
-      &named_field_type_error, &text_overlay_type_error, &burn_in_type_error,
-      &plan_type_error};
-  for (Resolver resolve : kResolvers) {
-    const std::string message = resolve(yaml_path, instance);
-    if (!message.empty()) {
-      return message;
-    }
+                             const nlohmann::json& instance,
+                             const nlohmann::json& root) {
+  const std::string named = named_field_type_error(yaml_path, instance);
+  if (!named.empty()) {
+    return named;
+  }
+  const std::string overlay = text_overlay_type_error(yaml_path, instance);
+  if (!overlay.empty()) {
+    return overlay;
+  }
+  const std::string burn_in = burn_in_type_error(yaml_path, instance);
+  if (!burn_in.empty()) {
+    return burn_in;
+  }
+  const std::string plan = plan_type_error(yaml_path, instance);
+  if (!plan.empty()) {
+    return plan;
+  }
+  const std::string video = output_video_type_error(
+      yaml_path, instance, output_video_codec_at(root, yaml_path));
+  if (!video.empty()) {
+    return video;
+  }
+  const std::string sequence =
+      output_image_sequence_type_error(yaml_path, instance);
+  if (!sequence.empty()) {
+    return sequence;
   }
   return with_job_error(USER_ERROR_JOB_41, got_detail(yaml_path, instance));
+}
+
+/*!
+ * \brief Enum message for codec-specific \c codec_options fields, or empty.
+ */
+std::string codec_options_enum_error(const std::string& yaml_path,
+                                     const std::string& codec,
+                                     const std::string& detail) {
+  if (is_output_video_yaml_field(yaml_path, "codec_options.huffman")) {
+    return with_job_error(USER_ERROR_JOB_189, detail);
+  }
+  if (is_output_video_yaml_field(yaml_path, "codec_options.quant_mat")) {
+    return with_job_error(USER_ERROR_JOB_202, detail);
+  }
+  if (is_output_video_yaml_field(yaml_path, "codec_options.pix_fmt")) {
+    if (codec == "mjpeg") {
+      return with_job_error(USER_ERROR_JOB_187, detail);
+    }
+    if (codec == "dnxhd") {
+      return with_job_error(USER_ERROR_JOB_193, detail);
+    }
+    if (codec == "prores") {
+      return with_job_error(USER_ERROR_JOB_200, detail);
+    }
+    return with_job_error(USER_ERROR_JOB_178, detail);
+  }
+  if (is_output_video_yaml_field(yaml_path, "codec_options.profile")) {
+    if (codec == "dnxhd") {
+      return with_job_error(USER_ERROR_JOB_191, detail);
+    }
+    if (codec == "prores") {
+      return with_job_error(USER_ERROR_JOB_198, detail);
+    }
+    return with_job_error(USER_ERROR_JOB_182, detail);
+  }
+  return {};
+}
+
+/*!
+ * \brief Message for an \c output.videos enum violation, or empty.
+ */
+std::string output_video_enum_error(const std::string& yaml_path,
+                                    const std::string& detail,
+                                    const std::string& codec) {
+  static constexpr std::pair<std::string_view, std::string_view> kFields[] = {
+      {"signal.range", USER_ERROR_JOB_155},
+      {"signal.matrix", USER_ERROR_JOB_158},
+      {"signal.primaries", USER_ERROR_JOB_161},
+      {"signal.transfer", USER_ERROR_JOB_164},
+      {"codec", USER_ERROR_JOB_171},
+      {"codec_options.preset", USER_ERROR_JOB_173},
+      {"codec_options.tune", USER_ERROR_JOB_180},
+      {"codec_options.level", USER_ERROR_JOB_184}};
+  for (const auto& field : kFields) {
+    if (is_output_video_yaml_field(yaml_path, field.first)) {
+      return with_job_error(field.second, detail);
+    }
+  }
+  return codec_options_enum_error(yaml_path, codec, detail);
 }
 
 /*!
  * \brief Message for a value outside its schema \c enum, or empty.
  */
 std::string enum_violation_error(const std::string& yaml_path,
-                                 const nlohmann::json& instance) {
+                                 const nlohmann::json& instance,
+                                 const nlohmann::json& root) {
   const std::string got = instance.is_string() ? instance.get<std::string>()
                                                : describe_json_value(instance);
   const std::string detail = "'" + got + "'.";
@@ -983,7 +1390,8 @@ std::string enum_violation_error(const std::string& yaml_path,
   if (is_burn_in_yaml_field(yaml_path, "box.mode")) {
     return with_job_error(USER_ERROR_JOB_21, detail);
   }
-  return {};
+  return output_video_enum_error(yaml_path, detail,
+                                 output_video_codec_at(root, yaml_path));
 }
 
 /*!
@@ -1010,6 +1418,22 @@ std::string burn_in_box_margin_subschema_error(const std::string& yaml_path,
 }
 
 /*!
+ * \brief Message for H.264 \c level when no \c anyOf branch matches.
+ */
+std::string h264_level_subschema_error(const std::string& yaml_path,
+                                       const nlohmann::json& instance) {
+  if (!is_output_video_yaml_field(yaml_path, "codec_options.level")) {
+    return {};
+  }
+  if (!instance.is_string() && !instance.is_number()) {
+    return with_job_error(USER_ERROR_JOB_28, yaml_path + ".");
+  }
+  const std::string got = instance.is_string() ? instance.get<std::string>()
+                                               : describe_json_value(instance);
+  return with_job_error(USER_ERROR_JOB_184, "'" + got + "'.");
+}
+
+/*!
  * \brief Message for a value matching none of its \c oneOf / \c anyOf branches.
  */
 std::string subschema_error(const std::string& yaml_path,
@@ -1019,6 +1443,10 @@ std::string subschema_error(const std::string& yaml_path,
   }
   if (is_plan_yaml_field(yaml_path, "timecode.start")) {
     return with_job_error(USER_ERROR_JOB_101, yaml_path + ".");
+  }
+  const std::string level = h264_level_subschema_error(yaml_path, instance);
+  if (!level.empty()) {
+    return level;
   }
   return with_job_error(USER_ERROR_JOB_42, yaml_path + ".");
 }
@@ -1042,6 +1470,43 @@ std::string plan_min_length_error(const std::string& yaml_path,
 }
 
 /*!
+ * \brief Message for an empty \c output.videos string field, or empty.
+ */
+std::string output_video_min_length_error(const std::string& yaml_path,
+                                          const std::string& detail) {
+  static constexpr std::pair<std::string_view, std::string_view> kFields[] = {
+      {"id", USER_ERROR_JOB_144},
+      {"display_view.display", USER_ERROR_JOB_149},
+      {"display_view.view", USER_ERROR_JOB_151},
+      {"path", USER_ERROR_JOB_166},
+      {"codec", USER_ERROR_JOB_170}};
+  for (const auto& field : kFields) {
+    if (is_output_video_yaml_field(yaml_path, field.first)) {
+      return with_job_error(field.second, detail);
+    }
+  }
+  return {};
+}
+
+/*!
+ * \brief Message for an empty \c output.image_sequences string field, or empty.
+ */
+std::string output_image_sequence_min_length_error(const std::string& yaml_path,
+                                                   const std::string& detail) {
+  static constexpr std::pair<std::string_view, std::string_view> kFields[] = {
+      {"id", USER_ERROR_JOB_205},
+      {"display_view.display", USER_ERROR_JOB_210},
+      {"display_view.view", USER_ERROR_JOB_212},
+      {"path_pattern", USER_ERROR_JOB_214}};
+  for (const auto& field : kFields) {
+    if (is_output_image_sequence_yaml_field(yaml_path, field.first)) {
+      return with_job_error(field.second, detail);
+    }
+  }
+  return {};
+}
+
+/*!
  * \brief Message for a string field that must not be empty (\c minLength).
  */
 std::string min_length_error(const std::string& yaml_path) {
@@ -1052,9 +1517,14 @@ std::string min_length_error(const std::string& yaml_path) {
   if (yaml_path == "color.working_colorspace") {
     return with_job_error(USER_ERROR_JOB_49, detail);
   }
-  if (yaml_path.find("display_view.display") != std::string::npos ||
-      yaml_path.find("display_view.view") != std::string::npos) {
-    return with_job_error(USER_ERROR_JOB_50, detail);
+  const std::string video = output_video_min_length_error(yaml_path, detail);
+  if (!video.empty()) {
+    return video;
+  }
+  const std::string sequence =
+      output_image_sequence_min_length_error(yaml_path, detail);
+  if (!sequence.empty()) {
+    return sequence;
   }
   if (is_text_overlay_yaml_field(yaml_path, "font.path")) {
     return with_job_error(USER_ERROR_JOB_87, detail);
@@ -1071,37 +1541,78 @@ std::string min_length_error(const std::string& yaml_path) {
 }
 
 /*!
+ * \brief Message for ProRes \c profile when no \c anyOf branch matches.
+ */
+std::string prores_profile_subschema_error(const std::string& yaml_path,
+                                           const nlohmann::json& instance) {
+  if (!is_output_video_yaml_field(yaml_path, "codec_options.profile")) {
+    return {};
+  }
+  if (instance.is_number_integer() && instance.get<int>() == 4444) {
+    return {};
+  }
+  if (!instance.is_string() && !instance.is_number()) {
+    return with_job_error(USER_ERROR_JOB_197, yaml_path + ".");
+  }
+  const std::string got = instance.is_string() ? instance.get<std::string>()
+                                               : describe_json_value(instance);
+  return with_job_error(USER_ERROR_JOB_198, "'" + got + "'.");
+}
+
+/*!
  * \brief Message for a type, enum, subschema, or length violation, or empty.
  */
 std::string structural_constraint_error(const std::string& yaml_path,
                                         const nlohmann::json& instance,
-                                        const std::string& message) {
+                                        const std::string& message,
+                                        const nlohmann::json& root) {
   const bool no_subschema =
-      message.find("no subschema has succeeded") != std::string::npos;
+      message.find("no subschema has succeeded") != std::string::npos ||
+      message.find("is not valid under any of the given schemas") !=
+          std::string::npos;
   if (yaml_path == "output" && no_subschema) {
     return with_job_error(USER_ERROR_JOB_39);
   }
   if (message == "instance invalid as per false-schema") {
+    if (is_output_video_yaml_field(yaml_path, "codec_options.bitrate_kbps")) {
+      return with_job_error(USER_ERROR_JOB_30, yaml_path + ".");
+    }
     return with_job_error(USER_ERROR_JOB_40, yaml_path + ".");
   }
-  if (message == "unexpected instance type") {
-    return wrong_type_error(yaml_path, instance);
+  // allOf / if-then may prefix the leaf reason (e.g. "…required to validate -
+  // unexpected instance type").
+  if (message.find("unexpected instance type") != std::string::npos) {
+    return wrong_type_error(yaml_path, instance, root);
   }
-  if (message == "instance not found in required enum") {
-    return enum_violation_error(yaml_path, instance);
+  if (message.find("instance not found in required enum") !=
+      std::string::npos) {
+    return enum_violation_error(yaml_path, instance, root);
   }
   if (no_subschema) {
+    const std::string prores =
+        prores_profile_subschema_error(yaml_path, instance);
+    if (!prores.empty()) {
+      return prores;
+    }
     return subschema_error(yaml_path, instance);
   }
   if (message.find("too short as per minLength") != std::string::npos) {
+    if (is_output_video_yaml_field(yaml_path, "codec_options.vendor")) {
+      return with_job_error(USER_ERROR_JOB_96, yaml_path + ".");
+    }
     return min_length_error(yaml_path);
+  }
+  if (message.find("too long as per maxLength") != std::string::npos &&
+      is_output_video_yaml_field(yaml_path, "codec_options.vendor")) {
+    return with_job_error(USER_ERROR_JOB_96, yaml_path + ".");
   }
   return {};
 }
 
 std::string format_job_schema_error(const nlohmann::json::json_pointer& ptr,
                                     const nlohmann::json& instance,
-                                    const std::string& message);
+                                    const std::string& message,
+                                    const nlohmann::json& root);
 
 /*!
  * \brief Re-reports an \c additionalProperties failure on the offending child.
@@ -1109,7 +1620,7 @@ std::string format_job_schema_error(const nlohmann::json::json_pointer& ptr,
  */
 std::string format_additional_property_error(
     const nlohmann::json::json_pointer& ptr, const nlohmann::json& instance,
-    const std::string& message) {
+    const std::string& message, const nlohmann::json& root) {
   const std::string prefix = "validation failed for additional property '";
   if (message.compare(0, prefix.size(), prefix) != 0) {
     return {};
@@ -1133,30 +1644,35 @@ std::string format_additional_property_error(
   }
   nlohmann::json::json_pointer child_ptr = ptr;
   child_ptr /= key;
-  return format_job_schema_error(child_ptr, child, inner);
+  return format_job_schema_error(child_ptr, child, inner, root);
 }
 
 std::string format_job_schema_error(const nlohmann::json::json_pointer& ptr,
                                     const nlohmann::json& instance,
-                                    const std::string& message) {
+                                    const std::string& message,
+                                    const nlohmann::json& root) {
   const std::string child =
-      format_additional_property_error(ptr, instance, message);
+      format_additional_property_error(ptr, instance, message, root);
   if (!child.empty()) {
     return child;
   }
+  const std::string yaml_path = json_pointer_to_yaml_path(ptr);
   using Resolver = std::string (*)(const std::string&, const nlohmann::json&,
                                    const std::string&);
   static constexpr Resolver kResolvers[] = {
-      &substitution_schema_error,  &required_key_error,
-      &array_size_error,           &property_count_error,
-      &version_constraint_error,   &numeric_constraint_error,
-      &structural_constraint_error};
-  const std::string yaml_path = json_pointer_to_yaml_path(ptr);
+      &substitution_schema_error, &required_key_error,
+      &array_size_error,          &property_count_error,
+      &version_constraint_error,  &numeric_constraint_error};
   for (Resolver resolve : kResolvers) {
     const std::string resolved = resolve(yaml_path, instance, message);
     if (!resolved.empty()) {
       return resolved;
     }
+  }
+  const std::string structural =
+      structural_constraint_error(yaml_path, instance, message, root);
+  if (!structural.empty()) {
+    return structural;
   }
   return with_job_error(USER_ERROR_JOB_44, yaml_path + ".");
 }
@@ -1164,18 +1680,21 @@ std::string format_job_schema_error(const nlohmann::json::json_pointer& ptr,
 class JobSchemaErrorHandler
     : public nlohmann::json_schema::basic_error_handler {
  public:
+  explicit JobSchemaErrorHandler(const nlohmann::json& root) : root_(root) {}
+
   void error(const nlohmann::json::json_pointer& ptr,
              const nlohmann::json& instance,
              const std::string& message) override {
     nlohmann::json_schema::basic_error_handler::error(ptr, instance, message);
     if (first_message_.empty()) {
-      first_message_ = format_job_schema_error(ptr, instance, message);
+      first_message_ = format_job_schema_error(ptr, instance, message, root_);
     }
   }
 
   const std::string& message() const { return first_message_; }
 
  private:
+  const nlohmann::json& root_;
   std::string first_message_;
 };
 
@@ -1211,7 +1730,7 @@ Status validate_job_schema(const std::filesystem::path& job_path) {
   } catch (const std::exception& ex) {
     return Status::Internal(with_job_error(INTERNAL_ERROR_JOB_4, ex.what()));
   }
-  JobSchemaErrorHandler err;
+  JobSchemaErrorHandler err(instance);
   validator.validate(instance, err);
   if (err) {
     return Status::User(err.message());
@@ -1239,6 +1758,9 @@ Status validate_job_schema(const std::filesystem::path& job_path) {
   }
   if (job_root["plans"] && job_root["plans"].IsSequence()) {
     DAILYBOY_RETURN_IF_ERROR(parse_plans(job_root["plans"]).status());
+  }
+  if (job_root["output"] && job_root["output"].IsMap()) {
+    DAILYBOY_RETURN_IF_ERROR(parse_output(job_root["output"]).status());
   }
   return Status::Ok();
 }

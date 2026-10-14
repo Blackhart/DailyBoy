@@ -15,15 +15,15 @@ output:
         display: "passthrough"
         view: "passthrough"
       signal:
-        range: tv
-        matrix: bt709
-        primaries: bt709
-        transfer: bt709
+        range: "tv"
+        matrix: "bt709"
+        primaries: "bt709"
+        transfer: "bt709"
       path: "/tmp/dailyboy_profile.mov"
-      codec: h264
+      codec: "h264"
       codec_options:
-        pix_fmt: yuv420p
-        profile: high422
+        pix_fmt: "yuv420p"
+        profile: "high422"
   image_sequences: []
 plans:
   - id: "plate"

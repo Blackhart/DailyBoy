@@ -5,6 +5,7 @@
 #include <fstream>
 #include <map>
 #include <string>
+#include <string_view>
 #include <variant>
 #include <vector>
 
@@ -123,18 +124,18 @@ std::filesystem::path write_dnxhd_job(const std::string& name,
          "    fit: \"contain\"\n"
          "output:\n"
          "  videos:\n"
-         "    - id: preview\n"
+         "    - id: \"preview\"\n"
          "      enabled: true\n"
          "      display_view:\n"
          "        display: \"passthrough\"\n"
          "        view: \"passthrough\"\n"
          "      signal:\n"
-         "        range: tv\n"
-         "        matrix: bt709\n"
-         "        primaries: bt709\n"
-         "        transfer: bt709\n"
-         "      path: /tmp/dailyboy_dnxhd.mov\n"
-         "      codec: dnxhd\n";
+         "        range: \"tv\"\n"
+         "        matrix: \"bt709\"\n"
+         "        primaries: \"bt709\"\n"
+         "        transfer: \"bt709\"\n"
+         "      path: \"/tmp/dailyboy_dnxhd.mov\"\n"
+         "      codec: \"dnxhd\"\n";
   if (!codec_options.empty()) {
     out << "      codec_options:\n" << codec_options;
   }
@@ -180,6 +181,184 @@ std::filesystem::path write_output_job(const std::string& name,
   return path;
 }
 
+/*!
+ * \brief Default one-item \c output.videos list body for an H.264 deliverable.
+ */
+std::string default_h264_video_item() {
+  return "    - id: \"preview\"\n"
+         "      enabled: true\n"
+         "      display_view:\n"
+         "        display: \"passthrough\"\n"
+         "        view: \"passthrough\"\n"
+         "      signal:\n"
+         "        range: \"tv\"\n"
+         "        matrix: \"bt709\"\n"
+         "        primaries: \"bt709\"\n"
+         "        transfer: \"bt709\"\n"
+         "      path: \"/tmp/dailyboy_h264.mov\"\n"
+         "      codec: \"h264\"\n";
+}
+
+/*!
+ * \brief Writes a job with one H.264 video; \a video_yaml replaces the list item.
+ */
+std::filesystem::path write_h264_output_job(
+    const std::string& name, const std::string& video_yaml = {},
+    bool include_empty_image_sequences = true) {
+  std::string output = "  videos:\n";
+  output += video_yaml.empty() ? default_h264_video_item() : video_yaml;
+  if (include_empty_image_sequences) {
+    output += "  image_sequences: []\n";
+  }
+  return write_output_job(name, output);
+}
+
+/*!
+ * \brief Writes a one-video H.264 job with an explicit \c codec_options block.
+ */
+std::filesystem::path write_h264_codec_options_job(
+    const std::string& name, const std::string& options_yaml) {
+  return write_h264_output_job(
+      name,
+      default_h264_video_item() + "      codec_options:\n" + options_yaml);
+}
+
+/*!
+ * \brief Default one-item \c output.image_sequences list body.
+ */
+std::string default_image_sequence_item(
+    const std::string& path_pattern = "\"/tmp/archive.%04d.png\"") {
+  return "    - id: \"archive\"\n"
+         "      enabled: true\n"
+         "      display_view:\n"
+         "        display: \"passthrough\"\n"
+         "        view: \"passthrough\"\n"
+         "      path_pattern: " +
+         path_pattern + "\n";
+}
+
+/*!
+ * \brief Writes a job with empty videos and one image sequence item.
+ */
+std::filesystem::path write_image_sequence_job(
+    const std::string& name, const std::string& sequence_item_yaml = {}) {
+  std::string output = "  videos: []\n  image_sequences:\n";
+  output += sequence_item_yaml.empty() ? default_image_sequence_item()
+                                       : sequence_item_yaml;
+  return write_output_job(name, output);
+}
+
+/*!
+ * \brief Writes an image-sequence job with an explicit \c format_options block.
+ */
+std::filesystem::path write_format_options_job(
+    const std::string& name, const std::string& path_pattern,
+    const std::string& format_options_yaml) {
+  return write_image_sequence_job(
+      name, default_image_sequence_item("\"" + path_pattern + "\"") +
+                "      format_options:\n" + format_options_yaml);
+}
+
+/*!
+ * \brief Default one-item \c output.videos list body for an MJPEG deliverable.
+ */
+std::string default_mjpeg_video_item() {
+  return "    - id: \"preview\"\n"
+         "      enabled: true\n"
+         "      display_view:\n"
+         "        display: \"passthrough\"\n"
+         "        view: \"passthrough\"\n"
+         "      signal:\n"
+         "        range: \"tv\"\n"
+         "        matrix: \"bt709\"\n"
+         "        primaries: \"bt709\"\n"
+         "        transfer: \"bt709\"\n"
+         "      path: \"/tmp/dailyboy_mjpeg.mov\"\n"
+         "      codec: \"mjpeg\"\n";
+}
+
+/*!
+ * \brief Writes a job with one MJPEG video; \a video_yaml replaces the list item.
+ */
+std::filesystem::path write_mjpeg_output_job(
+    const std::string& name, const std::string& video_yaml = {},
+    bool include_empty_image_sequences = true) {
+  std::string output = "  videos:\n";
+  output += video_yaml.empty() ? default_mjpeg_video_item() : video_yaml;
+  if (include_empty_image_sequences) {
+    output += "  image_sequences: []\n";
+  }
+  return write_output_job(name, output);
+}
+
+/*!
+ * \brief Writes a one-video MJPEG job with an explicit \c codec_options block.
+ */
+std::filesystem::path write_mjpeg_codec_options_job(
+    const std::string& name, const std::string& options_yaml) {
+  return write_mjpeg_output_job(
+      name,
+      default_mjpeg_video_item() + "      codec_options:\n" + options_yaml);
+}
+
+/*!
+ * \brief Default one-item \c output.videos list body for a DNxHD deliverable.
+ */
+std::string default_dnxhd_video_item() {
+  return "    - id: \"preview\"\n"
+         "      enabled: true\n"
+         "      display_view:\n"
+         "        display: \"passthrough\"\n"
+         "        view: \"passthrough\"\n"
+         "      signal:\n"
+         "        range: \"tv\"\n"
+         "        matrix: \"bt709\"\n"
+         "        primaries: \"bt709\"\n"
+         "        transfer: \"bt709\"\n"
+         "      path: \"/tmp/dailyboy_dnxhd.mov\"\n"
+         "      codec: \"dnxhd\"\n";
+}
+
+/*!
+ * \brief Writes a job with one DNxHD video; \a video_yaml replaces the list item.
+ */
+std::filesystem::path write_dnxhd_output_job(
+    const std::string& name, const std::string& video_yaml = {},
+    bool include_empty_image_sequences = true) {
+  std::string output = "  videos:\n";
+  output += video_yaml.empty() ? default_dnxhd_video_item() : video_yaml;
+  if (include_empty_image_sequences) {
+    output += "  image_sequences: []\n";
+  }
+  return write_output_job(name, output);
+}
+
+/*!
+ * \brief Writes a one-video DNxHD job with an explicit \c codec_options block.
+ */
+std::filesystem::path write_dnxhd_codec_options_job(
+    const std::string& name, const std::string& options_yaml) {
+  return write_dnxhd_job(name, options_yaml);
+}
+
+/*!
+ * \brief Default one-item \c output.videos list body for a ProRes deliverable.
+ */
+std::string default_prores_video_item() {
+  return "    - id: \"preview\"\n"
+         "      enabled: true\n"
+         "      display_view:\n"
+         "        display: \"passthrough\"\n"
+         "        view: \"passthrough\"\n"
+         "      signal:\n"
+         "        range: \"tv\"\n"
+         "        matrix: \"bt709\"\n"
+         "        primaries: \"bt709\"\n"
+         "        transfer: \"bt709\"\n"
+         "      path: \"/tmp/dailyboy_prores.mov\"\n"
+         "      codec: \"prores\"\n";
+}
+
 struct ContractJobSpec {
   const char* metadata_yaml = nullptr;
   bool include_color = true;
@@ -187,6 +366,7 @@ struct ContractJobSpec {
   bool include_layout = true;
   const char* layout_yaml = nullptr;
   bool include_output = true;
+  bool empty_output = false;
   bool include_plans = true;
   const char* plans_yaml = nullptr;
 };
@@ -223,21 +403,25 @@ std::filesystem::path write_contract_job(
     }
   }
   if (spec.include_output) {
-    out << "output:\n"
-           "  videos:\n"
-           "    - id: preview\n"
-           "      enabled: true\n"
-           "      display_view:\n"
-           "        display: \"passthrough\"\n"
-           "        view: \"passthrough\"\n"
-           "      signal:\n"
-           "        range: tv\n"
-           "        matrix: bt709\n"
-           "        primaries: bt709\n"
-           "        transfer: bt709\n"
-           "      path: /tmp/dailyboy_contract.mov\n"
-           "      codec: h264\n"
-           "  image_sequences: []\n";
+    if (spec.empty_output) {
+      out << "output: {}\n";
+    } else {
+      out << "output:\n"
+             "  videos:\n"
+             "    - id: \"preview\"\n"
+             "      enabled: true\n"
+             "      display_view:\n"
+             "        display: \"passthrough\"\n"
+             "        view: \"passthrough\"\n"
+             "      signal:\n"
+             "        range: \"tv\"\n"
+             "        matrix: \"bt709\"\n"
+             "        primaries: \"bt709\"\n"
+             "        transfer: \"bt709\"\n"
+             "      path: \"/tmp/dailyboy_contract.mov\"\n"
+             "      codec: \"h264\"\n"
+             "  image_sequences: []\n";
+    }
   }
   if (spec.include_plans) {
     if (spec.plans_yaml != nullptr) {
@@ -412,12 +596,12 @@ std::filesystem::path write_layout_job(const std::string& name,
       << "output:\n"
          "  videos: []\n"
          "  image_sequences:\n"
-         "    - id: preview\n"
+         "    - id: \"preview\"\n"
          "      enabled: true\n"
          "      display_view:\n"
          "        display: \"passthrough\"\n"
          "        view: \"passthrough\"\n"
-         "      path_pattern: /tmp/preview.%04d.png\n"
+         "      path_pattern: \"/tmp/preview.%04d.png\"\n"
          "plans:\n"
          "  - id: \"plate\"\n"
          "    input_colorspace: \"ACES - ACEScg\"\n"
@@ -436,6 +620,63 @@ void expect_user_message(const dailyboy::Status& status,
       << status.message();
 }
 
+/*!
+ * \brief Asserts schema and load both return the same user message.
+ */
+void expect_schema_load_user_error(const std::filesystem::path& yaml,
+                                   std::string_view message) {
+  const dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  const dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+  expect_user_message(schema, std::string(message));
+  expect_user_message(job.status(), std::string(message));
+}
+
+/*!
+ * \brief Loads the first video's H.264 options after schema + load succeed.
+ */
+dailyboy::JobOutputVideoH264 load_h264_options(
+    const std::filesystem::path& yaml) {
+  const dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  EXPECT_TRUE(schema.ok()) << schema.message();
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+  EXPECT_TRUE(job.ok()) << job.status().message();
+  if (!job.ok()) {
+    return {};
+  }
+  return std::get<dailyboy::JobOutputVideoH264>(
+      job.value().output().videos().videos().front().codec_options());
+}
+
+/*!
+ * \brief Loads the first video's MJPEG options after schema + load succeed.
+ */
+dailyboy::JobOutputVideoMjpeg load_mjpeg_options(
+    const std::filesystem::path& yaml) {
+  const dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  EXPECT_TRUE(schema.ok()) << schema.message();
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+  EXPECT_TRUE(job.ok()) << job.status().message();
+  if (!job.ok()) {
+    return {};
+  }
+  return std::get<dailyboy::JobOutputVideoMjpeg>(
+      job.value().output().videos().videos().front().codec_options());
+}
+
+/*!
+ * \brief Asserts schema fails and load returns the given user message.
+ *
+ * Used when JSON Schema rejects first with a generic path while parse returns
+ * a more specific \c USER_ERROR_JOB_*.
+ */
+void expect_schema_fails_load_user_error(const std::filesystem::path& yaml,
+                                         std::string_view load_message) {
+  const dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  const dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+  EXPECT_FALSE(schema.ok()) << schema.message();
+  expect_user_message(job.status(), std::string(load_message));
+}
+
 dailyboy::JobOutputVideoDnxhd load_dnxhd_options(
     const std::filesystem::path& yaml) {
   dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
@@ -447,6 +688,72 @@ dailyboy::JobOutputVideoDnxhd load_dnxhd_options(
   }
   return std::get<dailyboy::JobOutputVideoDnxhd>(
       job.value().output().videos().videos().front().codec_options());
+}
+
+/*!
+ * \brief Loads the first image sequence after schema + load succeed.
+ */
+dailyboy::JobOutputImageSequence load_front_image_sequence(
+    const std::filesystem::path& yaml) {
+  const dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  EXPECT_TRUE(schema.ok()) << schema.message();
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+  EXPECT_TRUE(job.ok()) << job.status().message();
+  if (!job.ok() ||
+      job.value().output().image_sequences().image_sequences().empty()) {
+    return {};
+  }
+  return job.value().output().image_sequences().image_sequences().front();
+}
+
+dailyboy::JobOutputImageSequencePng load_png_format_options(
+    const std::filesystem::path& yaml) {
+  const dailyboy::JobOutputImageSequence seq = load_front_image_sequence(yaml);
+  EXPECT_TRUE(seq.format_options().has_value());
+  if (!seq.format_options().has_value()) {
+    return {};
+  }
+  return std::get<dailyboy::JobOutputImageSequencePng>(*seq.format_options());
+}
+
+dailyboy::JobOutputImageSequenceJpeg load_jpeg_format_options(
+    const std::filesystem::path& yaml) {
+  const dailyboy::JobOutputImageSequence seq = load_front_image_sequence(yaml);
+  EXPECT_TRUE(seq.format_options().has_value());
+  if (!seq.format_options().has_value()) {
+    return {};
+  }
+  return std::get<dailyboy::JobOutputImageSequenceJpeg>(*seq.format_options());
+}
+
+dailyboy::JobOutputImageSequenceTiff load_tiff_format_options(
+    const std::filesystem::path& yaml) {
+  const dailyboy::JobOutputImageSequence seq = load_front_image_sequence(yaml);
+  EXPECT_TRUE(seq.format_options().has_value());
+  if (!seq.format_options().has_value()) {
+    return {};
+  }
+  return std::get<dailyboy::JobOutputImageSequenceTiff>(*seq.format_options());
+}
+
+dailyboy::JobOutputImageSequenceExr load_exr_format_options(
+    const std::filesystem::path& yaml) {
+  const dailyboy::JobOutputImageSequence seq = load_front_image_sequence(yaml);
+  EXPECT_TRUE(seq.format_options().has_value());
+  if (!seq.format_options().has_value()) {
+    return {};
+  }
+  return std::get<dailyboy::JobOutputImageSequenceExr>(*seq.format_options());
+}
+
+dailyboy::JobOutputImageSequenceHeif load_heif_format_options(
+    const std::filesystem::path& yaml) {
+  const dailyboy::JobOutputImageSequence seq = load_front_image_sequence(yaml);
+  EXPECT_TRUE(seq.format_options().has_value());
+  if (!seq.format_options().has_value()) {
+    return {};
+  }
+  return std::get<dailyboy::JobOutputImageSequenceHeif>(*seq.format_options());
 }
 
 std::filesystem::path write_prores_job(const std::string& name,
@@ -467,18 +774,18 @@ std::filesystem::path write_prores_job(const std::string& name,
          "    fit: \"contain\"\n"
          "output:\n"
          "  videos:\n"
-         "    - id: preview\n"
+         "    - id: \"preview\"\n"
          "      enabled: true\n"
          "      display_view:\n"
          "        display: \"passthrough\"\n"
          "        view: \"passthrough\"\n"
          "      signal:\n"
-         "        range: tv\n"
-         "        matrix: bt709\n"
-         "        primaries: bt709\n"
-         "        transfer: bt709\n"
-         "      path: /tmp/dailyboy_prores.mov\n"
-         "      codec: prores\n";
+         "        range: \"tv\"\n"
+         "        matrix: \"bt709\"\n"
+         "        primaries: \"bt709\"\n"
+         "        transfer: \"bt709\"\n"
+         "      path: \"/tmp/dailyboy_prores.mov\"\n"
+         "      codec: \"prores\"\n";
   if (!codec_options.empty()) {
     out << "      codec_options:\n" << codec_options;
   }
@@ -491,6 +798,14 @@ std::filesystem::path write_prores_job(const std::string& name,
          "      frame_start: 1001\n"
          "      frame_end: 1003\n";
   return path;
+}
+
+/*!
+ * \brief Writes a one-video ProRes job with an explicit \c codec_options block.
+ */
+std::filesystem::path write_prores_codec_options_job(
+    const std::string& name, const std::string& options_yaml) {
+  return write_prores_job(name, options_yaml);
 }
 
 dailyboy::JobOutputVideoProres load_prores_options(
@@ -550,18 +865,18 @@ TEST(JobLoader, ValidateJobSchema_DailyboyVersion1_Succeeds) {
   const std::filesystem::path yaml =
       write_output_job("version_1.yaml",
                        "  videos:\n"
-                       "    - id: preview\n"
+                       "    - id: \"preview\"\n"
                        "      enabled: true\n"
                        "      display_view:\n"
                        "        display: \"passthrough\"\n"
                        "        view: \"passthrough\"\n"
                        "      signal:\n"
-                       "        range: tv\n"
-                       "        matrix: bt709\n"
-                       "        primaries: bt709\n"
-                       "        transfer: bt709\n"
-                       "      path: /tmp/dailyboy_contract.mov\n"
-                       "      codec: h264\n"
+                       "        range: \"tv\"\n"
+                       "        matrix: \"bt709\"\n"
+                       "        primaries: \"bt709\"\n"
+                       "        transfer: \"bt709\"\n"
+                       "      path: \"/tmp/dailyboy_contract.mov\"\n"
+                       "      codec: \"h264\"\n"
                        "  image_sequences: []\n",
                        1);
 
@@ -584,18 +899,18 @@ TEST(JobLoader, ValidateJobSchema_DailyboyVersionNot1_ReturnsUserError) {
     const std::filesystem::path yaml =
         write_output_job("version_" + std::to_string(version) + ".yaml",
                          "  videos:\n"
-                         "    - id: preview\n"
+                         "    - id: \"preview\"\n"
                          "      enabled: true\n"
                          "      display_view:\n"
                          "        display: \"passthrough\"\n"
                          "        view: \"passthrough\"\n"
                          "      signal:\n"
-                         "        range: tv\n"
-                         "        matrix: bt709\n"
-                         "        primaries: bt709\n"
-                         "        transfer: bt709\n"
-                         "      path: /tmp/dailyboy_contract.mov\n"
-                         "      codec: h264\n"
+                         "        range: \"tv\"\n"
+                         "        matrix: \"bt709\"\n"
+                         "        primaries: \"bt709\"\n"
+                         "        transfer: \"bt709\"\n"
+                         "      path: \"/tmp/dailyboy_contract.mov\"\n"
+                         "      codec: \"h264\"\n"
                          "  image_sequences: []\n",
                          version);
 
@@ -6856,12 +7171,12 @@ TEST(JobLoader, LoadJob_ValidYaml_LoadsAllFields) {
   //     enabled: true
   //     colorspace: Output - sRGB
   //     path: "{review_mov_path}"
-  //     codec: h264
+  //     codec: "h264"
   //     codec_options:
   //       preset: slow
   //       crf: 18
   //       gop: 24
-  //       pix_fmt: yuv422p
+  //       pix_fmt: "yuv422p"
   //  image_sequences:
   //   - id: archive_acescg
   //     enabled: true
@@ -6994,7 +7309,7 @@ TEST(JobLoader, LoadJob_OmittedCodecOptions_UsesH264Defaults) {
       options.preset(),
       dailyboy::JobOutputVideoH264::JobOutputVideoH264PresetValue::Medium);
   EXPECT_EQ(options.crf(), dailyboy::JobOutputVideoH264::kDefaultCrf);
-  EXPECT_EQ(options.gop(), 0);
+  EXPECT_EQ(options.gop(), dailyboy::JobOutputVideoH264::kDefaultGop);
   EXPECT_EQ(options.bitrate_kbps(), 0);
   EXPECT_EQ(
       options.pix_fmt(),
@@ -7175,7 +7490,7 @@ TEST(JobLoader, LoadJob_OmittedDnxhdOptions_UsesDnxhrHqDefaults) {
 TEST(JobLoader, LoadJob_ProfileDnxhrLb_StoresLb) {
   // Prepare
   const std::filesystem::path yaml =
-      write_dnxhd_job("profile_lb.yaml", "        profile: dnxhr_lb\n");
+      write_dnxhd_job("profile_lb.yaml", "        profile: \"dnxhr_lb\"\n");
 
   // Test
   const dailyboy::JobOutputVideoDnxhd options = load_dnxhd_options(yaml);
@@ -7192,7 +7507,7 @@ TEST(JobLoader, LoadJob_ProfileDnxhrLb_StoresLb) {
 TEST(JobLoader, LoadJob_ProfileDnxhrSq_StoresSq) {
   // Prepare
   const std::filesystem::path yaml =
-      write_dnxhd_job("profile_sq.yaml", "        profile: dnxhr_sq\n");
+      write_dnxhd_job("profile_sq.yaml", "        profile: \"dnxhr_sq\"\n");
 
   // Test
   const dailyboy::JobOutputVideoDnxhd options = load_dnxhd_options(yaml);
@@ -7209,7 +7524,7 @@ TEST(JobLoader, LoadJob_ProfileDnxhrSq_StoresSq) {
 TEST(JobLoader, LoadJob_ProfileDnxhrHq_StoresHq) {
   // Prepare
   const std::filesystem::path yaml =
-      write_dnxhd_job("profile_hq.yaml", "        profile: dnxhr_hq\n");
+      write_dnxhd_job("profile_hq.yaml", "        profile: \"dnxhr_hq\"\n");
 
   // Test
   const dailyboy::JobOutputVideoDnxhd options = load_dnxhd_options(yaml);
@@ -7226,7 +7541,7 @@ TEST(JobLoader, LoadJob_ProfileDnxhrHq_StoresHq) {
 TEST(JobLoader, LoadJob_ProfileDnxhrHqx_StoresHqxAndYuv422p10) {
   // Prepare
   const std::filesystem::path yaml =
-      write_dnxhd_job("profile_hqx.yaml", "        profile: dnxhr_hqx\n");
+      write_dnxhd_job("profile_hqx.yaml", "        profile: \"dnxhr_hqx\"\n");
 
   // Test
   const dailyboy::JobOutputVideoDnxhd options = load_dnxhd_options(yaml);
@@ -7246,7 +7561,7 @@ TEST(JobLoader, LoadJob_ProfileDnxhrHqx_StoresHqxAndYuv422p10) {
 TEST(JobLoader, LoadJob_ProfileDnxhr444_Stores444AndYuv444p10) {
   // Prepare
   const std::filesystem::path yaml =
-      write_dnxhd_job("profile_444.yaml", "        profile: dnxhr_444\n");
+      write_dnxhd_job("profile_444.yaml", "        profile: \"dnxhr_444\"\n");
 
   // Test
   const dailyboy::JobOutputVideoDnxhd options = load_dnxhd_options(yaml);
@@ -7265,9 +7580,9 @@ TEST(JobLoader, LoadJob_ProfileDnxhr444_Stores444AndYuv444p10) {
  */
 TEST(JobLoader, LoadJob_ProfileDnxhdWithBitrate_StoresClassic) {
   // Prepare
-  const std::filesystem::path yaml =
-      write_dnxhd_job("profile_dnxhd.yaml",
-                      "        profile: dnxhd\n        bitrate_kbps: 36000\n");
+  const std::filesystem::path yaml = write_dnxhd_job(
+      "profile_dnxhd.yaml",
+      "        profile: \"dnxhd\"\n        bitrate_kbps: 36000\n");
 
   // Test
   const dailyboy::JobOutputVideoDnxhd options = load_dnxhd_options(yaml);
@@ -7285,7 +7600,7 @@ TEST(JobLoader, LoadJob_ProfileDnxhdWithBitrate_StoresClassic) {
 TEST(JobLoader, LoadJob_PixFmtYuv422p_StoresYuv422p) {
   // Prepare
   const std::filesystem::path yaml =
-      write_dnxhd_job("pix_fmt_422.yaml", "        pix_fmt: yuv422p\n");
+      write_dnxhd_job("pix_fmt_422.yaml", "        pix_fmt: \"yuv422p\"\n");
 
   // Test
   const dailyboy::JobOutputVideoDnxhd options = load_dnxhd_options(yaml);
@@ -7303,7 +7618,7 @@ TEST(JobLoader, LoadJob_PixFmtYuv422p10_StoresYuv422p10) {
   // Prepare
   const std::filesystem::path yaml = write_dnxhd_job(
       "pix_fmt_422p10.yaml",
-      "        profile: dnxhr_hqx\n        pix_fmt: yuv422p10\n");
+      "        profile: \"dnxhr_hqx\"\n        pix_fmt: \"yuv422p10\"\n");
 
   // Test
   const dailyboy::JobOutputVideoDnxhd options = load_dnxhd_options(yaml);
@@ -7321,7 +7636,7 @@ TEST(JobLoader, LoadJob_PixFmtYuv444p10_StoresYuv444p10) {
   // Prepare
   const std::filesystem::path yaml = write_dnxhd_job(
       "pix_fmt_444p10.yaml",
-      "        profile: dnxhr_444\n        pix_fmt: yuv444p10\n");
+      "        profile: \"dnxhr_444\"\n        pix_fmt: \"yuv444p10\"\n");
 
   // Test
   const dailyboy::JobOutputVideoDnxhd options = load_dnxhd_options(yaml);
@@ -7337,10 +7652,10 @@ TEST(JobLoader, LoadJob_PixFmtYuv444p10_StoresYuv444p10) {
  */
 TEST(JobLoader, LoadJob_InterlacedTrue_StoresInterlaced) {
   // Prepare
-  const std::filesystem::path yaml =
-      write_dnxhd_job("interlaced.yaml",
-                      "        profile: dnxhd\n        bitrate_kbps: 120000\n"
-                      "        interlaced: true\n");
+  const std::filesystem::path yaml = write_dnxhd_job(
+      "interlaced.yaml",
+      "        profile: \"dnxhd\"\n        bitrate_kbps: 120000\n"
+      "        interlaced: true\n");
 
   // Test
   const dailyboy::JobOutputVideoDnxhd options = load_dnxhd_options(yaml);
@@ -7385,7 +7700,7 @@ TEST(JobLoader, LoadJob_FaststartFalse_StoresFalse) {
 TEST(JobLoader, LoadJob_DnxhdWithoutBitrate_ReturnsUserError) {
   // Prepare
   const std::filesystem::path yaml =
-      write_dnxhd_job("no_bitrate.yaml", "        profile: dnxhd\n");
+      write_dnxhd_job("no_bitrate.yaml", "        profile: \"dnxhd\"\n");
 
   // Test
   dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
@@ -7404,7 +7719,7 @@ TEST(JobLoader, LoadJob_HrWithBitrate_ReturnsUserError) {
   // Prepare
   const std::filesystem::path yaml = write_dnxhd_job(
       "hr_bitrate.yaml",
-      "        profile: dnxhr_hq\n        bitrate_kbps: 36000\n");
+      "        profile: \"dnxhr_hq\"\n        bitrate_kbps: 36000\n");
 
   // Test
   dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
@@ -7421,9 +7736,9 @@ TEST(JobLoader, LoadJob_HrWithBitrate_ReturnsUserError) {
  */
 TEST(JobLoader, LoadJob_HrWithInterlaced_ReturnsUserError) {
   // Prepare
-  const std::filesystem::path yaml =
-      write_dnxhd_job("hr_interlaced.yaml",
-                      "        profile: dnxhr_hq\n        interlaced: true\n");
+  const std::filesystem::path yaml = write_dnxhd_job(
+      "hr_interlaced.yaml",
+      "        profile: \"dnxhr_hq\"\n        interlaced: true\n");
 
   // Test
   dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
@@ -7442,7 +7757,7 @@ TEST(JobLoader, LoadJob_PixFmtMismatch_ReturnsUserError) {
   // Prepare
   const std::filesystem::path yaml = write_dnxhd_job(
       "pix_mismatch.yaml",
-      "        profile: dnxhr_hq\n        pix_fmt: yuv422p10\n");
+      "        profile: \"dnxhr_hq\"\n        pix_fmt: \"yuv422p10\"\n");
 
   // Test
   dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
@@ -7539,7 +7854,7 @@ TEST(JobLoader, LoadJob_ProresOptions_ParsesAllFields) {
 TEST(JobLoader, LoadJob_Profile4444xq_DefaultsYuv444p10) {
   // Prepare
   const std::filesystem::path yaml =
-      write_prores_job("profile_4444xq.yaml", "        profile: 4444xq\n");
+      write_prores_job("profile_4444xq.yaml", "        profile: \"4444xq\"\n");
 
   // Test
   const dailyboy::JobOutputVideoProres options = load_prores_options(yaml);
@@ -7559,8 +7874,8 @@ TEST(JobLoader, LoadJob_ProresProfilePixFmtMismatch_ReturnsUserError) {
   // Prepare
   const std::filesystem::path yaml =
       write_prores_job("pix_mismatch.yaml",
-                       "        profile: hq\n"
-                       "        pix_fmt: yuv444p10\n");
+                       "        profile: \"hq\"\n"
+                       "        pix_fmt: \"yuv444p10\"\n");
 
   // Test
   dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
@@ -7581,7 +7896,7 @@ TEST(JobLoader, LoadJob_ProresProfilePixFmtMismatch_ReturnsUserError) {
 TEST(JobLoader, LoadJob_ProresVendorInvalid_ReturnsUserError) {
   // Prepare
   const std::filesystem::path yaml =
-      write_prores_job("vendor_bad.yaml", "        vendor: apple\n");
+      write_prores_job("vendor_bad.yaml", "        vendor: \"apple\"\n");
 
   // Test
   dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
@@ -7619,7 +7934,7 @@ TEST(JobLoader, LoadJob_ProresYuvaPixFmt_ReturnsUserError) {
   const std::filesystem::path yaml =
       write_prores_job("yuva.yaml",
                        "        profile: 4444\n"
-                       "        pix_fmt: yuva444p10\n");
+                       "        pix_fmt: \"yuva444p10\"\n");
 
   // Test
   dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
@@ -7655,30 +7970,30 @@ TEST(JobLoader, LoadJob_TwoVideosOneDisabled_LoadsBothFlags) {
   const std::filesystem::path yaml =
       write_output_job("two_videos.yaml",
                        "  videos:\n"
-                       "    - id: review_h264\n"
+                       "    - id: \"review_h264\"\n"
                        "      enabled: true\n"
                        "      display_view:\n"
                        "        display: \"passthrough\"\n"
                        "        view: \"passthrough\"\n"
                        "      signal:\n"
-                       "        range: tv\n"
-                       "        matrix: bt709\n"
-                       "        primaries: bt709\n"
-                       "        transfer: bt709\n"
-                       "      path: /tmp/dailyboy_h264.mov\n"
-                       "      codec: h264\n"
-                       "    - id: review_mjpeg\n"
+                       "        range: \"tv\"\n"
+                       "        matrix: \"bt709\"\n"
+                       "        primaries: \"bt709\"\n"
+                       "        transfer: \"bt709\"\n"
+                       "      path: \"/tmp/dailyboy_h264.mov\"\n"
+                       "      codec: \"h264\"\n"
+                       "    - id: \"review_mjpeg\"\n"
                        "      enabled: false\n"
                        "      display_view:\n"
                        "        display: \"passthrough\"\n"
                        "        view: \"passthrough\"\n"
                        "      signal:\n"
-                       "        range: tv\n"
-                       "        matrix: bt709\n"
-                       "        primaries: bt709\n"
-                       "        transfer: bt709\n"
-                       "      path: /tmp/dailyboy_mjpeg.mov\n"
-                       "      codec: mjpeg\n"
+                       "        range: \"tv\"\n"
+                       "        matrix: \"bt709\"\n"
+                       "        primaries: \"bt709\"\n"
+                       "        transfer: \"bt709\"\n"
+                       "      path: \"/tmp/dailyboy_mjpeg.mov\"\n"
+                       "      codec: \"mjpeg\"\n"
                        "  image_sequences: []\n");
 
   // Test
@@ -7709,18 +8024,18 @@ TEST(JobLoader, LoadJob_VideosWithoutImageSequences_LoadsVideos) {
   const std::filesystem::path yaml =
       write_output_job("videos_only.yaml",
                        "  videos:\n"
-                       "    - id: review_mjpeg\n"
+                       "    - id: \"review_mjpeg\"\n"
                        "      enabled: true\n"
                        "      display_view:\n"
                        "        display: \"passthrough\"\n"
                        "        view: \"passthrough\"\n"
                        "      signal:\n"
-                       "        range: tv\n"
-                       "        matrix: bt709\n"
-                       "        primaries: bt709\n"
-                       "        transfer: bt709\n"
-                       "      path: /tmp/dailyboy_mjpeg.mov\n"
-                       "      codec: mjpeg\n");
+                       "        range: \"tv\"\n"
+                       "        matrix: \"bt709\"\n"
+                       "        primaries: \"bt709\"\n"
+                       "        transfer: \"bt709\"\n"
+                       "      path: \"/tmp/dailyboy_mjpeg.mov\"\n"
+                       "      codec: \"mjpeg\"\n");
 
   // Test
   dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
@@ -7738,15 +8053,15 @@ TEST(JobLoader, LoadJob_VideosWithoutImageSequences_LoadsVideos) {
  */
 TEST(JobLoader, LoadJob_ImageSequencesWithoutVideos_LoadsSequences) {
   // Prepare
-  const std::filesystem::path yaml =
-      write_output_job("sequences_only.yaml",
-                       "  image_sequences:\n"
-                       "    - id: archive\n"
-                       "      enabled: true\n"
-                       "      display_view:\n"
-                       "        display: \"passthrough\"\n"
-                       "        view: \"passthrough\"\n"
-                       "      path_pattern: /tmp/dailyboy_archive.%04d.png\n");
+  const std::filesystem::path yaml = write_output_job(
+      "sequences_only.yaml",
+      "  image_sequences:\n"
+      "    - id: \"archive\"\n"
+      "      enabled: true\n"
+      "      display_view:\n"
+      "        display: \"passthrough\"\n"
+      "        view: \"passthrough\"\n"
+      "      path_pattern: \"/tmp/dailyboy_archive.%04d.png\"\n");
 
   // Test
   dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
@@ -7768,18 +8083,18 @@ TEST(JobLoader, ValidateJobSchema_AllVideosDisabled_FailsValidation) {
   const std::filesystem::path yaml =
       write_output_job("all_disabled.yaml",
                        "  videos:\n"
-                       "    - id: preview\n"
+                       "    - id: \"preview\"\n"
                        "      enabled: false\n"
                        "      display_view:\n"
                        "        display: \"passthrough\"\n"
                        "        view: \"passthrough\"\n"
                        "      signal:\n"
-                       "        range: tv\n"
-                       "        matrix: bt709\n"
-                       "        primaries: bt709\n"
-                       "        transfer: bt709\n"
-                       "      path: /tmp/dailyboy_disabled.mov\n"
-                       "      codec: h264\n"
+                       "        range: \"tv\"\n"
+                       "        matrix: \"bt709\"\n"
+                       "        primaries: \"bt709\"\n"
+                       "        transfer: \"bt709\"\n"
+                       "      path: \"/tmp/dailyboy_disabled.mov\"\n"
+                       "      codec: \"h264\"\n"
                        "  image_sequences: []\n");
 
   // Test
@@ -7807,6 +8122,2347 @@ TEST(JobLoader, ValidateJobSchema_EmptyVideos_FailsValidation) {
 }
 
 /*!
+ * \brief Accepts output that omits videos when an image sequence is enabled.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedVideos_WithImageSequences_Succeeds) {
+  // Prepare
+  const std::filesystem::path yaml = write_output_job(
+      "omitted_videos_with_seqs.yaml",
+      "  image_sequences:\n"
+      "    - id: \"archive\"\n"
+      "      enabled: true\n"
+      "      display_view:\n"
+      "        display: \"passthrough\"\n"
+      "        view: \"passthrough\"\n"
+      "      path_pattern: \"/tmp/dailyboy_archive.%04d.png\"\n");
+
+  // Test
+  const dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  ASSERT_TRUE(schema.ok()) << schema.message();
+  ASSERT_TRUE(job.ok()) << job.status().message();
+  EXPECT_TRUE(job.value().output().videos().videos().empty());
+  ASSERT_EQ(job.value().output().image_sequences().image_sequences().size(),
+            1u);
+}
+
+/*!
+ * \brief Accepts output that omits image_sequences when a video is enabled.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedImageSequences_WithVideos_Succeeds) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_h264_output_job("omitted_image_sequences.yaml", "", false);
+
+  // Test
+  const dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  ASSERT_TRUE(schema.ok()) << schema.message();
+  ASSERT_TRUE(job.ok()) << job.status().message();
+  ASSERT_EQ(job.value().output().videos().videos().size(), 1u);
+  EXPECT_TRUE(job.value().output().image_sequences().image_sequences().empty());
+}
+
+/*!
+ * \brief Rejects an empty output block with neither videos nor image_sequences.
+ */
+TEST(JobLoader,
+     ValidateJobSchema_OmittedVideosAndImageSequences_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_contract_job(
+      "omitted_videos_and_seqs.yaml", {.empty_output = true});
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_39);
+}
+
+/*!
+ * \brief Rejects image_sequences that is empty when videos is omitted.
+ */
+TEST(JobLoader,
+     ValidateJobSchema_EmptyImageSequences_WithoutVideos_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_output_job("empty_seqs_no_videos.yaml", "  image_sequences: []\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_36);
+}
+
+/*!
+ * \brief Rejects a video that omits id.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedVideoId_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_h264_output_job("omitted_video_id.yaml",
+                            "    - enabled: true\n"
+                            "      display_view:\n"
+                            "        display: \"passthrough\"\n"
+                            "        view: \"passthrough\"\n"
+                            "      signal:\n"
+                            "        range: \"tv\"\n"
+                            "        matrix: \"bt709\"\n"
+                            "        primaries: \"bt709\"\n"
+                            "        transfer: \"bt709\"\n"
+                            "      path: \"/tmp/dailyboy_h264.mov\"\n"
+                            "      codec: \"h264\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_143);
+}
+
+/*!
+ * \brief Rejects a video id that is not a quoted string.
+ */
+TEST(JobLoader, ValidateJobSchema_UnquotedVideoId_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_h264_output_job("unquoted_video_id.yaml",
+                            "    - id: preview\n"
+                            "      enabled: true\n"
+                            "      display_view:\n"
+                            "        display: \"passthrough\"\n"
+                            "        view: \"passthrough\"\n"
+                            "      signal:\n"
+                            "        range: \"tv\"\n"
+                            "        matrix: \"bt709\"\n"
+                            "        primaries: \"bt709\"\n"
+                            "        transfer: \"bt709\"\n"
+                            "      path: \"/tmp/dailyboy_h264.mov\"\n"
+                            "      codec: \"h264\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_144);
+}
+
+/*!
+ * \brief Rejects a video id that is an empty quoted string.
+ */
+TEST(JobLoader, ValidateJobSchema_EmptyVideoId_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_h264_output_job("empty_video_id.yaml",
+                            "    - id: \"\"\n"
+                            "      enabled: true\n"
+                            "      display_view:\n"
+                            "        display: \"passthrough\"\n"
+                            "        view: \"passthrough\"\n"
+                            "      signal:\n"
+                            "        range: \"tv\"\n"
+                            "        matrix: \"bt709\"\n"
+                            "        primaries: \"bt709\"\n"
+                            "        transfer: \"bt709\"\n"
+                            "      path: \"/tmp/dailyboy_h264.mov\"\n"
+                            "      codec: \"h264\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_144);
+}
+
+/*!
+ * \brief Stores a quoted video id on the Job.
+ */
+TEST(JobLoader, ValidateJobSchema_PresentVideoId_Succeeds) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_h264_output_job("present_video_id.yaml");
+
+  // Test
+  const dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  ASSERT_TRUE(schema.ok()) << schema.message();
+  ASSERT_TRUE(job.ok()) << job.status().message();
+  EXPECT_EQ(job.value().output().videos().videos().front().id(), "preview");
+}
+
+/*!
+ * \brief Rejects a video that omits enabled.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedVideoEnabled_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_h264_output_job("omitted_video_enabled.yaml",
+                            "    - id: \"preview\"\n"
+                            "      display_view:\n"
+                            "        display: \"passthrough\"\n"
+                            "        view: \"passthrough\"\n"
+                            "      signal:\n"
+                            "        range: \"tv\"\n"
+                            "        matrix: \"bt709\"\n"
+                            "        primaries: \"bt709\"\n"
+                            "        transfer: \"bt709\"\n"
+                            "      path: \"/tmp/dailyboy_h264.mov\"\n"
+                            "      codec: \"h264\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_145);
+}
+
+/*!
+ * \brief Rejects a video enabled that is not a boolean.
+ */
+TEST(JobLoader, ValidateJobSchema_VideoEnabledNotBool_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_h264_output_job("video_enabled_not_bool.yaml",
+                            "    - id: \"preview\"\n"
+                            "      enabled: \"yes\"\n"
+                            "      display_view:\n"
+                            "        display: \"passthrough\"\n"
+                            "        view: \"passthrough\"\n"
+                            "      signal:\n"
+                            "        range: \"tv\"\n"
+                            "        matrix: \"bt709\"\n"
+                            "        primaries: \"bt709\"\n"
+                            "        transfer: \"bt709\"\n"
+                            "      path: \"/tmp/dailyboy_h264.mov\"\n"
+                            "      codec: \"h264\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_146);
+}
+
+/*!
+ * \brief Rejects a video that omits display_view.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedDisplayView_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_h264_output_job("omitted_display_view.yaml",
+                            "    - id: \"preview\"\n"
+                            "      enabled: true\n"
+                            "      signal:\n"
+                            "        range: \"tv\"\n"
+                            "        matrix: \"bt709\"\n"
+                            "        primaries: \"bt709\"\n"
+                            "        transfer: \"bt709\"\n"
+                            "      path: \"/tmp/dailyboy_h264.mov\"\n"
+                            "      codec: \"h264\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_147);
+}
+
+/*!
+ * \brief Rejects display_view that omits display.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedDisplayViewDisplay_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_h264_output_job("omitted_dv_display.yaml",
+                            "    - id: \"preview\"\n"
+                            "      enabled: true\n"
+                            "      display_view:\n"
+                            "        view: \"passthrough\"\n"
+                            "      signal:\n"
+                            "        range: \"tv\"\n"
+                            "        matrix: \"bt709\"\n"
+                            "        primaries: \"bt709\"\n"
+                            "        transfer: \"bt709\"\n"
+                            "      path: \"/tmp/dailyboy_h264.mov\"\n"
+                            "      codec: \"h264\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_148);
+}
+
+/*!
+ * \brief Rejects display_view.display that is not a quoted string.
+ */
+TEST(JobLoader, ValidateJobSchema_UnquotedDisplayViewDisplay_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_h264_output_job("unquoted_dv_display.yaml",
+                            "    - id: \"preview\"\n"
+                            "      enabled: true\n"
+                            "      display_view:\n"
+                            "        display: passthrough\n"
+                            "        view: \"passthrough\"\n"
+                            "      signal:\n"
+                            "        range: \"tv\"\n"
+                            "        matrix: \"bt709\"\n"
+                            "        primaries: \"bt709\"\n"
+                            "        transfer: \"bt709\"\n"
+                            "      path: \"/tmp/dailyboy_h264.mov\"\n"
+                            "      codec: \"h264\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_149);
+}
+
+/*!
+ * \brief Rejects display_view.display that is empty.
+ */
+TEST(JobLoader, ValidateJobSchema_EmptyDisplayViewDisplay_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_h264_output_job("empty_dv_display.yaml",
+                            "    - id: \"preview\"\n"
+                            "      enabled: true\n"
+                            "      display_view:\n"
+                            "        display: \"\"\n"
+                            "        view: \"passthrough\"\n"
+                            "      signal:\n"
+                            "        range: \"tv\"\n"
+                            "        matrix: \"bt709\"\n"
+                            "        primaries: \"bt709\"\n"
+                            "        transfer: \"bt709\"\n"
+                            "      path: \"/tmp/dailyboy_h264.mov\"\n"
+                            "      codec: \"h264\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_149);
+}
+
+/*!
+ * \brief Rejects display_view that omits view.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedDisplayViewView_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_h264_output_job("omitted_dv_view.yaml",
+                            "    - id: \"preview\"\n"
+                            "      enabled: true\n"
+                            "      display_view:\n"
+                            "        display: \"passthrough\"\n"
+                            "      signal:\n"
+                            "        range: \"tv\"\n"
+                            "        matrix: \"bt709\"\n"
+                            "        primaries: \"bt709\"\n"
+                            "        transfer: \"bt709\"\n"
+                            "      path: \"/tmp/dailyboy_h264.mov\"\n"
+                            "      codec: \"h264\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_150);
+}
+
+/*!
+ * \brief Rejects display_view.view that is not a quoted string.
+ */
+TEST(JobLoader, ValidateJobSchema_UnquotedDisplayViewView_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_h264_output_job("unquoted_dv_view.yaml",
+                            "    - id: \"preview\"\n"
+                            "      enabled: true\n"
+                            "      display_view:\n"
+                            "        display: \"passthrough\"\n"
+                            "        view: passthrough\n"
+                            "      signal:\n"
+                            "        range: \"tv\"\n"
+                            "        matrix: \"bt709\"\n"
+                            "        primaries: \"bt709\"\n"
+                            "        transfer: \"bt709\"\n"
+                            "      path: \"/tmp/dailyboy_h264.mov\"\n"
+                            "      codec: \"h264\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_151);
+}
+
+/*!
+ * \brief Rejects display_view.view that is empty.
+ */
+TEST(JobLoader, ValidateJobSchema_EmptyDisplayViewView_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_h264_output_job("empty_dv_view.yaml",
+                            "    - id: \"preview\"\n"
+                            "      enabled: true\n"
+                            "      display_view:\n"
+                            "        display: \"passthrough\"\n"
+                            "        view: \"\"\n"
+                            "      signal:\n"
+                            "        range: \"tv\"\n"
+                            "        matrix: \"bt709\"\n"
+                            "        primaries: \"bt709\"\n"
+                            "        transfer: \"bt709\"\n"
+                            "      path: \"/tmp/dailyboy_h264.mov\"\n"
+                            "      codec: \"h264\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_151);
+}
+
+/*!
+ * \brief Stores display_view display and view on the Job.
+ */
+TEST(JobLoader, ValidateJobSchema_PresentDisplayView_Succeeds) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_h264_output_job("present_display_view.yaml");
+
+  // Test
+  const dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  ASSERT_TRUE(schema.ok()) << schema.message();
+  ASSERT_TRUE(job.ok()) << job.status().message();
+  const dailyboy::JobOutputDisplayView& dv =
+      job.value().output().videos().videos().front().display_view();
+  EXPECT_EQ(dv.display(), "passthrough");
+  EXPECT_EQ(dv.view(), "passthrough");
+}
+
+/*!
+ * \brief Rejects a video that omits signal.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedVideoSignal_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_h264_output_job("omitted_video_signal.yaml",
+                            "    - id: \"preview\"\n"
+                            "      enabled: true\n"
+                            "      display_view:\n"
+                            "        display: \"passthrough\"\n"
+                            "        view: \"passthrough\"\n"
+                            "      path: \"/tmp/dailyboy_h264.mov\"\n"
+                            "      codec: \"h264\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_92);
+}
+
+/*!
+ * \brief Rejects signal that omits range.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedSignalRange_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_h264_output_job("omitted_signal_range.yaml",
+                            "    - id: \"preview\"\n"
+                            "      enabled: true\n"
+                            "      display_view:\n"
+                            "        display: \"passthrough\"\n"
+                            "        view: \"passthrough\"\n"
+                            "      signal:\n"
+                            "        matrix: \"bt709\"\n"
+                            "        primaries: \"bt709\"\n"
+                            "        transfer: \"bt709\"\n"
+                            "      path: \"/tmp/dailyboy_h264.mov\"\n"
+                            "      codec: \"h264\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_153);
+}
+
+/*!
+ * \brief Rejects signal.range that is not a quoted string.
+ */
+TEST(JobLoader, ValidateJobSchema_UnquotedSignalRange_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_h264_output_job("unquoted_signal_range.yaml",
+                            "    - id: \"preview\"\n"
+                            "      enabled: true\n"
+                            "      display_view:\n"
+                            "        display: \"passthrough\"\n"
+                            "        view: \"passthrough\"\n"
+                            "      signal:\n"
+                            "        range: tv\n"
+                            "        matrix: \"bt709\"\n"
+                            "        primaries: \"bt709\"\n"
+                            "        transfer: \"bt709\"\n"
+                            "      path: \"/tmp/dailyboy_h264.mov\"\n"
+                            "      codec: \"h264\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_154);
+}
+
+/*!
+ * \brief Rejects signal.range outside the allowed enum.
+ */
+TEST(JobLoader, ValidateJobSchema_UnsupportedSignalRange_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_h264_output_job("unsupported_signal_range.yaml",
+                            "    - id: \"preview\"\n"
+                            "      enabled: true\n"
+                            "      display_view:\n"
+                            "        display: \"passthrough\"\n"
+                            "        view: \"passthrough\"\n"
+                            "      signal:\n"
+                            "        range: \"full\"\n"
+                            "        matrix: \"bt709\"\n"
+                            "        primaries: \"bt709\"\n"
+                            "        transfer: \"bt709\"\n"
+                            "      path: \"/tmp/dailyboy_h264.mov\"\n"
+                            "      codec: \"h264\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_155);
+}
+
+/*!
+ * \brief Rejects signal that omits matrix.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedSignalMatrix_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_h264_output_job("omitted_signal_matrix.yaml",
+                            "    - id: \"preview\"\n"
+                            "      enabled: true\n"
+                            "      display_view:\n"
+                            "        display: \"passthrough\"\n"
+                            "        view: \"passthrough\"\n"
+                            "      signal:\n"
+                            "        range: \"tv\"\n"
+                            "        primaries: \"bt709\"\n"
+                            "        transfer: \"bt709\"\n"
+                            "      path: \"/tmp/dailyboy_h264.mov\"\n"
+                            "      codec: \"h264\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_156);
+}
+
+/*!
+ * \brief Rejects signal.matrix that is not a quoted string.
+ */
+TEST(JobLoader, ValidateJobSchema_UnquotedSignalMatrix_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_h264_output_job("unquoted_signal_matrix.yaml",
+                            "    - id: \"preview\"\n"
+                            "      enabled: true\n"
+                            "      display_view:\n"
+                            "        display: \"passthrough\"\n"
+                            "        view: \"passthrough\"\n"
+                            "      signal:\n"
+                            "        range: \"tv\"\n"
+                            "        matrix: bt709\n"
+                            "        primaries: \"bt709\"\n"
+                            "        transfer: \"bt709\"\n"
+                            "      path: \"/tmp/dailyboy_h264.mov\"\n"
+                            "      codec: \"h264\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_157);
+}
+
+/*!
+ * \brief Rejects signal.matrix outside the allowed enum.
+ */
+TEST(JobLoader, ValidateJobSchema_UnsupportedSignalMatrix_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_h264_output_job("unsupported_signal_matrix.yaml",
+                            "    - id: \"preview\"\n"
+                            "      enabled: true\n"
+                            "      display_view:\n"
+                            "        display: \"passthrough\"\n"
+                            "        view: \"passthrough\"\n"
+                            "      signal:\n"
+                            "        range: \"tv\"\n"
+                            "        matrix: \"bt2020\"\n"
+                            "        primaries: \"bt709\"\n"
+                            "        transfer: \"bt709\"\n"
+                            "      path: \"/tmp/dailyboy_h264.mov\"\n"
+                            "      codec: \"h264\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_158);
+}
+
+/*!
+ * \brief Rejects signal that omits primaries.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedSignalPrimaries_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_h264_output_job("omitted_signal_primaries.yaml",
+                            "    - id: \"preview\"\n"
+                            "      enabled: true\n"
+                            "      display_view:\n"
+                            "        display: \"passthrough\"\n"
+                            "        view: \"passthrough\"\n"
+                            "      signal:\n"
+                            "        range: \"tv\"\n"
+                            "        matrix: \"bt709\"\n"
+                            "        transfer: \"bt709\"\n"
+                            "      path: \"/tmp/dailyboy_h264.mov\"\n"
+                            "      codec: \"h264\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_159);
+}
+
+/*!
+ * \brief Rejects signal.primaries that is not a quoted string.
+ */
+TEST(JobLoader, ValidateJobSchema_UnquotedSignalPrimaries_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_h264_output_job("unquoted_signal_primaries.yaml",
+                            "    - id: \"preview\"\n"
+                            "      enabled: true\n"
+                            "      display_view:\n"
+                            "        display: \"passthrough\"\n"
+                            "        view: \"passthrough\"\n"
+                            "      signal:\n"
+                            "        range: \"tv\"\n"
+                            "        matrix: \"bt709\"\n"
+                            "        primaries: bt709\n"
+                            "        transfer: \"bt709\"\n"
+                            "      path: \"/tmp/dailyboy_h264.mov\"\n"
+                            "      codec: \"h264\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_160);
+}
+
+/*!
+ * \brief Rejects signal.primaries outside the allowed enum.
+ */
+TEST(JobLoader, ValidateJobSchema_UnsupportedSignalPrimaries_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_h264_output_job("unsupported_signal_primaries.yaml",
+                            "    - id: \"preview\"\n"
+                            "      enabled: true\n"
+                            "      display_view:\n"
+                            "        display: \"passthrough\"\n"
+                            "        view: \"passthrough\"\n"
+                            "      signal:\n"
+                            "        range: \"tv\"\n"
+                            "        matrix: \"bt709\"\n"
+                            "        primaries: \"bt2020\"\n"
+                            "        transfer: \"bt709\"\n"
+                            "      path: \"/tmp/dailyboy_h264.mov\"\n"
+                            "      codec: \"h264\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_161);
+}
+
+/*!
+ * \brief Rejects signal that omits transfer.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedSignalTransfer_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_h264_output_job("omitted_signal_transfer.yaml",
+                            "    - id: \"preview\"\n"
+                            "      enabled: true\n"
+                            "      display_view:\n"
+                            "        display: \"passthrough\"\n"
+                            "        view: \"passthrough\"\n"
+                            "      signal:\n"
+                            "        range: \"tv\"\n"
+                            "        matrix: \"bt709\"\n"
+                            "        primaries: \"bt709\"\n"
+                            "      path: \"/tmp/dailyboy_h264.mov\"\n"
+                            "      codec: \"h264\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_162);
+}
+
+/*!
+ * \brief Rejects signal.transfer that is not a quoted string.
+ */
+TEST(JobLoader, ValidateJobSchema_UnquotedSignalTransfer_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_h264_output_job("unquoted_signal_transfer.yaml",
+                            "    - id: \"preview\"\n"
+                            "      enabled: true\n"
+                            "      display_view:\n"
+                            "        display: \"passthrough\"\n"
+                            "        view: \"passthrough\"\n"
+                            "      signal:\n"
+                            "        range: \"tv\"\n"
+                            "        matrix: \"bt709\"\n"
+                            "        primaries: \"bt709\"\n"
+                            "        transfer: bt709\n"
+                            "      path: \"/tmp/dailyboy_h264.mov\"\n"
+                            "      codec: \"h264\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_163);
+}
+
+/*!
+ * \brief Rejects signal.transfer outside the allowed enum.
+ */
+TEST(JobLoader, ValidateJobSchema_UnsupportedSignalTransfer_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_h264_output_job("unsupported_signal_transfer.yaml",
+                            "    - id: \"preview\"\n"
+                            "      enabled: true\n"
+                            "      display_view:\n"
+                            "        display: \"passthrough\"\n"
+                            "        view: \"passthrough\"\n"
+                            "      signal:\n"
+                            "        range: \"tv\"\n"
+                            "        matrix: \"bt709\"\n"
+                            "        primaries: \"bt709\"\n"
+                            "        transfer: \"bt2020\"\n"
+                            "      path: \"/tmp/dailyboy_h264.mov\"\n"
+                            "      codec: \"h264\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_164);
+}
+
+/*!
+ * \brief Stores video signal tags on the Job.
+ */
+TEST(JobLoader, ValidateJobSchema_PresentVideoSignal_Succeeds) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_h264_output_job("present_video_signal.yaml");
+
+  // Test
+  const dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  ASSERT_TRUE(schema.ok()) << schema.message();
+  ASSERT_TRUE(job.ok()) << job.status().message();
+  const dailyboy::JobOutputVideoSignal& signal =
+      job.value().output().videos().videos().front().signal();
+  EXPECT_EQ(signal.range(), dailyboy::JobOutputVideoSignal::RangeValue::Tv);
+  EXPECT_EQ(signal.matrix(),
+            dailyboy::JobOutputVideoSignal::MatrixValue::Bt709);
+  EXPECT_EQ(signal.primaries(),
+            dailyboy::JobOutputVideoSignal::PrimariesValue::Bt709);
+  EXPECT_EQ(signal.transfer(),
+            dailyboy::JobOutputVideoSignal::TransferValue::Bt709);
+}
+
+/*!
+ * \brief Rejects a video that omits path.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedVideoPath_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_h264_output_job("omitted_video_path.yaml",
+                            "    - id: \"preview\"\n"
+                            "      enabled: true\n"
+                            "      display_view:\n"
+                            "        display: \"passthrough\"\n"
+                            "        view: \"passthrough\"\n"
+                            "      signal:\n"
+                            "        range: \"tv\"\n"
+                            "        matrix: \"bt709\"\n"
+                            "        primaries: \"bt709\"\n"
+                            "        transfer: \"bt709\"\n"
+                            "      codec: \"h264\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_165);
+}
+
+/*!
+ * \brief Rejects a video path that is not a quoted string.
+ */
+TEST(JobLoader, ValidateJobSchema_UnquotedVideoPath_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_h264_output_job("unquoted_video_path.yaml",
+                            "    - id: \"preview\"\n"
+                            "      enabled: true\n"
+                            "      display_view:\n"
+                            "        display: \"passthrough\"\n"
+                            "        view: \"passthrough\"\n"
+                            "      signal:\n"
+                            "        range: \"tv\"\n"
+                            "        matrix: \"bt709\"\n"
+                            "        primaries: \"bt709\"\n"
+                            "        transfer: \"bt709\"\n"
+                            "      path: /tmp/dailyboy_h264.mov\n"
+                            "      codec: \"h264\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_166);
+}
+
+/*!
+ * \brief Rejects a video path that is empty.
+ */
+TEST(JobLoader, ValidateJobSchema_EmptyVideoPath_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_h264_output_job("empty_video_path.yaml",
+                            "    - id: \"preview\"\n"
+                            "      enabled: true\n"
+                            "      display_view:\n"
+                            "        display: \"passthrough\"\n"
+                            "        view: \"passthrough\"\n"
+                            "      signal:\n"
+                            "        range: \"tv\"\n"
+                            "        matrix: \"bt709\"\n"
+                            "        primaries: \"bt709\"\n"
+                            "        transfer: \"bt709\"\n"
+                            "      path: \"\"\n"
+                            "      codec: \"h264\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_166);
+}
+
+/*!
+ * \brief Rejects a video path that does not end with .mov.
+ */
+TEST(JobLoader, ValidateJobSchema_VideoPathNotMov_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_h264_output_job("video_path_not_mov.yaml",
+                            "    - id: \"preview\"\n"
+                            "      enabled: true\n"
+                            "      display_view:\n"
+                            "        display: \"passthrough\"\n"
+                            "        view: \"passthrough\"\n"
+                            "      signal:\n"
+                            "        range: \"tv\"\n"
+                            "        matrix: \"bt709\"\n"
+                            "        primaries: \"bt709\"\n"
+                            "        transfer: \"bt709\"\n"
+                            "      path: \"/tmp/dailyboy_h264.mp4\"\n"
+                            "      codec: \"h264\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_167);
+}
+
+/*!
+ * \brief Stores a quoted .mov video path on the Job.
+ */
+TEST(JobLoader, ValidateJobSchema_PresentVideoPath_Succeeds) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_h264_output_job("present_video_path.yaml");
+
+  // Test
+  const dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  ASSERT_TRUE(schema.ok()) << schema.message();
+  ASSERT_TRUE(job.ok()) << job.status().message();
+  EXPECT_EQ(job.value().output().videos().videos().front().path(),
+            "/tmp/dailyboy_h264.mov");
+}
+
+/*!
+ * \brief Defaults omitted video fps to 24.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedVideoFps_DefaultsTo24) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_h264_output_job("omitted_video_fps.yaml");
+
+  // Test
+  const dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  ASSERT_TRUE(schema.ok()) << schema.message();
+  ASSERT_TRUE(job.ok()) << job.status().message();
+  EXPECT_EQ(job.value().output().videos().videos().front().fps(), 24);
+}
+
+/*!
+ * \brief Rejects video fps that is not an unquoted integer.
+ */
+TEST(JobLoader, ValidateJobSchema_FpsNotInteger_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_h264_output_job("fps_not_integer.yaml",
+                            "    - id: \"preview\"\n"
+                            "      enabled: true\n"
+                            "      display_view:\n"
+                            "        display: \"passthrough\"\n"
+                            "        view: \"passthrough\"\n"
+                            "      signal:\n"
+                            "        range: \"tv\"\n"
+                            "        matrix: \"bt709\"\n"
+                            "        primaries: \"bt709\"\n"
+                            "        transfer: \"bt709\"\n"
+                            "      path: \"/tmp/dailyboy_h264.mov\"\n"
+                            "      fps: 24.5\n"
+                            "      codec: \"h264\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_168);
+}
+
+/*!
+ * \brief Rejects video fps below 1.
+ */
+TEST(JobLoader, ValidateJobSchema_FpsBelow1_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_h264_output_job("fps_below_1.yaml",
+                            "    - id: \"preview\"\n"
+                            "      enabled: true\n"
+                            "      display_view:\n"
+                            "        display: \"passthrough\"\n"
+                            "        view: \"passthrough\"\n"
+                            "      signal:\n"
+                            "        range: \"tv\"\n"
+                            "        matrix: \"bt709\"\n"
+                            "        primaries: \"bt709\"\n"
+                            "        transfer: \"bt709\"\n"
+                            "      path: \"/tmp/dailyboy_h264.mov\"\n"
+                            "      fps: 0\n"
+                            "      codec: \"h264\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_168);
+}
+
+/*!
+ * \brief Stores an explicit video fps on the Job.
+ */
+TEST(JobLoader, ValidateJobSchema_PresentVideoFps_Succeeds) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_h264_output_job("present_video_fps.yaml",
+                            "    - id: \"preview\"\n"
+                            "      enabled: true\n"
+                            "      display_view:\n"
+                            "        display: \"passthrough\"\n"
+                            "        view: \"passthrough\"\n"
+                            "      signal:\n"
+                            "        range: \"tv\"\n"
+                            "        matrix: \"bt709\"\n"
+                            "        primaries: \"bt709\"\n"
+                            "        transfer: \"bt709\"\n"
+                            "      path: \"/tmp/dailyboy_h264.mov\"\n"
+                            "      fps: 30\n"
+                            "      codec: \"h264\"\n");
+
+  // Test
+  const dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  ASSERT_TRUE(schema.ok()) << schema.message();
+  ASSERT_TRUE(job.ok()) << job.status().message();
+  EXPECT_EQ(job.value().output().videos().videos().front().fps(), 30);
+}
+
+/*!
+ * \brief Rejects a video that omits codec.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedVideoCodec_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_h264_output_job("omitted_video_codec.yaml",
+                            "    - id: \"preview\"\n"
+                            "      enabled: true\n"
+                            "      display_view:\n"
+                            "        display: \"passthrough\"\n"
+                            "        view: \"passthrough\"\n"
+                            "      signal:\n"
+                            "        range: \"tv\"\n"
+                            "        matrix: \"bt709\"\n"
+                            "        primaries: \"bt709\"\n"
+                            "        transfer: \"bt709\"\n"
+                            "      path: \"/tmp/dailyboy_h264.mov\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_169);
+}
+
+/*!
+ * \brief Rejects a video codec that is not a quoted string.
+ */
+TEST(JobLoader, ValidateJobSchema_UnquotedVideoCodec_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_h264_output_job("unquoted_video_codec.yaml",
+                            "    - id: \"preview\"\n"
+                            "      enabled: true\n"
+                            "      display_view:\n"
+                            "        display: \"passthrough\"\n"
+                            "        view: \"passthrough\"\n"
+                            "      signal:\n"
+                            "        range: \"tv\"\n"
+                            "        matrix: \"bt709\"\n"
+                            "        primaries: \"bt709\"\n"
+                            "        transfer: \"bt709\"\n"
+                            "      path: \"/tmp/dailyboy_h264.mov\"\n"
+                            "      codec: h264\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_170);
+}
+
+/*!
+ * \brief Rejects a video codec outside the allowed enum.
+ */
+TEST(JobLoader, ValidateJobSchema_UnsupportedVideoCodec_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_h264_output_job("unsupported_video_codec.yaml",
+                            "    - id: \"preview\"\n"
+                            "      enabled: true\n"
+                            "      display_view:\n"
+                            "        display: \"passthrough\"\n"
+                            "        view: \"passthrough\"\n"
+                            "      signal:\n"
+                            "        range: \"tv\"\n"
+                            "        matrix: \"bt709\"\n"
+                            "        primaries: \"bt709\"\n"
+                            "        transfer: \"bt709\"\n"
+                            "      path: \"/tmp/dailyboy_h264.mov\"\n"
+                            "      codec: \"vp9\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_171);
+}
+
+/*!
+ * \brief Stores a quoted h264 codec on the Job.
+ */
+TEST(JobLoader, ValidateJobSchema_PresentVideoCodec_Succeeds) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_h264_output_job("present_video_codec.yaml");
+
+  // Test
+  const dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  ASSERT_TRUE(schema.ok()) << schema.message();
+  ASSERT_TRUE(job.ok()) << job.status().message();
+  EXPECT_EQ(job.value().output().videos().videos().front().codec(),
+            dailyboy::JobOutputVideo::JobOutputVideoCodecValue::H264);
+}
+
+/*!
+ * \brief Accepts omitted codec_options and applies H.264 defaults.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedCodecOptions_Succeeds) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_h264_output_job("omitted_codec_options_schema.yaml");
+
+  // Test
+  const dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  ASSERT_TRUE(schema.ok()) << schema.message();
+  ASSERT_TRUE(job.ok()) << job.status().message();
+  const dailyboy::JobOutputVideoH264& options =
+      std::get<dailyboy::JobOutputVideoH264>(
+          job.value().output().videos().videos().front().codec_options());
+  EXPECT_EQ(
+      options.preset(),
+      dailyboy::JobOutputVideoH264::JobOutputVideoH264PresetValue::Medium);
+  EXPECT_EQ(options.crf(), dailyboy::JobOutputVideoH264::kDefaultCrf);
+  EXPECT_EQ(options.gop(), dailyboy::JobOutputVideoH264::kDefaultGop);
+  EXPECT_EQ(
+      options.pix_fmt(),
+      dailyboy::JobOutputVideoH264::JobOutputVideoH264PixFmtValue::Yuv420p);
+  EXPECT_EQ(
+      options.tune(),
+      dailyboy::JobOutputVideoH264::JobOutputVideoH264TuneValue::Unspecified);
+  EXPECT_EQ(options.profile(), dailyboy::JobOutputVideoH264::
+                                   JobOutputVideoH264ProfileValue::Unspecified);
+  EXPECT_TRUE(options.level().empty());
+  EXPECT_TRUE(options.faststart());
+}
+
+/*!
+ * \brief Defaults omitted H.264 preset to medium.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedH264Preset_DefaultsToMedium) {
+  // Prepare
+  const std::filesystem::path yaml = write_h264_codec_options_job(
+      "omitted_h264_preset.yaml", "        crf: 23\n");
+
+  // Test
+  const dailyboy::JobOutputVideoH264 options = load_h264_options(yaml);
+
+  // Assert
+  EXPECT_EQ(
+      options.preset(),
+      dailyboy::JobOutputVideoH264::JobOutputVideoH264PresetValue::Medium);
+}
+
+/*!
+ * \brief Rejects an H.264 preset that is not a quoted string.
+ */
+TEST(JobLoader, ValidateJobSchema_UnquotedH264Preset_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_h264_codec_options_job(
+      "unquoted_h264_preset.yaml", "        preset: medium\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_172);
+}
+
+/*!
+ * \brief Rejects an H.264 preset outside the allowed enum.
+ */
+TEST(JobLoader, ValidateJobSchema_UnsupportedH264Preset_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_h264_codec_options_job(
+      "unsupported_h264_preset.yaml", "        preset: \"placebo\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_173);
+}
+
+/*!
+ * \brief Defaults omitted H.264 crf to 23 when bitrate is omitted.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedH264Crf_DefaultsTo23) {
+  // Prepare
+  const std::filesystem::path yaml = write_h264_codec_options_job(
+      "omitted_h264_crf.yaml", "        preset: \"medium\"\n");
+
+  // Test
+  const dailyboy::JobOutputVideoH264 options = load_h264_options(yaml);
+
+  // Assert
+  EXPECT_EQ(options.crf(), dailyboy::JobOutputVideoH264::kDefaultCrf);
+}
+
+/*!
+ * \brief Rejects an H.264 crf that is not a number.
+ */
+TEST(JobLoader, ValidateJobSchema_H264CrfNotNumber_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_h264_codec_options_job(
+      "h264_crf_not_number.yaml", "        crf: \"high\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_174);
+}
+
+/*!
+ * \brief Rejects an H.264 crf below 0.
+ */
+TEST(JobLoader, ValidateJobSchema_H264CrfBelow0_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_h264_codec_options_job(
+      "h264_crf_below_0.yaml", "        crf: -1\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_174);
+}
+
+/*!
+ * \brief Rejects an H.264 crf above 51.
+ */
+TEST(JobLoader, ValidateJobSchema_H264CrfAbove51_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_h264_codec_options_job(
+      "h264_crf_above_51.yaml", "        crf: 52\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_174);
+}
+
+/*!
+ * \brief Accepts omitted H.264 bitrate_kbps.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedH264Bitrate_Succeeds) {
+  // Prepare
+  const std::filesystem::path yaml = write_h264_codec_options_job(
+      "omitted_h264_bitrate.yaml", "        crf: 23\n");
+
+  // Test
+  const dailyboy::JobOutputVideoH264 options = load_h264_options(yaml);
+
+  // Assert
+  EXPECT_EQ(options.bitrate_kbps(), 0);
+}
+
+/*!
+ * \brief Rejects H.264 codec_options that set both crf and bitrate_kbps.
+ */
+TEST(JobLoader, ValidateJobSchema_H264CrfAndBitrate_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_h264_codec_options_job("h264_crf_and_bitrate.yaml",
+                                   "        crf: 23\n"
+                                   "        bitrate_kbps: 8000\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_24);
+}
+
+/*!
+ * \brief Rejects an H.264 bitrate_kbps below 1.
+ */
+TEST(JobLoader, ValidateJobSchema_H264BitrateBelow1_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_h264_codec_options_job(
+      "h264_bitrate_below_1.yaml", "        bitrate_kbps: 0\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_175);
+}
+
+/*!
+ * \brief Defaults omitted H.264 gop to 250.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedH264Gop_DefaultsTo250) {
+  // Prepare
+  const std::filesystem::path yaml = write_h264_codec_options_job(
+      "omitted_h264_gop.yaml", "        crf: 23\n");
+
+  // Test
+  const dailyboy::JobOutputVideoH264 options = load_h264_options(yaml);
+
+  // Assert
+  EXPECT_EQ(options.gop(), dailyboy::JobOutputVideoH264::kDefaultGop);
+}
+
+/*!
+ * \brief Rejects an H.264 gop that is not an unquoted integer.
+ */
+TEST(JobLoader, ValidateJobSchema_H264GopNotInteger_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_h264_codec_options_job(
+      "h264_gop_not_integer.yaml", "        gop: 12.5\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_176);
+}
+
+/*!
+ * \brief Rejects an H.264 gop below 1.
+ */
+TEST(JobLoader, ValidateJobSchema_H264GopBelow1_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_h264_codec_options_job("h264_gop_below_1.yaml", "        gop: 0\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_176);
+}
+
+/*!
+ * \brief Defaults omitted H.264 pix_fmt to yuv420p.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedH264PixFmt_DefaultsToYuv420p) {
+  // Prepare
+  const std::filesystem::path yaml = write_h264_codec_options_job(
+      "omitted_h264_pix_fmt.yaml", "        crf: 23\n");
+
+  // Test
+  const dailyboy::JobOutputVideoH264 options = load_h264_options(yaml);
+
+  // Assert
+  EXPECT_EQ(
+      options.pix_fmt(),
+      dailyboy::JobOutputVideoH264::JobOutputVideoH264PixFmtValue::Yuv420p);
+}
+
+/*!
+ * \brief Rejects an H.264 pix_fmt that is not a quoted string.
+ */
+TEST(JobLoader, ValidateJobSchema_UnquotedH264PixFmt_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_h264_codec_options_job(
+      "unquoted_h264_pix_fmt.yaml", "        pix_fmt: yuv420p\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_177);
+}
+
+/*!
+ * \brief Rejects an H.264 pix_fmt outside the allowed enum.
+ */
+TEST(JobLoader, ValidateJobSchema_UnsupportedH264PixFmt_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_h264_codec_options_job(
+      "unsupported_h264_pix_fmt.yaml", "        pix_fmt: \"yuv444p\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_178);
+}
+
+/*!
+ * \brief Defaults omitted H.264 tune to Unspecified.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedH264Tune_DefaultsToUnspecified) {
+  // Prepare
+  const std::filesystem::path yaml = write_h264_codec_options_job(
+      "omitted_h264_tune.yaml", "        crf: 23\n");
+
+  // Test
+  const dailyboy::JobOutputVideoH264 options = load_h264_options(yaml);
+
+  // Assert
+  EXPECT_EQ(
+      options.tune(),
+      dailyboy::JobOutputVideoH264::JobOutputVideoH264TuneValue::Unspecified);
+}
+
+/*!
+ * \brief Rejects an H.264 tune that is not a quoted string.
+ */
+TEST(JobLoader, ValidateJobSchema_UnquotedH264Tune_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_h264_codec_options_job(
+      "unquoted_h264_tune.yaml", "        tune: film\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_179);
+}
+
+/*!
+ * \brief Rejects an H.264 tune outside the allowed enum.
+ */
+TEST(JobLoader, ValidateJobSchema_UnsupportedH264Tune_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_h264_codec_options_job(
+      "unsupported_h264_tune.yaml", "        tune: \"psnr\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_180);
+}
+
+/*!
+ * \brief Defaults omitted H.264 profile to Unspecified.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedH264Profile_DefaultsToUnspecified) {
+  // Prepare
+  const std::filesystem::path yaml = write_h264_codec_options_job(
+      "omitted_h264_profile.yaml", "        crf: 23\n");
+
+  // Test
+  const dailyboy::JobOutputVideoH264 options = load_h264_options(yaml);
+
+  // Assert
+  EXPECT_EQ(options.profile(), dailyboy::JobOutputVideoH264::
+                                   JobOutputVideoH264ProfileValue::Unspecified);
+}
+
+/*!
+ * \brief Rejects an H.264 profile that is not a quoted string.
+ */
+TEST(JobLoader, ValidateJobSchema_UnquotedH264Profile_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_h264_codec_options_job(
+      "unquoted_h264_profile.yaml", "        profile: high\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_181);
+}
+
+/*!
+ * \brief Rejects an H.264 profile outside the allowed enum.
+ */
+TEST(JobLoader, ValidateJobSchema_UnsupportedH264Profile_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_h264_codec_options_job(
+      "unsupported_h264_profile.yaml", "        profile: \"extended\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_182);
+}
+
+/*!
+ * \brief Defaults omitted H.264 level to an empty auto value.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedH264Level_DefaultsToAuto) {
+  // Prepare
+  const std::filesystem::path yaml = write_h264_codec_options_job(
+      "omitted_h264_level.yaml", "        crf: 23\n");
+
+  // Test
+  const dailyboy::JobOutputVideoH264 options = load_h264_options(yaml);
+
+  // Assert
+  EXPECT_TRUE(options.level().empty());
+}
+
+/*!
+ * \brief Rejects an H.264 level that is not a scalar number or string.
+ */
+TEST(JobLoader, ValidateJobSchema_UnquotedH264Level_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_h264_codec_options_job(
+      "unquoted_h264_level.yaml", "        level: [4.1]\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_28);
+}
+
+/*!
+ * \brief Rejects an H.264 level outside the allowed set.
+ */
+TEST(JobLoader, ValidateJobSchema_UnsupportedH264Level_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_h264_codec_options_job(
+      "unsupported_h264_level.yaml", "        level: \"9.9\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_184);
+}
+
+/*!
+ * \brief Defaults omitted H.264 faststart to true.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedH264Faststart_DefaultsToTrue) {
+  // Prepare
+  const std::filesystem::path yaml = write_h264_codec_options_job(
+      "omitted_h264_faststart.yaml", "        crf: 23\n");
+
+  // Test
+  const dailyboy::JobOutputVideoH264 options = load_h264_options(yaml);
+
+  // Assert
+  EXPECT_TRUE(options.faststart());
+}
+
+/*!
+ * \brief Rejects an H.264 faststart that is not a boolean.
+ */
+TEST(JobLoader, ValidateJobSchema_H264FaststartNotBool_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_h264_codec_options_job(
+      "h264_faststart_not_bool.yaml", "        faststart: \"yes\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_185);
+}
+
+/*!
+ * \brief Defaults omitted MJPEG qscale to 3.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedMjpegQscale_DefaultsTo3) {
+  // Prepare
+  const std::filesystem::path yaml = write_mjpeg_codec_options_job(
+      "omitted_mjpeg_qscale.yaml", "        pix_fmt: \"yuv422p\"\n");
+
+  // Test
+  const dailyboy::JobOutputVideoMjpeg options = load_mjpeg_options(yaml);
+
+  // Assert
+  EXPECT_EQ(options.qscale(), dailyboy::JobOutputVideoMjpeg::kDefaultQscale);
+}
+
+/*!
+ * \brief Rejects an MJPEG qscale that is not an integer.
+ */
+TEST(JobLoader, ValidateJobSchema_MjpegQscaleNotInteger_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_mjpeg_codec_options_job(
+      "mjpeg_qscale_not_int.yaml", "        qscale: \"high\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_29);
+}
+
+/*!
+ * \brief Rejects an MJPEG qscale below 1.
+ */
+TEST(JobLoader, ValidateJobSchema_MjpegQscaleBelow1_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_mjpeg_codec_options_job(
+      "mjpeg_qscale_below_1.yaml", "        qscale: 0\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_29);
+}
+
+/*!
+ * \brief Rejects an MJPEG qscale above 31.
+ */
+TEST(JobLoader, ValidateJobSchema_MjpegQscaleAbove31_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_mjpeg_codec_options_job(
+      "mjpeg_qscale_above_31.yaml", "        qscale: 32\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_29);
+}
+
+/*!
+ * \brief Defaults omitted MJPEG pix_fmt to yuv422p.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedMjpegPixFmt_DefaultsToYuv422p) {
+  // Prepare
+  const std::filesystem::path yaml = write_mjpeg_codec_options_job(
+      "omitted_mjpeg_pix_fmt.yaml", "        qscale: 3\n");
+
+  // Test
+  const dailyboy::JobOutputVideoMjpeg options = load_mjpeg_options(yaml);
+
+  // Assert
+  EXPECT_EQ(
+      options.pix_fmt(),
+      dailyboy::JobOutputVideoMjpeg::JobOutputVideoMjpegPixFmtValue::Yuv422p);
+}
+
+/*!
+ * \brief Rejects an MJPEG pix_fmt that is not a quoted string.
+ */
+TEST(JobLoader, ValidateJobSchema_UnquotedMjpegPixFmt_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_mjpeg_codec_options_job(
+      "unquoted_mjpeg_pix_fmt.yaml", "        pix_fmt: yuv422p\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_186);
+}
+
+/*!
+ * \brief Rejects an MJPEG pix_fmt outside the allowed enum.
+ */
+TEST(JobLoader, ValidateJobSchema_UnsupportedMjpegPixFmt_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_mjpeg_codec_options_job(
+      "unsupported_mjpeg_pix_fmt.yaml", "        pix_fmt: \"yuv422p10\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_187);
+}
+
+/*!
+ * \brief Defaults omitted MJPEG huffman to optimal.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedMjpegHuffman_DefaultsToOptimal) {
+  // Prepare
+  const std::filesystem::path yaml = write_mjpeg_codec_options_job(
+      "omitted_mjpeg_huffman.yaml", "        qscale: 3\n");
+
+  // Test
+  const dailyboy::JobOutputVideoMjpeg options = load_mjpeg_options(yaml);
+
+  // Assert
+  EXPECT_EQ(
+      options.huffman(),
+      dailyboy::JobOutputVideoMjpeg::JobOutputVideoMjpegHuffmanValue::Optimal);
+}
+
+/*!
+ * \brief Rejects an MJPEG huffman that is not a quoted string.
+ */
+TEST(JobLoader, ValidateJobSchema_UnquotedMjpegHuffman_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_mjpeg_codec_options_job(
+      "unquoted_mjpeg_huffman.yaml", "        huffman: optimal\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_188);
+}
+
+/*!
+ * \brief Rejects an MJPEG huffman outside the allowed enum.
+ */
+TEST(JobLoader, ValidateJobSchema_UnsupportedMjpegHuffman_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_mjpeg_codec_options_job(
+      "unsupported_mjpeg_huffman.yaml", "        huffman: \"custom\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_189);
+}
+
+/*!
+ * \brief Defaults omitted MJPEG faststart to true.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedMjpegFaststart_DefaultsToTrue) {
+  // Prepare
+  const std::filesystem::path yaml = write_mjpeg_codec_options_job(
+      "omitted_mjpeg_faststart.yaml", "        qscale: 3\n");
+
+  // Test
+  const dailyboy::JobOutputVideoMjpeg options = load_mjpeg_options(yaml);
+
+  // Assert
+  EXPECT_TRUE(options.faststart());
+}
+
+/*!
+ * \brief Rejects an MJPEG faststart that is not a boolean.
+ */
+TEST(JobLoader, ValidateJobSchema_MjpegFaststartNotBool_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_mjpeg_codec_options_job(
+      "mjpeg_faststart_not_bool.yaml", "        faststart: \"yes\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_185);
+}
+
+/*!
+ * \brief Defaults omitted DNxHD profile to dnxhr_hq with matching defaults.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedDnxhdProfile_DefaultsToDnxhrHq) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_dnxhd_codec_options_job("omitted_dnxhd_profile.yaml", "");
+
+  // Test
+  const dailyboy::JobOutputVideoDnxhd options = load_dnxhd_options(yaml);
+
+  // Assert
+  EXPECT_EQ(
+      options.profile(),
+      dailyboy::JobOutputVideoDnxhd::JobOutputVideoDnxhdProfileValue::DnxhrHq);
+  EXPECT_EQ(
+      options.pix_fmt(),
+      dailyboy::JobOutputVideoDnxhd::JobOutputVideoDnxhdPixFmtValue::Yuv422p);
+  EXPECT_EQ(options.bitrate_kbps(), 0);
+  EXPECT_FALSE(options.interlaced());
+  EXPECT_FALSE(options.nitris_compat());
+  EXPECT_TRUE(options.faststart());
+}
+
+/*!
+ * \brief Rejects a DNxHD profile that is not a quoted string.
+ */
+TEST(JobLoader, ValidateJobSchema_UnquotedDnxhdProfile_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_dnxhd_codec_options_job(
+      "unquoted_dnxhd_profile.yaml", "        profile: dnxhr_hq\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_190);
+}
+
+/*!
+ * \brief Rejects a DNxHD profile outside the allowed enum.
+ */
+TEST(JobLoader, ValidateJobSchema_UnsupportedDnxhdProfile_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_dnxhd_codec_options_job(
+      "unsupported_dnxhd_profile.yaml", "        profile: \"dnxhr_hqxx\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_191);
+}
+
+/*!
+ * \brief Defaults omitted DNxHD pix_fmt from the active profile.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedDnxhdPixFmt_DefaultsByProfile) {
+  // Prepare
+  const std::filesystem::path yaml = write_dnxhd_codec_options_job(
+      "omitted_dnxhd_pix_fmt_hqx.yaml", "        profile: \"dnxhr_hqx\"\n");
+
+  // Test
+  const dailyboy::JobOutputVideoDnxhd options = load_dnxhd_options(yaml);
+
+  // Assert
+  EXPECT_EQ(
+      options.pix_fmt(),
+      dailyboy::JobOutputVideoDnxhd::JobOutputVideoDnxhdPixFmtValue::Yuv422p10);
+}
+
+/*!
+ * \brief Rejects a DNxHD pix_fmt that is not a quoted string.
+ */
+TEST(JobLoader, ValidateJobSchema_UnquotedDnxhdPixFmt_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_dnxhd_codec_options_job(
+      "unquoted_dnxhd_pix_fmt.yaml", "        pix_fmt: yuv422p\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_192);
+}
+
+/*!
+ * \brief Rejects a DNxHD pix_fmt outside the allowed enum.
+ */
+TEST(JobLoader, ValidateJobSchema_UnsupportedDnxhdPixFmt_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_dnxhd_codec_options_job(
+      "unsupported_dnxhd_pix_fmt.yaml", "        pix_fmt: \"yuv420p\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_193);
+}
+
+/*!
+ * \brief Rejects a DNxHD pix_fmt incompatible with the profile.
+ */
+TEST(JobLoader, ValidateJobSchema_DnxhdPixFmtIncompatible_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_dnxhd_codec_options_job("dnxhd_pix_fmt_incompatible.yaml",
+                                    "        profile: \"dnxhr_hq\"\n"
+                                    "        pix_fmt: \"yuv422p10\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_33);
+}
+
+/*!
+ * \brief Rejects classic DNxHD without bitrate_kbps.
+ */
+TEST(JobLoader, ValidateJobSchema_DnxhdWithoutBitrate_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_dnxhd_codec_options_job(
+      "dnxhd_without_bitrate.yaml", "        profile: \"dnxhd\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_31);
+}
+
+/*!
+ * \brief Accepts classic DNxHD with bitrate_kbps and stores both fields.
+ */
+TEST(JobLoader, ValidateJobSchema_DnxhdWithBitrate_Succeeds) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_dnxhd_codec_options_job("dnxhd_with_bitrate.yaml",
+                                    "        profile: \"dnxhd\"\n"
+                                    "        bitrate_kbps: 36000\n");
+
+  // Test
+  const dailyboy::JobOutputVideoDnxhd options = load_dnxhd_options(yaml);
+
+  // Assert
+  EXPECT_EQ(
+      options.profile(),
+      dailyboy::JobOutputVideoDnxhd::JobOutputVideoDnxhdProfileValue::Dnxhd);
+  EXPECT_EQ(options.bitrate_kbps(), 36000);
+}
+
+/*!
+ * \brief Rejects a classic DNxHD bitrate_kbps that is not an integer.
+ */
+TEST(JobLoader, ValidateJobSchema_DnxhdBitrateNotInteger_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_dnxhd_codec_options_job("dnxhd_bitrate_not_int.yaml",
+                                    "        profile: \"dnxhd\"\n"
+                                    "        bitrate_kbps: \"fast\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_32);
+}
+
+/*!
+ * \brief Rejects a classic DNxHD bitrate_kbps below 1.
+ *
+ * Schema maps the minimum violation to \c USER_ERROR_JOB_175; load reports
+ * \c USER_ERROR_JOB_32.
+ */
+TEST(JobLoader, ValidateJobSchema_DnxhdBitrateBelow1_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_dnxhd_codec_options_job("dnxhd_bitrate_below_1.yaml",
+                                    "        profile: \"dnxhd\"\n"
+                                    "        bitrate_kbps: 0\n");
+
+  // Test
+  const dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  const dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  expect_user_message(schema, std::string(dailyboy::USER_ERROR_JOB_175));
+  expect_user_message(job.status(), std::string(dailyboy::USER_ERROR_JOB_32));
+}
+
+/*!
+ * \brief Rejects bitrate_kbps on a DNxHR profile.
+ *
+ * JSON Schema may fail first with a generic contract message; load reports
+ * \c USER_ERROR_JOB_30.
+ */
+TEST(JobLoader, ValidateJobSchema_DnxhrWithBitrate_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_dnxhd_codec_options_job("dnxhr_with_bitrate.yaml",
+                                    "        profile: \"dnxhr_hq\"\n"
+                                    "        bitrate_kbps: 36000\n");
+
+  // Test
+  // Assert
+  expect_schema_fails_load_user_error(yaml, dailyboy::USER_ERROR_JOB_30);
+}
+
+/*!
+ * \brief Defaults omitted DNxHD interlaced to false.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedDnxhdInterlaced_DefaultsToFalse) {
+  // Prepare
+  const std::filesystem::path yaml = write_dnxhd_codec_options_job(
+      "omitted_dnxhd_interlaced.yaml", "        profile: \"dnxhr_hq\"\n");
+
+  // Test
+  const dailyboy::JobOutputVideoDnxhd options = load_dnxhd_options(yaml);
+
+  // Assert
+  EXPECT_FALSE(options.interlaced());
+}
+
+/*!
+ * \brief Rejects a DNxHD interlaced that is not a boolean.
+ */
+TEST(JobLoader, ValidateJobSchema_DnxhdInterlacedNotBool_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_dnxhd_codec_options_job(
+      "dnxhd_interlaced_not_bool.yaml", "        interlaced: \"yes\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_194);
+}
+
+/*!
+ * \brief Rejects interlaced true on a DNxHR profile.
+ */
+TEST(JobLoader, ValidateJobSchema_DnxhrWithInterlaced_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_dnxhd_codec_options_job("dnxhr_with_interlaced.yaml",
+                                    "        profile: \"dnxhr_hq\"\n"
+                                    "        interlaced: true\n");
+
+  // Test
+  // Assert
+  expect_schema_fails_load_user_error(yaml, dailyboy::USER_ERROR_JOB_34);
+}
+
+/*!
+ * \brief Defaults omitted DNxHD nitris_compat to false.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedDnxhdNitris_DefaultsToFalse) {
+  // Prepare
+  const std::filesystem::path yaml = write_dnxhd_codec_options_job(
+      "omitted_dnxhd_nitris.yaml", "        profile: \"dnxhr_hq\"\n");
+
+  // Test
+  const dailyboy::JobOutputVideoDnxhd options = load_dnxhd_options(yaml);
+
+  // Assert
+  EXPECT_FALSE(options.nitris_compat());
+}
+
+/*!
+ * \brief Rejects a DNxHD nitris_compat that is not a boolean.
+ */
+TEST(JobLoader, ValidateJobSchema_DnxhdNitrisNotBool_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_dnxhd_codec_options_job(
+      "dnxhd_nitris_not_bool.yaml", "        nitris_compat: \"yes\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_195);
+}
+
+/*!
+ * \brief Defaults omitted DNxHD faststart to true.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedDnxhdFaststart_DefaultsToTrue) {
+  // Prepare
+  const std::filesystem::path yaml = write_dnxhd_codec_options_job(
+      "omitted_dnxhd_faststart.yaml", "        profile: \"dnxhr_hq\"\n");
+
+  // Test
+  const dailyboy::JobOutputVideoDnxhd options = load_dnxhd_options(yaml);
+
+  // Assert
+  EXPECT_TRUE(options.faststart());
+}
+
+/*!
+ * \brief Rejects a DNxHD faststart that is not a boolean.
+ */
+TEST(JobLoader, ValidateJobSchema_DnxhdFaststartNotBool_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_dnxhd_codec_options_job(
+      "dnxhd_faststart_not_bool.yaml", "        faststart: \"yes\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_185);
+}
+
+/*!
+ * \brief Rejects DNxHD with signal.range pc.
+ */
+TEST(JobLoader, ValidateJobSchema_DnxhdSignalRangePc_ReturnsUserError) {
+  // Prepare
+  const std::string video =
+      "    - id: \"preview\"\n"
+      "      enabled: true\n"
+      "      display_view:\n"
+      "        display: \"passthrough\"\n"
+      "        view: \"passthrough\"\n"
+      "      signal:\n"
+      "        range: \"pc\"\n"
+      "        matrix: \"bt709\"\n"
+      "        primaries: \"bt709\"\n"
+      "        transfer: \"bt709\"\n"
+      "      path: \"/tmp/dailyboy_dnxhd.mov\"\n"
+      "      codec: \"dnxhd\"\n";
+  const std::filesystem::path yaml =
+      write_dnxhd_output_job("dnxhd_signal_range_pc.yaml", video);
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_196);
+}
+
+/*!
+ * \brief Defaults omitted ProRes profile to hq with matching defaults.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedProresProfile_DefaultsToHq) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_prores_codec_options_job("omitted_prores_profile.yaml", "");
+
+  // Test
+  const dailyboy::JobOutputVideoProres options = load_prores_options(yaml);
+
+  // Assert
+  EXPECT_EQ(
+      options.profile(),
+      dailyboy::JobOutputVideoProres::JobOutputVideoProresProfileValue::Hq);
+  EXPECT_EQ(options.pix_fmt(), dailyboy::JobOutputVideoProres::
+                                   JobOutputVideoProresPixFmtValue::Yuv422p10);
+  EXPECT_EQ(
+      options.quant_mat(),
+      dailyboy::JobOutputVideoProres::JobOutputVideoProresQuantMatValue::Auto);
+  EXPECT_EQ(options.bits_per_mb(), 0);
+  EXPECT_EQ(options.mbs_per_slice(),
+            dailyboy::JobOutputVideoProres::kDefaultMbsPerSlice);
+  EXPECT_EQ(options.vendor(), dailyboy::JobOutputVideoProres::kDefaultVendor);
+  EXPECT_TRUE(options.faststart());
+}
+
+/*!
+ * \brief Rejects a ProRes profile that is not a quoted string (except 4444).
+ */
+TEST(JobLoader, ValidateJobSchema_UnquotedProresProfile_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_prores_codec_options_job(
+      "unquoted_prores_profile.yaml", "        profile: hq\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_197);
+}
+
+/*!
+ * \brief Accepts an unquoted integer ProRes profile 4444.
+ */
+TEST(JobLoader, ValidateJobSchema_UnquotedProresProfile4444_Succeeds) {
+  // Prepare
+  const std::filesystem::path yaml = write_prores_codec_options_job(
+      "unquoted_prores_profile_4444.yaml", "        profile: 4444\n");
+
+  // Test
+  const dailyboy::JobOutputVideoProres options = load_prores_options(yaml);
+
+  // Assert
+  EXPECT_EQ(options.profile(),
+            dailyboy::JobOutputVideoProres::JobOutputVideoProresProfileValue::
+                FourFourFourFour);
+  EXPECT_EQ(options.pix_fmt(), dailyboy::JobOutputVideoProres::
+                                   JobOutputVideoProresPixFmtValue::Yuv444p10);
+}
+
+/*!
+ * \brief Rejects a ProRes profile outside the allowed enum.
+ */
+TEST(JobLoader, ValidateJobSchema_UnsupportedProresProfile_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_prores_codec_options_job(
+      "unsupported_prores_profile.yaml", "        profile: \"xq\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_198);
+}
+
+/*!
+ * \brief Defaults omitted ProRes pix_fmt from the active profile.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedProresPixFmt_DefaultsByProfile) {
+  // Prepare
+  const std::filesystem::path yaml = write_prores_codec_options_job(
+      "omitted_prores_pix_fmt_4444.yaml", "        profile: \"4444\"\n");
+
+  // Test
+  const dailyboy::JobOutputVideoProres options = load_prores_options(yaml);
+
+  // Assert
+  EXPECT_EQ(options.pix_fmt(), dailyboy::JobOutputVideoProres::
+                                   JobOutputVideoProresPixFmtValue::Yuv444p10);
+}
+
+/*!
+ * \brief Rejects a ProRes pix_fmt that is not a quoted string.
+ */
+TEST(JobLoader, ValidateJobSchema_UnquotedProresPixFmt_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_prores_codec_options_job(
+      "unquoted_prores_pix_fmt.yaml", "        pix_fmt: yuv422p10\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_199);
+}
+
+/*!
+ * \brief Rejects a ProRes pix_fmt outside the allowed enum.
+ */
+TEST(JobLoader, ValidateJobSchema_UnsupportedProresPixFmt_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_prores_codec_options_job(
+      "unsupported_prores_pix_fmt.yaml", "        pix_fmt: \"yuv420p\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_200);
+}
+
+/*!
+ * \brief Rejects ProRes hq with pix_fmt yuv444p10.
+ */
+TEST(JobLoader, ValidateJobSchema_ProresHqWithYuv444p10_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_prores_codec_options_job("prores_hq_yuv444p10.yaml",
+                                     "        profile: \"hq\"\n"
+                                     "        pix_fmt: \"yuv444p10\"\n");
+
+  // Test
+  // Assert
+  expect_schema_fails_load_user_error(yaml, dailyboy::USER_ERROR_JOB_95);
+}
+
+/*!
+ * \brief Rejects ProRes 4444 with pix_fmt yuv422p10.
+ */
+TEST(JobLoader, ValidateJobSchema_Prores4444WithYuv422p10_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_prores_codec_options_job("prores_4444_yuv422p10.yaml",
+                                     "        profile: \"4444\"\n"
+                                     "        pix_fmt: \"yuv422p10\"\n");
+
+  // Test
+  // Assert
+  expect_schema_fails_load_user_error(yaml, dailyboy::USER_ERROR_JOB_95);
+}
+
+/*!
+ * \brief Defaults omitted ProRes quant_mat to auto.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedProresQuantMat_DefaultsToAuto) {
+  // Prepare
+  const std::filesystem::path yaml = write_prores_codec_options_job(
+      "omitted_prores_quant_mat.yaml", "        profile: \"hq\"\n");
+
+  // Test
+  const dailyboy::JobOutputVideoProres options = load_prores_options(yaml);
+
+  // Assert
+  EXPECT_EQ(
+      options.quant_mat(),
+      dailyboy::JobOutputVideoProres::JobOutputVideoProresQuantMatValue::Auto);
+}
+
+/*!
+ * \brief Rejects a ProRes quant_mat that is not a quoted string.
+ */
+TEST(JobLoader, ValidateJobSchema_UnquotedProresQuantMat_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_prores_codec_options_job(
+      "unquoted_prores_quant_mat.yaml", "        quant_mat: auto\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_201);
+}
+
+/*!
+ * \brief Rejects a ProRes quant_mat outside the allowed enum.
+ */
+TEST(JobLoader, ValidateJobSchema_UnsupportedProresQuantMat_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_prores_codec_options_job(
+      "unsupported_prores_quant_mat.yaml", "        quant_mat: \"custom\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_202);
+}
+
+/*!
+ * \brief Defaults omitted ProRes bits_per_mb to 0.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedProresBitsPerMb_DefaultsTo0) {
+  // Prepare
+  const std::filesystem::path yaml = write_prores_codec_options_job(
+      "omitted_prores_bits_per_mb.yaml", "        profile: \"hq\"\n");
+
+  // Test
+  const dailyboy::JobOutputVideoProres options = load_prores_options(yaml);
+
+  // Assert
+  EXPECT_EQ(options.bits_per_mb(), 0);
+}
+
+/*!
+ * \brief Rejects a ProRes bits_per_mb that is not an integer.
+ */
+TEST(JobLoader, ValidateJobSchema_ProresBitsPerMbNotInteger_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_prores_codec_options_job(
+      "prores_bits_per_mb_not_int.yaml", "        bits_per_mb: \"high\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_98);
+}
+
+/*!
+ * \brief Rejects a ProRes bits_per_mb below 0.
+ */
+TEST(JobLoader, ValidateJobSchema_ProresBitsPerMbBelow0_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_prores_codec_options_job(
+      "prores_bits_per_mb_below_0.yaml", "        bits_per_mb: -1\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_98);
+}
+
+/*!
+ * \brief Rejects a ProRes bits_per_mb above 8192.
+ */
+TEST(JobLoader, ValidateJobSchema_ProresBitsPerMbAbove8192_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_prores_codec_options_job(
+      "prores_bits_per_mb_above_8192.yaml", "        bits_per_mb: 8193\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_98);
+}
+
+/*!
+ * \brief Defaults omitted ProRes mbs_per_slice to 8.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedProresMbsPerSlice_DefaultsTo8) {
+  // Prepare
+  const std::filesystem::path yaml = write_prores_codec_options_job(
+      "omitted_prores_mbs_per_slice.yaml", "        profile: \"hq\"\n");
+
+  // Test
+  const dailyboy::JobOutputVideoProres options = load_prores_options(yaml);
+
+  // Assert
+  EXPECT_EQ(options.mbs_per_slice(),
+            dailyboy::JobOutputVideoProres::kDefaultMbsPerSlice);
+}
+
+/*!
+ * \brief Rejects a ProRes mbs_per_slice that is not an integer.
+ */
+TEST(JobLoader,
+     ValidateJobSchema_ProresMbsPerSliceNotInteger_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_prores_codec_options_job(
+      "prores_mbs_per_slice_not_int.yaml", "        mbs_per_slice: 4.5\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_99);
+}
+
+/*!
+ * \brief Rejects a ProRes mbs_per_slice below 1.
+ */
+TEST(JobLoader, ValidateJobSchema_ProresMbsPerSliceBelow1_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_prores_codec_options_job(
+      "prores_mbs_per_slice_below_1.yaml", "        mbs_per_slice: 0\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_99);
+}
+
+/*!
+ * \brief Rejects a ProRes mbs_per_slice above 8.
+ */
+TEST(JobLoader, ValidateJobSchema_ProresMbsPerSliceAbove8_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_prores_codec_options_job(
+      "prores_mbs_per_slice_above_8.yaml", "        mbs_per_slice: 9\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_99);
+}
+
+/*!
+ * \brief Defaults omitted ProRes vendor to apl0.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedProresVendor_DefaultsToApl0) {
+  // Prepare
+  const std::filesystem::path yaml = write_prores_codec_options_job(
+      "omitted_prores_vendor.yaml", "        profile: \"hq\"\n");
+
+  // Test
+  const dailyboy::JobOutputVideoProres options = load_prores_options(yaml);
+
+  // Assert
+  EXPECT_EQ(options.vendor(), dailyboy::JobOutputVideoProres::kDefaultVendor);
+}
+
+/*!
+ * \brief Rejects a ProRes vendor that is not a quoted string.
+ */
+TEST(JobLoader, ValidateJobSchema_UnquotedProresVendor_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_prores_codec_options_job(
+      "unquoted_prores_vendor.yaml", "        vendor: apl0\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_203);
+}
+
+/*!
+ * \brief Rejects a ProRes vendor that is not exactly four ASCII characters.
+ */
+TEST(JobLoader, ValidateJobSchema_ProresVendorNotFourChars_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_prores_codec_options_job(
+      "prores_vendor_not_four.yaml", "        vendor: \"apple\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_96);
+}
+
+/*!
+ * \brief Rejects ProRes alpha_bits (alpha is not supported).
+ */
+TEST(JobLoader, ValidateJobSchema_ProresAlphaBits_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_prores_codec_options_job(
+      "prores_alpha_bits.yaml", "        alpha_bits: 8\n");
+
+  // Test
+  // Assert
+  expect_schema_fails_load_user_error(yaml, dailyboy::USER_ERROR_JOB_97);
+}
+
+/*!
+ * \brief Defaults omitted ProRes faststart to true.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedProresFaststart_DefaultsToTrue) {
+  // Prepare
+  const std::filesystem::path yaml = write_prores_codec_options_job(
+      "omitted_prores_faststart.yaml", "        profile: \"hq\"\n");
+
+  // Test
+  const dailyboy::JobOutputVideoProres options = load_prores_options(yaml);
+
+  // Assert
+  EXPECT_TRUE(options.faststart());
+}
+
+/*!
+ * \brief Rejects a ProRes faststart that is not a boolean.
+ */
+TEST(JobLoader, ValidateJobSchema_ProresFaststartNotBool_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_prores_codec_options_job(
+      "prores_faststart_not_bool.yaml", "        faststart: \"yes\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_185);
+}
+
+/*!
  * \brief Validates two videos that share an id and fails.
  */
 TEST(JobLoader, ValidateJobSchema_DuplicateVideoId_FailsValidation) {
@@ -7814,30 +10470,30 @@ TEST(JobLoader, ValidateJobSchema_DuplicateVideoId_FailsValidation) {
   const std::filesystem::path yaml =
       write_output_job("dup_video_id.yaml",
                        "  videos:\n"
-                       "    - id: preview\n"
+                       "    - id: \"preview\"\n"
                        "      enabled: true\n"
                        "      display_view:\n"
                        "        display: \"passthrough\"\n"
                        "        view: \"passthrough\"\n"
                        "      signal:\n"
-                       "        range: tv\n"
-                       "        matrix: bt709\n"
-                       "        primaries: bt709\n"
-                       "        transfer: bt709\n"
-                       "      path: /tmp/dailyboy_a.mov\n"
-                       "      codec: h264\n"
-                       "    - id: preview\n"
+                       "        range: \"tv\"\n"
+                       "        matrix: \"bt709\"\n"
+                       "        primaries: \"bt709\"\n"
+                       "        transfer: \"bt709\"\n"
+                       "      path: \"/tmp/dailyboy_a.mov\"\n"
+                       "      codec: \"h264\"\n"
+                       "    - id: \"preview\"\n"
                        "      enabled: true\n"
                        "      display_view:\n"
                        "        display: \"passthrough\"\n"
                        "        view: \"passthrough\"\n"
                        "      signal:\n"
-                       "        range: tv\n"
-                       "        matrix: bt709\n"
-                       "        primaries: bt709\n"
-                       "        transfer: bt709\n"
-                       "      path: /tmp/dailyboy_b.mov\n"
-                       "      codec: mjpeg\n"
+                       "        range: \"tv\"\n"
+                       "        matrix: \"bt709\"\n"
+                       "        primaries: \"bt709\"\n"
+                       "        transfer: \"bt709\"\n"
+                       "      path: \"/tmp/dailyboy_b.mov\"\n"
+                       "      codec: \"mjpeg\"\n"
                        "  image_sequences: []\n");
 
   // Test
@@ -7862,25 +10518,25 @@ TEST(JobLoader, ValidateJobSchema_DuplicateVideoAndSequenceId_FailsValidation) {
   const std::filesystem::path yaml =
       write_output_job("dup_cross_id.yaml",
                        "  videos:\n"
-                       "    - id: preview\n"
+                       "    - id: \"preview\"\n"
                        "      enabled: true\n"
                        "      display_view:\n"
                        "        display: \"passthrough\"\n"
                        "        view: \"passthrough\"\n"
                        "      signal:\n"
-                       "        range: tv\n"
-                       "        matrix: bt709\n"
-                       "        primaries: bt709\n"
-                       "        transfer: bt709\n"
-                       "      path: /tmp/dailyboy_preview.mov\n"
-                       "      codec: h264\n"
+                       "        range: \"tv\"\n"
+                       "        matrix: \"bt709\"\n"
+                       "        primaries: \"bt709\"\n"
+                       "        transfer: \"bt709\"\n"
+                       "      path: \"/tmp/dailyboy_preview.mov\"\n"
+                       "      codec: \"h264\"\n"
                        "  image_sequences:\n"
-                       "    - id: preview\n"
+                       "    - id: \"preview\"\n"
                        "      enabled: true\n"
                        "      display_view:\n"
                        "        display: \"passthrough\"\n"
                        "        view: \"passthrough\"\n"
-                       "      path_pattern: /tmp/out.%04d.png\n");
+                       "      path_pattern: \"/tmp/out.%04d.png\"\n");
 
   // Test
   dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
@@ -7900,12 +10556,12 @@ TEST(JobLoader, LoadJob_SequenceOnly_LoadsImageSequence) {
       write_output_job("sequence_only.yaml",
                        "  videos: []\n"
                        "  image_sequences:\n"
-                       "    - id: archive\n"
+                       "    - id: \"archive\"\n"
                        "      enabled: true\n"
                        "      display_view:\n"
                        "        display: \"passthrough\"\n"
                        "        view: \"passthrough\"\n"
-                       "      path_pattern: /tmp/archive.%04d.png\n");
+                       "      path_pattern: \"/tmp/archive.%04d.png\"\n");
 
   // Test
   dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
@@ -7933,37 +10589,37 @@ TEST(JobLoader, LoadJob_ThreeImageSequences_LoadsAll) {
   const std::filesystem::path yaml =
       write_output_job("three_seqs.yaml",
                        "  videos:\n"
-                       "    - id: preview\n"
+                       "    - id: \"preview\"\n"
                        "      enabled: true\n"
                        "      display_view:\n"
                        "        display: \"passthrough\"\n"
                        "        view: \"passthrough\"\n"
                        "      signal:\n"
-                       "        range: tv\n"
-                       "        matrix: bt709\n"
-                       "        primaries: bt709\n"
-                       "        transfer: bt709\n"
-                       "      path: /tmp/preview.mov\n"
-                       "      codec: h264\n"
+                       "        range: \"tv\"\n"
+                       "        matrix: \"bt709\"\n"
+                       "        primaries: \"bt709\"\n"
+                       "        transfer: \"bt709\"\n"
+                       "      path: \"/tmp/preview.mov\"\n"
+                       "      codec: \"h264\"\n"
                        "  image_sequences:\n"
-                       "    - id: a\n"
+                       "    - id: \"a\"\n"
                        "      enabled: true\n"
                        "      display_view:\n"
                        "        display: \"passthrough\"\n"
                        "        view: \"passthrough\"\n"
-                       "      path_pattern: /tmp/a.%04d.png\n"
-                       "    - id: b\n"
+                       "      path_pattern: \"/tmp/a.%04d.png\"\n"
+                       "    - id: \"b\"\n"
                        "      enabled: false\n"
                        "      display_view:\n"
                        "        display: \"passthrough\"\n"
                        "        view: \"passthrough\"\n"
-                       "      path_pattern: /tmp/b.%04d.png\n"
-                       "    - id: c\n"
+                       "      path_pattern: \"/tmp/b.%04d.png\"\n"
+                       "    - id: \"c\"\n"
                        "      enabled: true\n"
                        "      display_view:\n"
                        "        display: \"passthrough\"\n"
                        "        view: \"passthrough\"\n"
-                       "      path_pattern: /tmp/c.%04d.png\n");
+                       "      path_pattern: \"/tmp/c.%04d.png\"\n");
 
   // Test
   dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
@@ -7984,31 +10640,31 @@ TEST(JobLoader, ValidateJobSchema_ImageSequenceFormatKey_FailsValidation) {
   const std::filesystem::path yaml =
       write_output_job("format_key.yaml",
                        "  videos:\n"
-                       "    - id: preview\n"
+                       "    - id: \"preview\"\n"
                        "      enabled: true\n"
                        "      display_view:\n"
                        "        display: \"passthrough\"\n"
                        "        view: \"passthrough\"\n"
                        "      signal:\n"
-                       "        range: tv\n"
-                       "        matrix: bt709\n"
-                       "        primaries: bt709\n"
-                       "        transfer: bt709\n"
-                       "      path: /tmp/preview.mov\n"
-                       "      codec: h264\n"
+                       "        range: \"tv\"\n"
+                       "        matrix: \"bt709\"\n"
+                       "        primaries: \"bt709\"\n"
+                       "        transfer: \"bt709\"\n"
+                       "      path: \"/tmp/preview.mov\"\n"
+                       "      codec: \"h264\"\n"
                        "  image_sequences:\n"
-                       "    - id: archive\n"
+                       "    - id: \"archive\"\n"
                        "      enabled: true\n"
                        "      display_view:\n"
                        "        display: \"passthrough\"\n"
                        "        view: \"passthrough\"\n"
                        "      signal:\n"
-                       "        range: tv\n"
-                       "        matrix: bt709\n"
-                       "        primaries: bt709\n"
-                       "        transfer: bt709\n"
+                       "        range: \"tv\"\n"
+                       "        matrix: \"bt709\"\n"
+                       "        primaries: \"bt709\"\n"
+                       "        transfer: \"bt709\"\n"
                        "      format: png\n"
-                       "      path_pattern: /tmp/archive.%04d.png\n");
+                       "      path_pattern: \"/tmp/archive.%04d.png\"\n");
 
   // Test
   dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
@@ -8017,6 +10673,1337 @@ TEST(JobLoader, ValidateJobSchema_ImageSequenceFormatKey_FailsValidation) {
   EXPECT_FALSE(schema.ok()) << schema.message();
 }
 
+/*!
+ * \brief Rejects an image sequence that omits id.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedImageSequenceId_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_image_sequence_job(
+      "omitted_image_sequence_id.yaml",
+      "    - enabled: true\n"
+      "      display_view:\n"
+      "        display: \"passthrough\"\n"
+      "        view: \"passthrough\"\n"
+      "      path_pattern: \"/tmp/archive.%04d.png\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_204);
+}
+
+/*!
+ * \brief Rejects an image sequence id that is not a quoted string.
+ */
+TEST(JobLoader, ValidateJobSchema_UnquotedImageSequenceId_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_image_sequence_job(
+      "unquoted_image_sequence_id.yaml",
+      "    - id: archive\n"
+      "      enabled: true\n"
+      "      display_view:\n"
+      "        display: \"passthrough\"\n"
+      "        view: \"passthrough\"\n"
+      "      path_pattern: \"/tmp/archive.%04d.png\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_205);
+}
+
+/*!
+ * \brief Rejects an image sequence id that is an empty quoted string.
+ */
+TEST(JobLoader, ValidateJobSchema_EmptyImageSequenceId_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_image_sequence_job(
+      "empty_image_sequence_id.yaml",
+      "    - id: \"\"\n"
+      "      enabled: true\n"
+      "      display_view:\n"
+      "        display: \"passthrough\"\n"
+      "        view: \"passthrough\"\n"
+      "      path_pattern: \"/tmp/archive.%04d.png\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_205);
+}
+
+/*!
+ * \brief Rejects two image sequences that share an id.
+ */
+TEST(JobLoader, ValidateJobSchema_NonUniqueImageSequenceId_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_output_job("dup_image_sequence_id.yaml",
+                       "  videos: []\n"
+                       "  image_sequences:\n"
+                       "    - id: \"archive\"\n"
+                       "      enabled: true\n"
+                       "      display_view:\n"
+                       "        display: \"passthrough\"\n"
+                       "        view: \"passthrough\"\n"
+                       "      path_pattern: \"/tmp/a.%04d.png\"\n"
+                       "    - id: \"archive\"\n"
+                       "      enabled: true\n"
+                       "      display_view:\n"
+                       "        display: \"passthrough\"\n"
+                       "        view: \"passthrough\"\n"
+                       "      path_pattern: \"/tmp/b.%04d.png\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_35);
+}
+
+/*!
+ * \brief Rejects an image sequence id that collides with a video id.
+ */
+TEST(JobLoader,
+     ValidateJobSchema_NonUniqueImageSequenceVsVideoId_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_output_job("dup_seq_vs_video_id.yaml",
+                       "  videos:\n"
+                       "    - id: \"preview\"\n"
+                       "      enabled: true\n"
+                       "      display_view:\n"
+                       "        display: \"passthrough\"\n"
+                       "        view: \"passthrough\"\n"
+                       "      signal:\n"
+                       "        range: \"tv\"\n"
+                       "        matrix: \"bt709\"\n"
+                       "        primaries: \"bt709\"\n"
+                       "        transfer: \"bt709\"\n"
+                       "      path: \"/tmp/preview.mov\"\n"
+                       "      codec: \"h264\"\n"
+                       "  image_sequences:\n"
+                       "    - id: \"preview\"\n"
+                       "      enabled: true\n"
+                       "      display_view:\n"
+                       "        display: \"passthrough\"\n"
+                       "        view: \"passthrough\"\n"
+                       "      path_pattern: \"/tmp/out.%04d.png\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_35);
+}
+
+/*!
+ * \brief Rejects an image sequence that omits enabled.
+ */
+TEST(JobLoader,
+     ValidateJobSchema_OmittedImageSequenceEnabled_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_image_sequence_job(
+      "omitted_image_sequence_enabled.yaml",
+      "    - id: \"archive\"\n"
+      "      display_view:\n"
+      "        display: \"passthrough\"\n"
+      "        view: \"passthrough\"\n"
+      "      path_pattern: \"/tmp/archive.%04d.png\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_206);
+}
+
+/*!
+ * \brief Rejects an image sequence enabled that is not a boolean.
+ */
+TEST(JobLoader,
+     ValidateJobSchema_ImageSequenceEnabledNotBool_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_image_sequence_job(
+      "image_sequence_enabled_not_bool.yaml",
+      "    - id: \"archive\"\n"
+      "      enabled: \"yes\"\n"
+      "      display_view:\n"
+      "        display: \"passthrough\"\n"
+      "        view: \"passthrough\"\n"
+      "      path_pattern: \"/tmp/archive.%04d.png\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_207);
+}
+
+/*!
+ * \brief Rejects an image sequence that omits display_view.
+ */
+TEST(JobLoader,
+     ValidateJobSchema_OmittedImageSequenceDisplayView_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_image_sequence_job(
+      "omitted_image_sequence_display_view.yaml",
+      "    - id: \"archive\"\n"
+      "      enabled: true\n"
+      "      path_pattern: \"/tmp/archive.%04d.png\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_208);
+}
+
+/*!
+ * \brief Rejects display_view that omits display on an image sequence.
+ */
+TEST(
+    JobLoader,
+    ValidateJobSchema_OmittedImageSequenceDisplayViewDisplay_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_image_sequence_job(
+      "omitted_image_sequence_dv_display.yaml",
+      "    - id: \"archive\"\n"
+      "      enabled: true\n"
+      "      display_view:\n"
+      "        view: \"passthrough\"\n"
+      "      path_pattern: \"/tmp/archive.%04d.png\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_209);
+}
+
+/*!
+ * \brief Rejects display_view.display that is not a quoted string.
+ */
+TEST(
+    JobLoader,
+    ValidateJobSchema_UnquotedImageSequenceDisplayViewDisplay_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_image_sequence_job(
+      "unquoted_image_sequence_dv_display.yaml",
+      "    - id: \"archive\"\n"
+      "      enabled: true\n"
+      "      display_view:\n"
+      "        display: passthrough\n"
+      "        view: \"passthrough\"\n"
+      "      path_pattern: \"/tmp/archive.%04d.png\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_210);
+}
+
+/*!
+ * \brief Rejects display_view.display that is empty.
+ */
+TEST(JobLoader,
+     ValidateJobSchema_EmptyImageSequenceDisplayViewDisplay_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_image_sequence_job(
+      "empty_image_sequence_dv_display.yaml",
+      "    - id: \"archive\"\n"
+      "      enabled: true\n"
+      "      display_view:\n"
+      "        display: \"\"\n"
+      "        view: \"passthrough\"\n"
+      "      path_pattern: \"/tmp/archive.%04d.png\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_210);
+}
+
+/*!
+ * \brief Rejects display_view that omits view on an image sequence.
+ */
+TEST(JobLoader,
+     ValidateJobSchema_OmittedImageSequenceDisplayViewView_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_image_sequence_job(
+      "omitted_image_sequence_dv_view.yaml",
+      "    - id: \"archive\"\n"
+      "      enabled: true\n"
+      "      display_view:\n"
+      "        display: \"passthrough\"\n"
+      "      path_pattern: \"/tmp/archive.%04d.png\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_211);
+}
+
+/*!
+ * \brief Rejects display_view.view that is not a quoted string.
+ */
+TEST(JobLoader,
+     ValidateJobSchema_UnquotedImageSequenceDisplayViewView_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_image_sequence_job(
+      "unquoted_image_sequence_dv_view.yaml",
+      "    - id: \"archive\"\n"
+      "      enabled: true\n"
+      "      display_view:\n"
+      "        display: \"passthrough\"\n"
+      "        view: passthrough\n"
+      "      path_pattern: \"/tmp/archive.%04d.png\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_212);
+}
+
+/*!
+ * \brief Rejects display_view.view that is empty.
+ */
+TEST(JobLoader,
+     ValidateJobSchema_EmptyImageSequenceDisplayViewView_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_image_sequence_job(
+      "empty_image_sequence_dv_view.yaml",
+      "    - id: \"archive\"\n"
+      "      enabled: true\n"
+      "      display_view:\n"
+      "        display: \"passthrough\"\n"
+      "        view: \"\"\n"
+      "      path_pattern: \"/tmp/archive.%04d.png\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_212);
+}
+
+/*!
+ * \brief Rejects an image sequence that omits path_pattern.
+ */
+TEST(JobLoader,
+     ValidateJobSchema_OmittedImageSequencePathPattern_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_image_sequence_job("omitted_image_sequence_path_pattern.yaml",
+                               "    - id: \"archive\"\n"
+                               "      enabled: true\n"
+                               "      display_view:\n"
+                               "        display: \"passthrough\"\n"
+                               "        view: \"passthrough\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_213);
+}
+
+/*!
+ * \brief Rejects an image sequence path_pattern that is empty.
+ */
+TEST(JobLoader,
+     ValidateJobSchema_EmptyImageSequencePathPattern_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_image_sequence_job("empty_image_sequence_path_pattern.yaml",
+                               "    - id: \"archive\"\n"
+                               "      enabled: true\n"
+                               "      display_view:\n"
+                               "        display: \"passthrough\"\n"
+                               "        view: \"passthrough\"\n"
+                               "      path_pattern: \"\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_214);
+}
+
+/*!
+ * \brief Stores a quoted path_pattern on the Job.
+ */
+TEST(JobLoader, ValidateJobSchema_PresentImageSequencePathPattern_Succeeds) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_image_sequence_job("present_image_sequence_path_pattern.yaml");
+
+  // Test
+  const dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  ASSERT_TRUE(schema.ok()) << schema.message();
+  ASSERT_TRUE(job.ok()) << job.status().message();
+  EXPECT_EQ(job.value()
+                .output()
+                .image_sequences()
+                .image_sequences()
+                .front()
+                .path_pattern(),
+            "/tmp/archive.%04d.png");
+}
+
+/*!
+ * \brief Accepts an image sequence that omits format_options.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedFormatOptions_Succeeds) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_image_sequence_job("omitted_format_options.yaml");
+
+  // Test
+  const dailyboy::Status schema = dailyboy::validate_job_schema(yaml);
+  dailyboy::StatusOr<dailyboy::Job> job = dailyboy::load_job(yaml);
+
+  // Assert
+  ASSERT_TRUE(schema.ok()) << schema.message();
+  ASSERT_TRUE(job.ok()) << job.status().message();
+  EXPECT_FALSE(job.value()
+                   .output()
+                   .image_sequences()
+                   .image_sequences()
+                   .front()
+                   .format_options()
+                   .has_value());
+}
+
+/*!
+ * \brief Rejects format_options that is an empty map.
+ */
+TEST(JobLoader, ValidateJobSchema_EmptyFormatOptions_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_image_sequence_job(
+      "empty_format_options.yaml",
+      default_image_sequence_item() + "      format_options: {}\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_215);
+}
+
+/*!
+ * \brief Rejects format_options when path_pattern extension is unknown.
+ */
+TEST(
+    JobLoader,
+    ValidateJobSchema_UnknownPathPatternExtensionWithFormatOptions_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_format_options_job("unknown_ext_format_options.yaml",
+                               "/tmp/out.%04d.bmp", "        bit_depth: 8\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_93);
+}
+
+/*!
+ * \brief Rejects format_options keys that belong to another extension.
+ */
+TEST(JobLoader,
+     ValidateJobSchema_FormatOptionsForeignExtensionKeys_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_format_options_job(
+      "format_options_foreign_keys.yaml", "/tmp/out.%04d.png",
+      "        subsampling: \"4:2:0\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_40);
+}
+
+/*!
+ * \brief Defaults omitted PNG bit_depth to 8.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedPngBitDepth_DefaultsTo8) {
+  // Prepare
+  const std::filesystem::path yaml = write_format_options_job(
+      "omitted_png_bit_depth.yaml", "/tmp/out.%04d.png",
+      "        compression: \"default\"\n");
+
+  // Test
+  const dailyboy::JobOutputImageSequencePng options =
+      load_png_format_options(yaml);
+
+  // Assert
+  EXPECT_EQ(options.bit_depth(),
+            dailyboy::JobOutputImageSequencePng::kDefaultBitDepth);
+}
+
+/*!
+ * \brief Rejects a PNG bit_depth that is not an integer.
+ */
+TEST(JobLoader, ValidateJobSchema_NonIntegerPngBitDepth_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_format_options_job(
+      "non_integer_png_bit_depth.yaml", "/tmp/out.%04d.png",
+      "        bit_depth: \"eight\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_216);
+}
+
+/*!
+ * \brief Rejects a PNG bit_depth that is not 8 or 16.
+ */
+TEST(JobLoader, ValidateJobSchema_UnsupportedPngBitDepth_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_format_options_job("unsupported_png_bit_depth.yaml",
+                               "/tmp/out.%04d.png", "        bit_depth: 10\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_216);
+}
+
+/*!
+ * \brief Defaults omitted PNG compression to default.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedPngCompression_DefaultsToDefault) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_format_options_job("omitted_png_compression.yaml",
+                               "/tmp/out.%04d.png", "        bit_depth: 8\n");
+
+  // Test
+  const dailyboy::JobOutputImageSequencePng options =
+      load_png_format_options(yaml);
+
+  // Assert
+  EXPECT_EQ(options.compression(), "default");
+}
+
+/*!
+ * \brief Rejects a PNG compression that is not a quoted string.
+ */
+TEST(JobLoader, ValidateJobSchema_UnquotedPngCompression_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_format_options_job(
+      "unquoted_png_compression.yaml", "/tmp/out.%04d.png",
+      "        compression: default\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_217);
+}
+
+/*!
+ * \brief Rejects a PNG compression outside the allowed enum.
+ */
+TEST(JobLoader, ValidateJobSchema_UnsupportedPngCompression_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_format_options_job(
+      "unsupported_png_compression.yaml", "/tmp/out.%04d.png",
+      "        compression: \"lzma\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_218);
+}
+
+/*!
+ * \brief Defaults omitted PNG compression_level to 6.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedPngCompressionLevel_DefaultsTo6) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_format_options_job("omitted_png_compression_level.yaml",
+                               "/tmp/out.%04d.png", "        bit_depth: 8\n");
+
+  // Test
+  const dailyboy::JobOutputImageSequencePng options =
+      load_png_format_options(yaml);
+
+  // Assert
+  EXPECT_EQ(options.compression_level(),
+            dailyboy::JobOutputImageSequencePng::kDefaultCompressionLevel);
+}
+
+/*!
+ * \brief Rejects a PNG compression_level that is not an integer.
+ */
+TEST(JobLoader,
+     ValidateJobSchema_NonIntegerPngCompressionLevel_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_format_options_job(
+      "non_integer_png_compression_level.yaml", "/tmp/out.%04d.png",
+      "        compression_level: \"high\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_219);
+}
+
+/*!
+ * \brief Rejects a PNG compression_level below 0.
+ */
+TEST(JobLoader, ValidateJobSchema_PngCompressionLevelBelow0_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_format_options_job(
+      "png_compression_level_below_0.yaml", "/tmp/out.%04d.png",
+      "        compression_level: -1\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_219);
+}
+
+/*!
+ * \brief Rejects a PNG compression_level above 6.
+ */
+TEST(JobLoader, ValidateJobSchema_PngCompressionLevelAbove6_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_format_options_job(
+      "png_compression_level_above_6.yaml", "/tmp/out.%04d.png",
+      "        compression_level: 7\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_219);
+}
+
+/*!
+ * \brief Defaults omitted PNG filter to 0.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedPngFilter_DefaultsTo0) {
+  // Prepare
+  const std::filesystem::path yaml = write_format_options_job(
+      "omitted_png_filter.yaml", "/tmp/out.%04d.png", "        bit_depth: 8\n");
+
+  // Test
+  const dailyboy::JobOutputImageSequencePng options =
+      load_png_format_options(yaml);
+
+  // Assert
+  EXPECT_EQ(options.filter(),
+            dailyboy::JobOutputImageSequencePng::kDefaultFilter);
+}
+
+/*!
+ * \brief Rejects a PNG filter that is not an integer.
+ */
+TEST(JobLoader, ValidateJobSchema_NonIntegerPngFilter_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_format_options_job(
+      "non_integer_png_filter.yaml", "/tmp/out.%04d.png",
+      "        filter: \"none\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_220);
+}
+
+/*!
+ * \brief Rejects a PNG filter below 0.
+ */
+TEST(JobLoader, ValidateJobSchema_PngFilterBelow0_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_format_options_job(
+      "png_filter_below_0.yaml", "/tmp/out.%04d.png", "        filter: -1\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_220);
+}
+
+/*!
+ * \brief Rejects a PNG filter above 4.
+ */
+TEST(JobLoader, ValidateJobSchema_PngFilterAbove4_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_format_options_job(
+      "png_filter_above_4.yaml", "/tmp/out.%04d.png", "        filter: 5\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_220);
+}
+
+/*!
+ * \brief Defaults omitted JPEG bit_depth to 8.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedJpegBitDepth_DefaultsTo8) {
+  // Prepare
+  const std::filesystem::path yaml = write_format_options_job(
+      "omitted_jpeg_bit_depth.yaml", "/tmp/out.%04d.jpg",
+      "        compression_level: 98\n");
+
+  // Test
+  const dailyboy::JobOutputImageSequenceJpeg options =
+      load_jpeg_format_options(yaml);
+
+  // Assert
+  EXPECT_EQ(options.bit_depth(),
+            dailyboy::JobOutputImageSequenceJpeg::kDefaultBitDepth);
+}
+
+/*!
+ * \brief Rejects a JPEG bit_depth that is not 8.
+ */
+TEST(JobLoader, ValidateJobSchema_UnsupportedJpegBitDepth_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_format_options_job("unsupported_jpeg_bit_depth.yaml",
+                               "/tmp/out.%04d.jpg", "        bit_depth: 16\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_221);
+}
+
+/*!
+ * \brief Defaults omitted JPEG compression_level to 98.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedJpegCompressionLevel_DefaultsTo98) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_format_options_job("omitted_jpeg_compression_level.yaml",
+                               "/tmp/out.%04d.jpeg", "        bit_depth: 8\n");
+
+  // Test
+  const dailyboy::JobOutputImageSequenceJpeg options =
+      load_jpeg_format_options(yaml);
+
+  // Assert
+  EXPECT_EQ(options.compression_level(),
+            dailyboy::JobOutputImageSequenceJpeg::kDefaultCompressionLevel);
+}
+
+/*!
+ * \brief Rejects a JPEG compression_level that is not an integer.
+ */
+TEST(JobLoader,
+     ValidateJobSchema_NonIntegerJpegCompressionLevel_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_format_options_job(
+      "non_integer_jpeg_compression_level.yaml", "/tmp/out.%04d.jpg",
+      "        compression_level: \"high\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_222);
+}
+
+/*!
+ * \brief Rejects a JPEG compression_level below 1.
+ */
+TEST(JobLoader, ValidateJobSchema_JpegCompressionLevelBelow1_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_format_options_job(
+      "jpeg_compression_level_below_1.yaml", "/tmp/out.%04d.jpg",
+      "        compression_level: 0\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_222);
+}
+
+/*!
+ * \brief Rejects a JPEG compression_level above 100.
+ */
+TEST(JobLoader,
+     ValidateJobSchema_JpegCompressionLevelAbove100_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_format_options_job(
+      "jpeg_compression_level_above_100.yaml", "/tmp/out.%04d.jpg",
+      "        compression_level: 101\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_222);
+}
+
+/*!
+ * \brief Leaves omitted JPEG subsampling unset.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedJpegSubsampling_DefaultsToUnset) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_format_options_job("omitted_jpeg_subsampling.yaml",
+                               "/tmp/out.%04d.jpg", "        bit_depth: 8\n");
+
+  // Test
+  const dailyboy::JobOutputImageSequenceJpeg options =
+      load_jpeg_format_options(yaml);
+
+  // Assert
+  EXPECT_TRUE(options.subsampling().empty());
+}
+
+/*!
+ * \brief Rejects a JPEG subsampling that is not a quoted string.
+ */
+TEST(JobLoader, ValidateJobSchema_UnquotedJpegSubsampling_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_format_options_job(
+      "unquoted_jpeg_subsampling.yaml", "/tmp/out.%04d.jpg",
+      "        subsampling: four_two_zero\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_223);
+}
+
+/*!
+ * \brief Rejects a JPEG subsampling outside the allowed enum.
+ */
+TEST(JobLoader, ValidateJobSchema_UnsupportedJpegSubsampling_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_format_options_job(
+      "unsupported_jpeg_subsampling.yaml", "/tmp/out.%04d.jpg",
+      "        subsampling: \"4:2:1\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_224);
+}
+
+/*!
+ * \brief Defaults omitted JPEG progressive to false.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedJpegProgressive_DefaultsToFalse) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_format_options_job("omitted_jpeg_progressive.yaml",
+                               "/tmp/out.%04d.jpg", "        bit_depth: 8\n");
+
+  // Test
+  const dailyboy::JobOutputImageSequenceJpeg options =
+      load_jpeg_format_options(yaml);
+
+  // Assert
+  EXPECT_FALSE(options.progressive());
+}
+
+/*!
+ * \brief Rejects a JPEG progressive that is not a boolean.
+ */
+TEST(JobLoader, ValidateJobSchema_JpegProgressiveNotBool_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_format_options_job(
+      "jpeg_progressive_not_bool.yaml", "/tmp/out.%04d.jpg",
+      "        progressive: \"yes\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_225);
+}
+
+/*!
+ * \brief Defaults omitted TIFF bit_depth to 8.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedTiffBitDepth_DefaultsTo8) {
+  // Prepare
+  const std::filesystem::path yaml = write_format_options_job(
+      "omitted_tiff_bit_depth.yaml", "/tmp/out.%04d.tif",
+      "        compression: \"zip\"\n");
+
+  // Test
+  const dailyboy::JobOutputImageSequenceTiff options =
+      load_tiff_format_options(yaml);
+
+  // Assert
+  EXPECT_EQ(options.bit_depth(), "8");
+}
+
+/*!
+ * \brief Rejects a TIFF bit_depth outside the allowed set.
+ */
+TEST(JobLoader, ValidateJobSchema_UnsupportedTiffBitDepth_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_format_options_job("unsupported_tiff_bit_depth.yaml",
+                               "/tmp/out.%04d.tiff", "        bit_depth: 3\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_226);
+}
+
+/*!
+ * \brief Defaults omitted TIFF bigtiff to false.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedTiffBigtiff_DefaultsToFalse) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_format_options_job("omitted_tiff_bigtiff.yaml", "/tmp/out.%04d.tif",
+                               "        bit_depth: 8\n");
+
+  // Test
+  const dailyboy::JobOutputImageSequenceTiff options =
+      load_tiff_format_options(yaml);
+
+  // Assert
+  EXPECT_FALSE(options.bigtiff());
+}
+
+/*!
+ * \brief Rejects a TIFF bigtiff that is not a boolean.
+ */
+TEST(JobLoader, ValidateJobSchema_TiffBigtiffNotBool_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_format_options_job(
+      "tiff_bigtiff_not_bool.yaml", "/tmp/out.%04d.tif",
+      "        bigtiff: \"yes\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_227);
+}
+
+/*!
+ * \brief Defaults omitted TIFF compression to zip.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedTiffCompression_DefaultsToZip) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_format_options_job("omitted_tiff_compression.yaml",
+                               "/tmp/out.%04d.tif", "        bit_depth: 8\n");
+
+  // Test
+  const dailyboy::JobOutputImageSequenceTiff options =
+      load_tiff_format_options(yaml);
+
+  // Assert
+  EXPECT_EQ(options.compression(), "zip");
+}
+
+/*!
+ * \brief Rejects a TIFF compression that is not a quoted string.
+ */
+TEST(JobLoader, ValidateJobSchema_UnquotedTiffCompression_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_format_options_job(
+      "unquoted_tiff_compression.yaml", "/tmp/out.%04d.tif",
+      "        compression: zip\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_228);
+}
+
+/*!
+ * \brief Rejects a TIFF compression outside the allowed enum.
+ */
+TEST(JobLoader, ValidateJobSchema_UnsupportedTiffCompression_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_format_options_job(
+      "unsupported_tiff_compression.yaml", "/tmp/out.%04d.tif",
+      "        compression: \"jpeg\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_229);
+}
+
+/*!
+ * \brief Defaults omitted TIFF compression_level to 6.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedTiffCompressionLevel_DefaultsTo6) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_format_options_job("omitted_tiff_compression_level.yaml",
+                               "/tmp/out.%04d.tif", "        bit_depth: 8\n");
+
+  // Test
+  const dailyboy::JobOutputImageSequenceTiff options =
+      load_tiff_format_options(yaml);
+
+  // Assert
+  EXPECT_EQ(options.compression_level(),
+            dailyboy::JobOutputImageSequenceTiff::kDefaultCompressionLevel);
+}
+
+/*!
+ * \brief Rejects a TIFF compression_level that is not an integer.
+ */
+TEST(JobLoader,
+     ValidateJobSchema_NonIntegerTiffCompressionLevel_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_format_options_job(
+      "non_integer_tiff_compression_level.yaml", "/tmp/out.%04d.tif",
+      "        compression_level: \"high\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_230);
+}
+
+/*!
+ * \brief Rejects a TIFF compression_level below 1.
+ */
+TEST(JobLoader, ValidateJobSchema_TiffCompressionLevelBelow1_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_format_options_job(
+      "tiff_compression_level_below_1.yaml", "/tmp/out.%04d.tif",
+      "        compression_level: 0\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_230);
+}
+
+/*!
+ * \brief Rejects a TIFF compression_level above 9.
+ */
+TEST(JobLoader, ValidateJobSchema_TiffCompressionLevelAbove9_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_format_options_job(
+      "tiff_compression_level_above_9.yaml", "/tmp/out.%04d.tif",
+      "        compression_level: 10\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_230);
+}
+
+/*!
+ * \brief Defaults omitted EXR bit_depth to h16.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedExrBitDepth_DefaultsToH16) {
+  // Prepare
+  const std::filesystem::path yaml = write_format_options_job(
+      "omitted_exr_bit_depth.yaml", "/tmp/out.%04d.exr",
+      "        compression: \"zip\"\n");
+
+  // Test
+  const dailyboy::JobOutputImageSequenceExr options =
+      load_exr_format_options(yaml);
+
+  // Assert
+  EXPECT_EQ(options.bit_depth(), "h16");
+}
+
+/*!
+ * \brief Rejects an EXR bit_depth that is not a quoted string.
+ */
+TEST(JobLoader, ValidateJobSchema_UnquotedExrBitDepth_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_format_options_job("unquoted_exr_bit_depth.yaml",
+                               "/tmp/out.%04d.exr", "        bit_depth: h16\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_231);
+}
+
+/*!
+ * \brief Rejects an EXR bit_depth that is not h16 or f32.
+ */
+TEST(JobLoader, ValidateJobSchema_UnsupportedExrBitDepth_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_format_options_job(
+      "unsupported_exr_bit_depth.yaml", "/tmp/out.%04d.exr",
+      "        bit_depth: \"u8\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_232);
+}
+
+/*!
+ * \brief Defaults omitted EXR compression to zip.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedExrCompression_DefaultsToZip) {
+  // Prepare
+  const std::filesystem::path yaml = write_format_options_job(
+      "omitted_exr_compression.yaml", "/tmp/out.%04d.exr",
+      "        bit_depth: \"h16\"\n");
+
+  // Test
+  const dailyboy::JobOutputImageSequenceExr options =
+      load_exr_format_options(yaml);
+
+  // Assert
+  EXPECT_EQ(options.compression(), "zip");
+}
+
+/*!
+ * \brief Rejects an EXR compression that is not a quoted string.
+ */
+TEST(JobLoader, ValidateJobSchema_UnquotedExrCompression_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_format_options_job(
+      "unquoted_exr_compression.yaml", "/tmp/out.%04d.exr",
+      "        compression: zip\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_233);
+}
+
+/*!
+ * \brief Rejects an EXR compression outside the allowed enum.
+ */
+TEST(JobLoader, ValidateJobSchema_UnsupportedExrCompression_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_format_options_job(
+      "unsupported_exr_compression.yaml", "/tmp/out.%04d.exr",
+      "        compression: \"lzma\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_234);
+}
+
+/*!
+ * \brief Defaults omitted EXR compression_level to 4 for zip.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedExrCompressionLevel_DefaultsTo4) {
+  // Prepare
+  const std::filesystem::path yaml = write_format_options_job(
+      "omitted_exr_compression_level.yaml", "/tmp/out.%04d.exr",
+      "        compression: \"zip\"\n");
+
+  // Test
+  const dailyboy::JobOutputImageSequenceExr options =
+      load_exr_format_options(yaml);
+
+  // Assert
+  EXPECT_EQ(options.compression_level(),
+            dailyboy::JobOutputImageSequenceExr::kDefaultZipLevel);
+}
+
+/*!
+ * \brief Rejects EXR compression_level when compression is piz.
+ */
+TEST(JobLoader, ValidateJobSchema_ExrCompressionLevelWithPiz_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_format_options_job(
+      "exr_compression_level_with_piz.yaml", "/tmp/out.%04d.exr",
+      "        compression: \"piz\"\n"
+      "        compression_level: 4\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_94);
+}
+
+/*!
+ * \brief Rejects an EXR compression_level that is not an integer.
+ */
+TEST(JobLoader,
+     ValidateJobSchema_NonIntegerExrCompressionLevel_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_format_options_job(
+      "non_integer_exr_compression_level.yaml", "/tmp/out.%04d.exr",
+      "        compression: \"zip\"\n"
+      "        compression_level: \"high\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_235);
+}
+
+/*!
+ * \brief Rejects an EXR zip compression_level below 1.
+ */
+TEST(JobLoader,
+     ValidateJobSchema_ExrZipCompressionLevelBelow1_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_format_options_job(
+      "exr_zip_compression_level_below_1.yaml", "/tmp/out.%04d.exr",
+      "        compression: \"zip\"\n"
+      "        compression_level: 0\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_235);
+}
+
+/*!
+ * \brief Rejects an EXR zip compression_level above 9.
+ */
+TEST(JobLoader,
+     ValidateJobSchema_ExrZipCompressionLevelAbove9_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_format_options_job(
+      "exr_zip_compression_level_above_9.yaml", "/tmp/out.%04d.exr",
+      "        compression: \"zips\"\n"
+      "        compression_level: 10\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_235);
+}
+
+/*!
+ * \brief Rejects an EXR dwaa compression_level below 0.
+ */
+TEST(JobLoader,
+     ValidateJobSchema_ExrDwaCompressionLevelBelow0_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_format_options_job(
+      "exr_dwa_compression_level_below_0.yaml", "/tmp/out.%04d.exr",
+      "        compression: \"dwaa\"\n"
+      "        compression_level: -1\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_236);
+}
+
+/*!
+ * \brief Defaults omitted HEIF bit_depth to 8.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedHeifBitDepth_DefaultsTo8) {
+  // Prepare
+  const std::filesystem::path yaml = write_format_options_job(
+      "omitted_heif_bit_depth.yaml", "/tmp/out.%04d.heif",
+      "        compression: \"heic\"\n");
+
+  // Test
+  const dailyboy::JobOutputImageSequenceHeif options =
+      load_heif_format_options(yaml);
+
+  // Assert
+  EXPECT_EQ(options.bit_depth(),
+            dailyboy::JobOutputImageSequenceHeif::kDefaultBitDepth);
+}
+
+/*!
+ * \brief Rejects a HEIF bit_depth that is not 8.
+ */
+TEST(JobLoader, ValidateJobSchema_UnsupportedHeifBitDepth_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_format_options_job("unsupported_heif_bit_depth.yaml",
+                               "/tmp/out.%04d.heic", "        bit_depth: 16\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_237);
+}
+
+/*!
+ * \brief Defaults omitted HEIF compression to heic for .heif/.heic.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedHeicCompression_DefaultsToHeic) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_format_options_job("omitted_heic_compression.yaml",
+                               "/tmp/out.%04d.heic", "        bit_depth: 8\n");
+
+  // Test
+  const dailyboy::JobOutputImageSequenceHeif options =
+      load_heif_format_options(yaml);
+
+  // Assert
+  EXPECT_EQ(options.compression(), "heic");
+}
+
+/*!
+ * \brief Defaults omitted HEIF compression to avif for .avif.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedAvifCompression_DefaultsToAvif) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_format_options_job("omitted_avif_compression.yaml",
+                               "/tmp/out.%04d.avif", "        bit_depth: 8\n");
+
+  // Test
+  const dailyboy::JobOutputImageSequenceHeif options =
+      load_heif_format_options(yaml);
+
+  // Assert
+  EXPECT_EQ(options.compression(), "avif");
+}
+
+/*!
+ * \brief Rejects a HEIF compression that is not a quoted string.
+ */
+TEST(JobLoader, ValidateJobSchema_UnquotedHeifCompression_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_format_options_job(
+      "unquoted_heif_compression.yaml", "/tmp/out.%04d.heif",
+      "        compression: heic\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_238);
+}
+
+/*!
+ * \brief Rejects a HEIF compression outside the allowed enum.
+ */
+TEST(JobLoader, ValidateJobSchema_UnsupportedHeifCompression_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_format_options_job(
+      "unsupported_heif_compression.yaml", "/tmp/out.%04d.heif",
+      "        compression: \"jpeg\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_239);
+}
+
+/*!
+ * \brief Stores hevc compression as the heic alias.
+ */
+TEST(JobLoader, ValidateJobSchema_HevcCompressionAlias_StoresHeic) {
+  // Prepare
+  const std::filesystem::path yaml = write_format_options_job(
+      "hevc_compression_alias.yaml", "/tmp/out.%04d.heif",
+      "        compression: \"hevc\"\n");
+
+  // Test
+  const dailyboy::JobOutputImageSequenceHeif options =
+      load_heif_format_options(yaml);
+
+  // Assert
+  EXPECT_EQ(options.compression(), "heic");
+}
+
+/*!
+ * \brief Defaults omitted HEIF compression_level to 75.
+ */
+TEST(JobLoader, ValidateJobSchema_OmittedHeifCompressionLevel_DefaultsTo75) {
+  // Prepare
+  const std::filesystem::path yaml =
+      write_format_options_job("omitted_heif_compression_level.yaml",
+                               "/tmp/out.%04d.heif", "        bit_depth: 8\n");
+
+  // Test
+  const dailyboy::JobOutputImageSequenceHeif options =
+      load_heif_format_options(yaml);
+
+  // Assert
+  EXPECT_EQ(options.compression_level(),
+            dailyboy::JobOutputImageSequenceHeif::kDefaultCompressionLevel);
+}
+
+/*!
+ * \brief Rejects a HEIF compression_level that is not an integer.
+ */
+TEST(JobLoader,
+     ValidateJobSchema_NonIntegerHeifCompressionLevel_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_format_options_job(
+      "non_integer_heif_compression_level.yaml", "/tmp/out.%04d.heif",
+      "        compression_level: \"high\"\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_240);
+}
+
+/*!
+ * \brief Rejects a HEIF compression_level below 0.
+ */
+TEST(JobLoader, ValidateJobSchema_HeifCompressionLevelBelow0_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_format_options_job(
+      "heif_compression_level_below_0.yaml", "/tmp/out.%04d.heif",
+      "        compression_level: -1\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_240);
+}
+
+/*!
+ * \brief Rejects a HEIF compression_level above 100.
+ */
+TEST(JobLoader,
+     ValidateJobSchema_HeifCompressionLevelAbove100_ReturnsUserError) {
+  // Prepare
+  const std::filesystem::path yaml = write_format_options_job(
+      "heif_compression_level_above_100.yaml", "/tmp/out.%04d.heif",
+      "        compression_level: 101\n");
+
+  // Test
+  // Assert
+  expect_schema_load_user_error(yaml, dailyboy::USER_ERROR_JOB_240);
+}
 std::string layout_burn_in(const std::string& anchor,
                            const std::string& extra = "") {
   return std::string(
@@ -8222,20 +12209,20 @@ layout:
   image: { fit: "contain" }
 output:
   videos:
-    - id: a
+    - id: "a"
       enabled: true
       display_view: { display: "passthrough", view: "passthrough" }
-      signal: { range: tv, matrix: bt709, primaries: bt709, transfer: bt709 }
-      path: /tmp/a.mov
+      signal: { range: "tv", matrix: "bt709", primaries: "bt709", transfer: "bt709" }
+      path: "/tmp/a.mov"
       fps: 24
-      codec: h264
-    - id: b
+      codec: "h264"
+    - id: "b"
       enabled: true
       display_view: { display: "passthrough", view: "passthrough" }
-      signal: { range: tv, matrix: bt709, primaries: bt709, transfer: bt709 }
-      path: /tmp/b.mov
+      signal: { range: "tv", matrix: "bt709", primaries: "bt709", transfer: "bt709" }
+      path: "/tmp/b.mov"
       fps: 25
-      codec: h264
+      codec: "h264"
 plans:
   - id: "plate"
     input_colorspace: "ACES - ACEScg"
@@ -8275,13 +12262,13 @@ layout:
   image: { fit: "contain" }
 output:
   videos:
-    - id: a
+    - id: "a"
       enabled: true
       display_view: { display: "passthrough", view: "passthrough" }
-      signal: { range: tv, matrix: bt709, primaries: bt709, transfer: bt709 }
-      path: /tmp/a.mov
+      signal: { range: "tv", matrix: "bt709", primaries: "bt709", transfer: "bt709" }
+      path: "/tmp/a.mov"
       fps: 24
-      codec: h264
+      codec: "h264"
 plans:
   - id: "plate"
     input_colorspace: "ACES - ACEScg"
@@ -8325,18 +12312,18 @@ TEST(JobLoader, ValidateJobSchema_OmittedDailyboyVersion_ReturnsUserError) {
            "    fit: \"contain\"\n"
            "output:\n"
            "  videos:\n"
-           "    - id: preview\n"
+           "    - id: \"preview\"\n"
            "      enabled: true\n"
            "      display_view:\n"
            "        display: \"passthrough\"\n"
            "        view: \"passthrough\"\n"
            "      signal:\n"
-           "        range: tv\n"
-           "        matrix: bt709\n"
-           "        primaries: bt709\n"
-           "        transfer: bt709\n"
-           "      path: /tmp/dailyboy_contract.mov\n"
-           "      codec: h264\n"
+           "        range: \"tv\"\n"
+           "        matrix: \"bt709\"\n"
+           "        primaries: \"bt709\"\n"
+           "        transfer: \"bt709\"\n"
+           "      path: \"/tmp/dailyboy_contract.mov\"\n"
+           "      codec: \"h264\"\n"
            "  image_sequences: []\n"
            "plans:\n"
            "  - id: \"plate\"\n"
@@ -8377,14 +12364,15 @@ TEST(JobLoader, ValidateJobSchema_DailyboyVersionNotInteger_ReturnsUserError) {
            "  image: { fit: \"contain\" }\n"
            "output:\n"
            "  videos:\n"
-           "    - id: preview\n"
+           "    - id: \"preview\"\n"
            "      enabled: true\n"
            "      display_view: { display: \"passthrough\", view: "
            "\"passthrough\" }\n"
-           "      signal: { range: tv, matrix: bt709, primaries: bt709, "
+           "      signal: { range: \"tv\", matrix: \"bt709\", primaries: "
+           "\"bt709\", "
            "transfer: bt709 }\n"
-           "      path: /tmp/dailyboy_contract.mov\n"
-           "      codec: h264\n"
+           "      path: \"/tmp/dailyboy_contract.mov\"\n"
+           "      codec: \"h264\"\n"
            "  image_sequences: []\n"
            "plans:\n"
            "  - id: \"plate\"\n"
@@ -9571,13 +13559,13 @@ layout:
   image: { fit: "contain" }
 output:
   videos:
-    - id: a
+    - id: "a"
       enabled: true
       display_view: { display: "passthrough", view: "passthrough" }
-      signal: { range: tv, matrix: bt709, primaries: bt709, transfer: bt709 }
-      path: /tmp/a.mov
+      signal: { range: "tv", matrix: "bt709", primaries: "bt709", transfer: "bt709" }
+      path: "/tmp/a.mov"
       fps: 30
-      codec: h264
+      codec: "h264"
 plans:
   - id: "plate"
     input_colorspace: "ACES - ACEScg"

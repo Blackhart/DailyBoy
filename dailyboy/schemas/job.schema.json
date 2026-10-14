@@ -121,7 +121,7 @@
         "path": {
           "type": "string",
           "minLength": 1,
-          "description": "Video file path (e.g. QuickTime .mov container with H.264)."
+          "description": "Video file path. Must end with .mov (case-insensitive) after resolving {token} / $VAR substitutions; QuickTime mov muxer."
         },
         "fps": {
           "type": "integer",
@@ -219,7 +219,8 @@
         "gop": {
           "type": "integer",
           "minimum": 1,
-          "description": "Keyframe interval (FFmpeg -g). Omit for the x264 default."
+          "default": 250,
+          "description": "Keyframe interval (FFmpeg -g). Omit for 250."
         },
         "pix_fmt": {
           "type": "string",

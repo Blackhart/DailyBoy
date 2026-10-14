@@ -557,14 +557,20 @@ Each entry specifies one movie output.
 
 | Field           | Required | Values                        | Default if omitted | Description                    |
 | --------------- | -------- | ----------------------------- | ------------------ | ------------------------------ |
-| `id`            | yes      | string (non-empty)            | —                  | Unique identifier for this movie|
+| `id`            | yes      | quoted string (non-empty)     | —                  | Unique identifier for this movie|
 | `enabled`       | yes      | boolean                       | —                  | Whether to write this output    |
 | `display_view`  | yes      | object (`display`, `view`)    | —                  | OCIO DisplayView for review     |
 | `signal`        | yes      | object — see [§7.2.0](#output-signal) | —                  | Encode color tags + YCbCr matrix|
-| `path`          | yes      | string (non-empty)            | —                  | Output file path (QuickTime `.mov`; muxer is always `mov`) |
-| `fps`           | no       | integer ≥ 1                   | `24`               | Frames per second. When `plans[].timecode` is set, every enabled video must share the same `fps` (see §4.5). |
-| `codec`         | yes      | `h264`, `mjpeg`, `dnxhd`, `prores` | —                  | Output codec                    |
+| `path`          | yes      | quoted string (non-empty)     | —                  | Output file path (QuickTime `.mov`; muxer is always `mov`) |
+| `fps`           | no       | unquoted integer ≥ 1          | `24`               | Frames per second. When `plans[].timecode` is set, every enabled video must share the same `fps` (see §4.5). |
+| `codec`         | yes      | quoted `h264`, `mjpeg`, `dnxhd`, or `prores` | —                  | Output codec                    |
 | `codec_options` | no       | object                        | codec defaults     | Codec parameters (optional)     |
+
+Required keys and supported enum values on `videos[]` entries use **field-specific** parse errors (`output.videos[].<field>: …`, and `output.videos[].codec_options.<key>: …` for H.264 options), not the generic `job: a required key is missing…` or `job: unsupported value…` messages.
+
+- `id`, `path`, and `codec` must be **quoted** non-empty YAML strings (e.g. `"review_h264"`, `"{dailies_root}/review.mov"`, `"h264"`).
+- `path` must end with `.mov` (case-insensitive) **after** `{token}` / `$VAR` substitutions are applied. While the path still contains `{` or `$`, that suffix check is skipped (tokens may supply the extension). A resolved non-`.mov` path fails with `output.videos[].path: must end with .mov (case-insensitive) after resolving tokens.` plus the entry location (e.g. `output.videos[0].path '/out/review.mp4'.`).
+- `fps`, when set, must be an **unquoted** integer ≥ 1.
 
 See the documentation for details regarding available `codec_options` per codec.
 
@@ -574,12 +580,14 @@ See the documentation for details regarding available `codec_options` per codec.
 
 Required on every `videos[]` entry. Tags written into the bitstream / container and the RGB→YCbCr matrix used by swscale. Only BT.709 is supported today.
 
-| Field        | Required | Values     | Description |
-| ------------ | -------- | ---------- | ----------- |
-| `range`      | yes      | `tv`, `pc` | Limited (`tv`) or full (`pc`) luma/chroma range |
-| `matrix`     | yes      | `bt709`    | YCbCr matrix (AVCOL_SPC) and swscale RGB→YUV matrix |
-| `primaries`  | yes      | `bt709`    | Color primaries metadata |
-| `transfer`   | yes      | `bt709`    | Transfer characteristic metadata |
+| Field        | Required | Values              | Description |
+| ------------ | -------- | ------------------- | ----------- |
+| `range`      | yes      | quoted `"tv"`, `"pc"` | Limited (`tv`) or full (`pc`) luma/chroma range |
+| `matrix`     | yes      | quoted `"bt709"`    | YCbCr matrix (AVCOL_SPC) and swscale RGB→YUV matrix |
+| `primaries`  | yes      | quoted `"bt709"`    | Color primaries metadata |
+| `transfer`   | yes      | quoted `"bt709"`    | Transfer characteristic metadata |
+
+Each `signal` key must be a **quoted** string. Missing keys, wrong types, and unsupported values fail with dedicated `output.videos[].signal.<field>:` messages (for example `output.videos[].signal.range: unsupported value. Use "tv" or "pc".`). If the whole `signal` block is omitted, parse fails with `output.videos[].signal: requires range, matrix, primaries, and transfer.`
 
 `display_view` selects the OCIO DisplayView that produces the review RGB sent to the encoder; `signal` describes how that RGB is tagged and converted to YCbCr. They are independent fields.
 
@@ -587,14 +595,14 @@ Required on every `videos[]` entry. Tags written into the bitstream / container 
 
 #### 7.2.1 `codec_options` for `h264`
 
-Optional. If not specified, defaults are used. Only set either `crf` or `bitrate_kbps`, not both.
+Optional. If not specified, defaults are used. Only set either `crf` or `bitrate_kbps`, not both. Invalid H.264 `codec_options` keys use `output.videos[].codec_options.<key>:` error messages (quoted-string enums must be quoted in YAML; `crf`, `bitrate_kbps`, `gop`, and `level` use unquoted numbers).
 
 | Field          | Required | Values                                                                 | Default                  | Description                                 |
 | -------------- | -------- | ---------------------------------------------------------------------- | ------------------------ | ------------------------------------------- |
 | `preset`       | no       | `ultrafast`, `superfast`, `veryfast`, `faster`, `fast`, `medium`, `slow` | `medium`                | Encoding speed / efficiency tradeoff.       |
 | `crf`          | no       | number 0–51                                                            | `23` (if bitrate omitted)| Constant Rate Factor (quality).             |
 | `bitrate_kbps` | no       | integer ≥ 1                                                            | unused                   | Target bitrate (alternative to crf).        |
-| `gop`          | no       | integer ≥ 1                                                            | encoder default (~250)   | Keyframe interval.                          |
+| `gop`          | no       | unquoted integer ≥ 1                                                   | `250`                    | Keyframe interval (FFmpeg `-g`).            |
 | `pix_fmt`      | no       | `yuv420p`, `yuv422p`                                                   | `yuv420p`                | Pixel format.                               |
 | `tune`         | no       | `film`, `animation`, `grain`, `stillimage`, `fastdecode`, `zerolatency` | not set                  | Optional encoder hint.                      |
 | `profile`      | no       | `baseline`, `main`, `high`, `high422`                                  | auto based on pix_fmt    | H.264 feature set.                          |
@@ -658,11 +666,13 @@ Defines per-frame image outputs. Required fields:
 
 | Field             | Required | Type                                                                      | Description                                    |
 | ----------------- | -------- | ------------------------------------------------------------------------- | ---------------------------------------------- |
-| `id`              | yes      | string (non-empty)                                                        | Unique identifier for the output.              |
+| `id`              | yes      | quoted string (non-empty)                                                 | Unique among all videos and image sequences    |
 | `enabled`         | yes      | boolean                                                                   | Whether to write this output                   |
-| `display_view`    | yes      | object (`display`, `view`)                                                | OCIO DisplayView for this sequence             |
-| `path_pattern`    | yes      | string ([fileseq](https://github.com/shotgunsoftware/fileseq) syntax)     | Output file pattern; extension picks file type |
-| `format_options`  | no       | object                                                                    | Writer settings; keys depend on the extension  |
+| `display_view`    | yes      | object (`display`, `view` quoted non-empty)                               | OCIO DisplayView for this sequence             |
+| `path_pattern`    | yes      | quoted string ([fileseq](https://github.com/shotgunsoftware/fileseq) syntax) | Output file pattern; extension picks file type |
+| `format_options`  | no       | non-empty object                                                          | Writer settings; keys depend on the extension  |
+
+Required keys and enum / range checks on `image_sequences[]` and `format_options` use **field-specific** errors (`output.image_sequences[].<field>: …`, `output.image_sequences[].format_options.<key>: …`), not the generic missing-key / unsupported-value messages. Omit `format_options` for writer defaults; an empty `format_options: {}` is rejected.
 
 The file extension of `path_pattern` selects the OpenImageIO writer and which `format_options` keys are valid. Supported extensions: `.png`, `.jpg` / `.jpeg`, `.tif` / `.tiff`, `.exr`, `.heif` / `.heic` / `.avif`.
 
@@ -728,38 +738,38 @@ Examples:
 ```yaml
 output:
   videos:
-    - id: review_h264
+    - id: "review_h264"
       enabled: true
       display_view:
         display: "Rec.1886 Rec.709 - Display"
         view: "ACES 2.0 - SDR 100 nits (Rec.709)"
       signal:
-        range: tv
-        matrix: bt709
-        primaries: bt709
-        transfer: bt709
-      path: /out/sh010_review.mov
+        range: "tv"
+        matrix: "bt709"
+        primaries: "bt709"
+        transfer: "bt709"
+      path: "/out/sh010_review.mov"
       fps: 24
-      codec: h264
+      codec: "h264"
       codec_options:
-        preset: medium
+        preset: "medium"
         crf: 20
         gop: 12
-        pix_fmt: yuv420p
-        tune: film
-        profile: high
+        pix_fmt: "yuv420p"
+        tune: "film"
+        profile: "high"
         level: 4.1
         faststart: true
   image_sequences:
-    - id: archive_acescg
+    - id: "archive_acescg"
       enabled: true
       display_view:
         display: "passthrough"
         view: "passthrough"
-      path_pattern: /out/sh010_archive.%04d.png
+      path_pattern: "/out/sh010_archive.%04d.png"
       format_options:
         bit_depth: 8
-        compression: default
+        compression: "default"
         compression_level: 6
         filter: 0
 ```
@@ -820,19 +830,19 @@ layout:
 
 output:
   videos:
-    - id: review_h264
+    - id: "review_h264"
       enabled: true
       display_view:
         display: "Rec.1886 Rec.709 - Display"
         view: "ACES 2.0 - SDR 100 nits (Rec.709)"
       signal:
-        range: tv
-        matrix: bt709
-        primaries: bt709
-        transfer: bt709
+        range: "tv"
+        matrix: "bt709"
+        primaries: "bt709"
+        transfer: "bt709"
       path: "{dailies_root}/review.mov"   # CHANGE_ME
       fps: 24
-      codec: h264
+      codec: "h264"
       # codec_options:   # optional; omit for defaults
 ```
 

@@ -224,17 +224,17 @@ output:
         display: "passthrough"
         view: "passthrough"
       signal:
-        range: tv
-        matrix: bt709
-        primaries: bt709
-        transfer: bt709
+        range: "tv"
+        matrix: "bt709"
+        primaries: "bt709"
+        transfer: "bt709"
       path: "{review_mov_path}"
-      codec: h264
+      codec: "h264"
       codec_options:
-        preset: slow
+        preset: "slow"
         crf: 18
         gop: 24
-        pix_fmt: yuv422p
+        pix_fmt: "yuv422p"
   image_sequences:
     - id: "archive_acescg"
       enabled: true

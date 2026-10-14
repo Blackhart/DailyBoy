@@ -92,7 +92,7 @@ bool write_pipeline_yaml(const std::filesystem::path& yaml_path,
       << "output:\n";
   if (output == PipelineOutput::Png) {
     out << "  image_sequences:\n"
-        << "    - id: archive\n"
+        << "    - id: \"archive\"\n"
         << "      enabled: true\n"
         << "      display_view:\n"
            "        display: \"passthrough\"\n"
@@ -101,21 +101,21 @@ bool write_pipeline_yaml(const std::filesystem::path& yaml_path,
         << "\"\n";
   } else {
     out << "  videos:\n"
-        << "    - id: review_h264\n"
+        << "    - id: \"review_h264\"\n"
         << "      enabled: true\n"
         << "      display_view:\n"
            "        display: \"passthrough\"\n"
            "        view: \"passthrough\"\n"
            "      signal:\n"
-           "        range: tv\n"
-           "        matrix: bt709\n"
-           "        primaries: bt709\n"
-           "        transfer: bt709\n"
+           "        range: \"tv\"\n"
+           "        matrix: \"bt709\"\n"
+           "        primaries: \"bt709\"\n"
+           "        transfer: \"bt709\"\n"
         << "      path: \"" << (out_dir / "out.mov").string() << "\"\n"
         << "      fps: 24\n"
-        << "      codec: h264\n"
+        << "      codec: \"h264\"\n"
         << "      codec_options:\n"
-        << "        preset: ultrafast\n"
+        << "        preset: \"ultrafast\"\n"
         << "        faststart: false\n";
   }
   out << "plans:\n"
