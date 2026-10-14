@@ -6711,7 +6711,7 @@ TEST(JobLoader, LoadJob_ValidYaml_LoadsAllFields) {
   //       path: dailyboy/tests/data/fonts/DejaVuSans.ttf
   //       size_px: 22
   //     box:
-  //       mode: fill
+  //       mode: "fill"
   //       color:
   //         r: 0
   //         g: 0
@@ -6726,7 +6726,7 @@ TEST(JobLoader, LoadJob_ValidYaml_LoadsAllFields) {
   //       path: dailyboy/tests/data/fonts/DejaVuSans.ttf
   //       size_px: 18
   //     box:
-  //       mode: outline
+  //       mode: "outline"
   //       color:
   //         r: 1
   //         g: 1
@@ -6745,7 +6745,7 @@ TEST(JobLoader, LoadJob_ValidYaml_LoadsAllFields) {
   //       path: dailyboy/tests/data/fonts/DejaVuSans-Bold.ttf
   //       size_px: 24
   //     box:
-  //       mode: fill
+  //       mode: "fill"
   //       color:
   //         r: 0.1
   //         g: 0.1
@@ -6761,7 +6761,7 @@ TEST(JobLoader, LoadJob_ValidYaml_LoadsAllFields) {
   //       path: dailyboy/tests/data/fonts/DejaVuSansMono.ttf
   //       size_px: 16
   //     box:
-  //       mode: outline
+  //       mode: "outline"
   //       color:
   //         r: 0.9
   //         g: 0.9
@@ -6777,7 +6777,7 @@ TEST(JobLoader, LoadJob_ValidYaml_LoadsAllFields) {
   //       path: dailyboy/tests/data/fonts/DejaVuSans.ttf
   //       size_px: 20
   //     box:
-  //       mode: fill
+  //       mode: "fill"
   //       color:
   //         r: 0
   //         g: 0
@@ -6796,7 +6796,7 @@ TEST(JobLoader, LoadJob_ValidYaml_LoadsAllFields) {
   //       path: dailyboy/tests/data/fonts/DejaVuSans.ttf
   //       size_px: 14
   //     box:
-  //       mode: fill
+  //       mode: "fill"
   //       color:
   //         r: 0
   //         g: 0
@@ -6811,7 +6811,7 @@ TEST(JobLoader, LoadJob_ValidYaml_LoadsAllFields) {
   //       path: dailyboy/tests/data/fonts/DejaVuSans.ttf
   //       size_px: 14
   //     box:
-  //       mode: outline
+  //       mode: "outline"
   //       color:
   //         r: 1
   //         g: 0.5
@@ -6912,7 +6912,7 @@ TEST(JobLoader, LoadJob_ValidYaml_LoadsAllFields) {
   //       path: dailyboy/tests/data/fonts/DejaVuSans.ttf
   //       size_px: 22
   //     box:
-  //       mode: fill
+  //       mode: "fill"
   //       color:
   //         r: 0
   //         g: 0
@@ -6941,7 +6941,7 @@ TEST(JobLoader, LoadJob_ValidYaml_LoadsAllFields) {
   //       path: dailyboy/tests/data/fonts/DejaVuSans.ttf
   //       size_px: 18
   //     box:
-  //       mode: outline
+  //       mode: "outline"
   //       color:
   //         r: 1
   //         g: 1
@@ -6969,7 +6969,7 @@ TEST(JobLoader, LoadJob_ValidYaml_LoadsAllFields) {
   //       path: dailyboy/tests/data/fonts/DejaVuSans-Bold.ttf
   //       size_px: 24
   //     box:
-  //       mode: fill
+  //       mode: "fill"
   //       color:
   //         r: 0.1
   //         g: 0.1
@@ -6992,7 +6992,7 @@ TEST(JobLoader, LoadJob_ValidYaml_LoadsAllFields) {
   //       path: dailyboy/tests/data/fonts/DejaVuSansMono.ttf
   //       size_px: 16
   //     box:
-  //       mode: outline
+  //       mode: "outline"
   //       color:
   //         r: 0.9
   //         g: 0.9
@@ -7015,7 +7015,7 @@ TEST(JobLoader, LoadJob_ValidYaml_LoadsAllFields) {
   //       path: dailyboy/tests/data/fonts/DejaVuSans.ttf
   //       size_px: 20
   //     box:
-  //       mode: fill
+  //       mode: "fill"
   //       color:
   //         r: 0
   //         g: 0
@@ -7040,7 +7040,7 @@ TEST(JobLoader, LoadJob_ValidYaml_LoadsAllFields) {
   //       path: dailyboy/tests/data/fonts/DejaVuSans.ttf
   //       size_px: 14
   //     box:
-  //       mode: fill
+  //       mode: "fill"
   //       color:
   //         r: 0
   //         g: 0
@@ -7062,7 +7062,7 @@ TEST(JobLoader, LoadJob_ValidYaml_LoadsAllFields) {
   //       path: dailyboy/tests/data/fonts/DejaVuSans.ttf
   //       size_px: 14
   //     box:
-  //       mode: outline
+  //       mode: "outline"
   //       color:
   //         r: 1
   //         g: 0.5

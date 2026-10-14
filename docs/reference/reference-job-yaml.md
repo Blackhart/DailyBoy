@@ -453,7 +453,7 @@ Each entry:
 
 | Sub-field | Required | Type            | Default   | Description                  |
 | --------- | -------- | --------------- | --------- | ---------------------------- |
-| `mode`    | no       | string          | `fill`    | Fill or outline              |
+| `mode`    | no       | quoted `"fill"` or `"outline"` | `fill` | Box style. Must be a quoted YAML string when set (e.g. `mode: "fill"`). |
 | `color`   | no       | object (r,g,b)  | black     | Color (display RGB)|
 | `opacity` | no       | number (0–1)    | `1`       | Alpha transparency           |
 | `margin`  | no       | int or object   | `0`       | Padding around text          |
@@ -508,7 +508,7 @@ layout:
         path: "dailyboy/tests/data/fonts/DejaVuSans.ttf"
         size_px: 22
       box:
-        mode: fill
+        mode: "fill"
         color:
           r: 0
           g: 0
@@ -655,7 +655,7 @@ Optional. If not specified, defaults are used. Encoding uses FFmpeg `prores_ks`.
 | `quant_mat`     | no       | `auto`, `proxy`, `lt`, `standard`, `hq`, `default`              | `auto`       | Quantization matrix                              |
 | `bits_per_mb`   | no       | integer 0–8192                                                  | `0`          | Bits per macroblock (`0` = encoder default)      |
 | `mbs_per_slice` | no       | integer 1–8                                                     | `8`          | Macroblocks per slice                            |
-| `vendor`        | no       | exactly 4 ASCII characters                                      | `apl0`       | ProRes vendor ID in the bitstream                |
+| `vendor`        | no       | quoted string, exactly 4 ASCII characters                       | `apl0`       | ProRes vendor ID in the bitstream. Must be a quoted YAML string when set (e.g. `vendor: "apl0"`). |
 | `faststart`     | no       | `true`, `false`                                                 | `true`       | Store moov atom at file head                     |
 
 <a id="output-image-sequences"></a>
@@ -683,7 +683,7 @@ The file extension of `path_pattern` selects the OpenImageIO writer and which `f
 | Field | Required | Values | Default | Description |
 | ----- | -------- | ------ | ------- | ----------- |
 | `bit_depth` | no | `8`, `16` | `8` | Pixel bit depth |
-| `compression` | no | `default`, `filtered`, `huffman`, `rle`, `fixed`, `pngfast`, `none` | `default` | zlib strategy |
+| `compression` | no | quoted `"default"`, `"filtered"`, `"huffman"`, `"rle"`, `"fixed"`, `"pngfast"`, `"none"` | `default` | zlib strategy. Must be a quoted YAML string when set. |
 | `compression_level` | no | 0–6 | `6` | zlib level (`png:compressionLevel`) |
 | `filter` | no | 0–4 | `0` | PNG filter (0=none … 4=paeth) |
 
@@ -706,7 +706,7 @@ The file extension of `path_pattern` selects the OpenImageIO writer and which `f
 | ----- | -------- | ------ | ------- | ----------- |
 | `bit_depth` | no | `1`,`2`,`4`,`6`,`8`,`10`,`12`,`14`,`16`,`24`,`32`,`64`,`h16`,`f32` | `8` | Sample depth (`h16` = half) |
 | `bigtiff` | no | `true`, `false` | `false` | Force BigTIFF |
-| `compression` | no | `none`, `lzw`, `zip`, `ccittrle`, `packbits` | `zip` | TIFF compression |
+| `compression` | no | quoted `"none"`, `"lzw"`, `"zip"`, `"ccittrle"`, `"packbits"` | `zip` | TIFF compression. Must be a quoted YAML string when set. |
 | `compression_level` | no | 1–9 | `6` | zip quality |
 
 <a id="output-format-options-exr"></a>
@@ -716,7 +716,7 @@ The file extension of `path_pattern` selects the OpenImageIO writer and which `f
 | Field | Required | Values | Default | Description |
 | ----- | -------- | ------ | ------- | ----------- |
 | `bit_depth` | no | `h16`, `f32` | `h16` | HALF or FLOAT |
-| `compression` | no | `none`, `rle`, `zips`, `zip`, `piz`, `pxr24`, `b44`, `b44a`, `dwaa`, `dwab` | `zip` | OpenEXR compression |
+| `compression` | no | quoted `"none"`, `"rle"`, `"zips"`, `"zip"`, `"piz"`, `"pxr24"`, `"b44"`, `"b44a"`, `"dwaa"`, `"dwab"` | `zip` | OpenEXR compression. Must be a quoted YAML string when set. |
 | `compression_level` | no | zip/zips: 1–9; dwaa/dwab: ≥0 | `4` (zip/zips) | Forbidden for other compressions |
 
 <a id="output-format-options-heif"></a>
@@ -726,7 +726,7 @@ The file extension of `path_pattern` selects the OpenImageIO writer and which `f
 | Field | Required | Values | Default | Description |
 | ----- | -------- | ------ | ------- | ----------- |
 | `bit_depth` | no | `8` | `8` | OIIO writes uint8 only |
-| `compression` | no | `heic`, `avif` (`hevc` alias → `heic`) | `heic` (or `avif` if `.avif`) | Codec |
+| `compression` | no | quoted `"heic"`, `"avif"` (`"hevc"` alias → `heic`) | `heic` (or `avif` if `.avif`) | Codec. Must be a quoted YAML string when set. |
 | `compression_level` | no | 0–100 | `75` | Quality |
 
 Examples:

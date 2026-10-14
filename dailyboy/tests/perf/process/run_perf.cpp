@@ -55,7 +55,7 @@ bool write_pipeline_yaml(const std::filesystem::path& yaml_path,
       << "      font: {path: \"" << dailyboy::test::kDejaVuSans
       << "\", size_px: 18}\n"
       << "      box:\n"
-      << "        mode: fill\n"
+      << "        mode: \"fill\"\n"
       << "        color: {r: 0, g: 0, b: 0}\n"
       << "        opacity: 0.45\n"
       << "        margin: 6\n"
@@ -64,7 +64,7 @@ bool write_pipeline_yaml(const std::filesystem::path& yaml_path,
       << "      font: {path: \"" << dailyboy::test::kDejaVuSans
       << "\", size_px: 18}\n"
       << "      box:\n"
-      << "        mode: fill\n"
+      << "        mode: \"fill\"\n"
       << "        color: {r: 0, g: 0, b: 0}\n"
       << "        opacity: 0.45\n"
       << "        margin: 6\n"
@@ -73,7 +73,7 @@ bool write_pipeline_yaml(const std::filesystem::path& yaml_path,
       << "      font: {path: \"" << dailyboy::test::kDejaVuSans
       << "\", size_px: 18}\n"
       << "      box:\n"
-      << "        mode: outline\n"
+      << "        mode: \"outline\"\n"
       << "        color: {r: 1, g: 1, b: 1}\n"
       << "        opacity: 0.85\n"
       << "        margin: 6\n"

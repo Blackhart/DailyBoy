@@ -416,7 +416,7 @@
           "minLength": 4,
           "maxLength": 4,
           "default": "apl0",
-          "description": "Four-character ProRes vendor ID (e.g. apl0, Lavc)."
+          "description": "Quoted YAML string. Four-character ProRes vendor ID (e.g. apl0, Lavc)."
         },
         "faststart": {
           "type": "boolean",
@@ -500,7 +500,8 @@
             "pngfast",
             "none"
           ],
-          "default": "default"
+          "default": "default",
+          "description": "Quoted YAML string. zlib strategy for PNG."
         },
         "compression_level": {
           "type": "integer",
@@ -553,7 +554,8 @@
         "compression": {
           "type": "string",
           "enum": ["none", "lzw", "zip", "ccittrle", "packbits"],
-          "default": "zip"
+          "default": "zip",
+          "description": "Quoted YAML string. TIFF compression."
         },
         "compression_level": {
           "type": "integer",
@@ -586,7 +588,8 @@
             "dwaa",
             "dwab"
           ],
-          "default": "zip"
+          "default": "zip",
+          "description": "Quoted YAML string. OpenEXR compression."
         },
         "compression_level": {
           "type": "integer",
@@ -604,7 +607,7 @@
           "type": "string",
           "enum": ["heic", "avif", "hevc"],
           "default": "heic",
-          "description": "hevc is accepted as an alias for heic. Default is avif when path_pattern ends with .avif."
+          "description": "Quoted YAML string. hevc is accepted as an alias for heic. Default is avif when path_pattern ends with .avif."
         },
         "compression_level": {
           "type": "integer",
@@ -694,7 +697,7 @@
           "type": "string",
           "enum": ["fill", "outline"],
           "default": "fill",
-          "description": "fill = solid surface; outline = box stroke (width from engine if not overridden)."
+          "description": "Quoted YAML string. fill = solid surface; outline = box stroke (width from engine if not overridden)."
         },
         "color": {
           "type": "object",

@@ -47,7 +47,7 @@ layout:
         path: "dailyboy/tests/data/fonts/DejaVuSans.ttf"
         size_px: 18
       box:
-        mode: fill
+        mode: "fill"
         color:
           r: 0
           g: 0
@@ -66,7 +66,7 @@ layout:
           g: 0.85
           b: 0.2
       box:
-        mode: fill
+        mode: "fill"
         color:
           r: 0
           g: 0
@@ -81,7 +81,7 @@ layout:
         path: "dailyboy/tests/data/fonts/DejaVuSans.ttf"
         size_px: 18
       box:
-        mode: outline
+        mode: "outline"
         color:
           r: 1
           g: 1
@@ -96,7 +96,7 @@ layout:
         path: "dailyboy/tests/data/fonts/DejaVuSans.ttf"
         size_px: 18
       box:
-        mode: fill
+        mode: "fill"
         color:
           r: 0
           g: 0
@@ -118,7 +118,7 @@ layout:
         path: "dailyboy/tests/data/fonts/DejaVuSans.ttf"
         size_px: 18
       box:
-        mode: fill
+        mode: "fill"
         color:
           r: 0
           g: 0
@@ -249,7 +249,7 @@ output:
       codec_options:
         profile: "hq"
         pix_fmt: "yuv422p10"
-        vendor: apl0
+        vendor: "apl0"
         faststart: true
   image_sequences:
     - id: "archive_acescg"
@@ -260,7 +260,7 @@ output:
       path_pattern: "{dailies_root}/archive/sh010_archive.%04d.png"
       format_options:
         bit_depth: 8
-        compression: default
+        compression: "default"
         compression_level: 6
         filter: 0
     - id: "share_srgb"
@@ -271,7 +271,7 @@ output:
       path_pattern: "{dailies_root}/share/sh010_share.%04d.tiff"
       format_options:
         bit_depth: 8
-        compression: zip
+        compression: "zip"
         compression_level: 6
 
 plans:
