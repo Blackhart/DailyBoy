@@ -9,12 +9,14 @@ extern "C" {
 #include <dailyboy/makeDaily.hpp>
 #include <filesystem>
 #include <fstream>
+#include <ostream>
 #include <string>
 
 #include "job/loader.hpp"
 #include "process/run.hpp"
 #include "status.hpp"
 #include "support/test_fixtures.hpp"
+#include "support/test_fonts.hpp"
 
 namespace {
 
@@ -72,39 +74,36 @@ bool write_two_video_job(const std::filesystem::path& yaml_path,
       << "    height: " << dailyboy::test::kPlateHeight << "\n"
       << "  image:\n"
       << "    fit: \"contain\"\n"
-      << "  slate:\n"
-      << "    duration_frames: 0\n"
-      << "    lines: []\n"
       << "output:\n"
       << "  videos:\n"
-      << "    - id: review_h264\n"
+      << "    - id: \"review_h264\"\n"
       << "      enabled: true\n"
       << "      display_view:\n"
       << "        display: \"passthrough\"\n"
       << "        view: \"passthrough\"\n"
       << "      signal:\n"
-      << "        range: tv\n"
-      << "        matrix: bt709\n"
-      << "        primaries: bt709\n"
-      << "        transfer: bt709\n"
+      << "        range: \"tv\"\n"
+      << "        matrix: \"bt709\"\n"
+      << "        primaries: \"bt709\"\n"
+      << "        transfer: \"bt709\"\n"
       << "      path: \"" << h264_mov.string() << "\"\n"
-      << "      codec: h264\n"
-      << "    - id: review_mjpeg\n"
+      << "      codec: \"h264\"\n"
+      << "    - id: \"review_mjpeg\"\n"
       << "      enabled: " << (mjpeg_enabled ? "true" : "false") << "\n"
       << "      display_view:\n"
       << "        display: \"passthrough\"\n"
       << "        view: \"passthrough\"\n"
       << "      signal:\n"
-      << "        range: pc\n"
-      << "        matrix: bt709\n"
-      << "        primaries: bt709\n"
-      << "        transfer: bt709\n"
+      << "        range: \"pc\"\n"
+      << "        matrix: \"bt709\"\n"
+      << "        primaries: \"bt709\"\n"
+      << "        transfer: \"bt709\"\n"
       << "      path: \"" << mjpeg_mov.string() << "\"\n"
-      << "      codec: mjpeg\n"
+      << "      codec: \"mjpeg\"\n"
       << "  image_sequences: []\n"
       << "plans:\n"
-      << "  - id: plate\n"
-      << "    input_colorspace: ACES - ACEScg\n"
+      << "  - id: \"plate\"\n"
+      << "    input_colorspace: \"ACES - ACEScg\"\n"
       << "    sequence:\n"
       << "      path: \"" << seq << "\"\n"
       << "      frame_start: " << dailyboy::test::kPlateFrameStart << "\n"
@@ -116,6 +115,22 @@ bool write_two_video_job(const std::filesystem::path& yaml_path,
     return false;
   }
   return true;
+}
+
+void write_slate_block(std::ostream& out, int duration_frames) {
+  if (duration_frames <= 0) {
+    return;
+  }
+  out << "  slate:\n"
+      << "    duration_frames: " << duration_frames << "\n"
+      << "    lines:\n"
+      << "      - text: \"slate\"\n"
+      << "        position:\n"
+      << "          mode: \"layout\"\n"
+      << "          anchor: \"center_center\"\n"
+      << "        font:\n"
+      << "          path: \"" << dailyboy::test::kDejaVuSans << "\"\n"
+      << "          size_px: 12\n";
 }
 
 bool write_output_job_yaml(const std::filesystem::path& yaml_path,
@@ -140,14 +155,12 @@ bool write_output_job_yaml(const std::filesystem::path& yaml_path,
       << "    width: " << dailyboy::test::kPlateWidth << "\n"
       << "    height: " << dailyboy::test::kPlateHeight << "\n"
       << "  image:\n"
-      << "    fit: \"contain\"\n"
-      << "  slate:\n"
-      << "    duration_frames: " << slate_duration_frames << "\n"
-      << "    lines: []\n"
-      << "output:\n"
+      << "    fit: \"contain\"\n";
+  write_slate_block(out, slate_duration_frames);
+  out << "output:\n"
       << output_yaml << "plans:\n"
-      << "  - id: plate\n"
-      << "    input_colorspace: ACES - ACEScg\n"
+      << "  - id: \"plate\"\n"
+      << "    input_colorspace: \"ACES - ACEScg\"\n"
       << "    sequence:\n"
       << "      path: \"" << seq << "\"\n"
       << "      frame_start: " << dailyboy::test::kPlateFrameStart << "\n"
@@ -377,22 +390,22 @@ TEST(RunJob, RunJob_VideoAndImageSequence_WritesMovAndPngs) {
   const std::filesystem::path yaml = dir / "job.yaml";
   ASSERT_TRUE(write_output_job_yaml(yaml, dir,
                                     "  videos:\n"
-                                    "    - id: review_h264\n"
+                                    "    - id: \"review_h264\"\n"
                                     "      enabled: true\n"
                                     "      display_view:\n"
                                     "        display: \"passthrough\"\n"
                                     "        view: \"passthrough\"\n"
                                     "      signal:\n"
-                                    "        range: tv\n"
-                                    "        matrix: bt709\n"
-                                    "        primaries: bt709\n"
-                                    "        transfer: bt709\n"
+                                    "        range: \"tv\"\n"
+                                    "        matrix: \"bt709\"\n"
+                                    "        primaries: \"bt709\"\n"
+                                    "        transfer: \"bt709\"\n"
                                     "      path: \"" +
                                         mov.string() +
                                         "\"\n"
-                                        "      codec: h264\n"
+                                        "      codec: \"h264\"\n"
                                         "  image_sequences:\n"
-                                        "    - id: archive\n"
+                                        "    - id: \"archive\"\n"
                                         "      enabled: true\n"
                                         "      display_view:\n"
                                         "        display: \"passthrough\"\n"
@@ -438,22 +451,22 @@ TEST(RunJob, RunJob_ImageSequenceDisabled_SkipsPngs) {
   const std::filesystem::path yaml = dir / "job.yaml";
   ASSERT_TRUE(write_output_job_yaml(yaml, dir,
                                     "  videos:\n"
-                                    "    - id: review_h264\n"
+                                    "    - id: \"review_h264\"\n"
                                     "      enabled: true\n"
                                     "      display_view:\n"
                                     "        display: \"passthrough\"\n"
                                     "        view: \"passthrough\"\n"
                                     "      signal:\n"
-                                    "        range: tv\n"
-                                    "        matrix: bt709\n"
-                                    "        primaries: bt709\n"
-                                    "        transfer: bt709\n"
+                                    "        range: \"tv\"\n"
+                                    "        matrix: \"bt709\"\n"
+                                    "        primaries: \"bt709\"\n"
+                                    "        transfer: \"bt709\"\n"
                                     "      path: \"" +
                                         mov.string() +
                                         "\"\n"
-                                        "      codec: h264\n"
+                                        "      codec: \"h264\"\n"
                                         "  image_sequences:\n"
-                                        "    - id: archive\n"
+                                        "    - id: \"archive\"\n"
                                         "      enabled: false\n"
                                         "      display_view:\n"
                                         "        display: \"passthrough\"\n"
@@ -494,7 +507,7 @@ TEST(RunJob, RunJob_SequenceOnly_WritesPngsWithoutMov) {
   ASSERT_TRUE(write_output_job_yaml(yaml, dir,
                                     "  videos: []\n"
                                     "  image_sequences:\n"
-                                    "    - id: archive\n"
+                                    "    - id: \"archive\"\n"
                                     "      enabled: true\n"
                                     "      display_view:\n"
                                     "        display: \"passthrough\"\n"
@@ -540,22 +553,22 @@ TEST(RunJob, RunJob_PresentSlate_PrefixesMovieAndSequence) {
   const std::filesystem::path yaml = dir / "job.yaml";
   ASSERT_TRUE(write_output_job_yaml(yaml, dir,
                                     "  videos:\n"
-                                    "    - id: review_h264\n"
+                                    "    - id: \"review_h264\"\n"
                                     "      enabled: true\n"
                                     "      display_view:\n"
                                     "        display: \"passthrough\"\n"
                                     "        view: \"passthrough\"\n"
                                     "      signal:\n"
-                                    "        range: tv\n"
-                                    "        matrix: bt709\n"
-                                    "        primaries: bt709\n"
-                                    "        transfer: bt709\n"
+                                    "        range: \"tv\"\n"
+                                    "        matrix: \"bt709\"\n"
+                                    "        primaries: \"bt709\"\n"
+                                    "        transfer: \"bt709\"\n"
                                     "      path: \"" +
                                         mov.string() +
                                         "\"\n"
-                                        "      codec: h264\n"
+                                        "      codec: \"h264\"\n"
                                         "  image_sequences:\n"
-                                        "    - id: archive\n"
+                                        "    - id: \"archive\"\n"
                                         "      enabled: true\n"
                                         "      display_view:\n"
                                         "        display: \"passthrough\"\n"
@@ -616,7 +629,7 @@ TEST(RunJob, RunJob_SequenceHandles_WritesHandlesAndSlateBeforeHead) {
   ASSERT_TRUE(write_output_job_yaml(yaml, dir,
                                     "  videos: []\n"
                                     "  image_sequences:\n"
-                                    "    - id: archive\n"
+                                    "    - id: \"archive\"\n"
                                     "      enabled: true\n"
                                     "      display_view:\n"
                                     "        display: \"passthrough\"\n"
@@ -670,7 +683,7 @@ TEST(RunJob, RunJob_SequenceOnlyWithSlate_WritesSlateThenPlates) {
   ASSERT_TRUE(write_output_job_yaml(yaml, dir,
                                     "  videos: []\n"
                                     "  image_sequences:\n"
-                                    "    - id: archive\n"
+                                    "    - id: \"archive\"\n"
                                     "      enabled: true\n"
                                     "      display_view:\n"
                                     "        display: \"passthrough\"\n"

@@ -51,8 +51,8 @@ TEST(Parse, ParseRgbColor_MissingBlue_UsesDefault) {
 TEST(Parse, ParsePlans_OnePlan_SetsIdAndRange) {
   // Prepare
   const YAML::Node node = YAML::Load(R"(
-- id: plate
-  input_colorspace: ACES - ACEScg
+- id: "plate"
+  input_colorspace: "ACES - ACEScg"
   sequence:
     path: "/tmp/plate.%04d.exr"
     frame_start: 1001
@@ -76,8 +76,8 @@ TEST(Parse, ParsePlans_OnePlan_SetsIdAndRange) {
 TEST(Parse, ParsePlans_TimecodeStart_StringAndInteger) {
   // Prepare
   const YAML::Node string_node = YAML::Load(R"(
-- id: plate
-  input_colorspace: ACES - ACEScg
+- id: "plate"
+  input_colorspace: "ACES - ACEScg"
   timecode:
     start: "01:00:00:00"
   sequence:
@@ -86,8 +86,8 @@ TEST(Parse, ParsePlans_TimecodeStart_StringAndInteger) {
     frame_end: 1003
 )");
   const YAML::Node int_node = YAML::Load(R"(
-- id: plate
-  input_colorspace: ACES - ACEScg
+- id: "plate"
+  input_colorspace: "ACES - ACEScg"
   timecode:
     start: 86400
     drop_frame: false
@@ -206,12 +206,12 @@ TEST(Parse, ParseOutput_OneSequence_SetsIdAndPattern) {
   const YAML::Node node = YAML::Load(R"(
 videos: []
 image_sequences:
-  - id: archive
+  - id: "archive"
     enabled: true
     display_view:
       display: "passthrough"
       view: "passthrough"
-    path_pattern: /tmp/out.%04d.png
+    path_pattern: "/tmp/out.%04d.png"
 )");
 
   // Test
@@ -240,15 +240,15 @@ TEST(Parse, ParseOutput_PngFormatOptions_SetsBitDepthAndCompression) {
   const YAML::Node node = YAML::Load(R"(
 videos: []
 image_sequences:
-  - id: archive
+  - id: "archive"
     enabled: true
     display_view:
       display: "passthrough"
       view: "passthrough"
-    path_pattern: /tmp/out.%04d.png
+    path_pattern: "/tmp/out.%04d.png"
     format_options:
       bit_depth: 16
-      compression: filtered
+      compression: "filtered"
       compression_level: 3
       filter: 2
 )");
@@ -276,12 +276,12 @@ TEST(Parse, ParseOutput_UnknownExtensionWithOptions_ReturnsJobUserError93) {
   const YAML::Node node = YAML::Load(R"(
 videos: []
 image_sequences:
-  - id: archive
+  - id: "archive"
     enabled: true
     display_view:
       display: "passthrough"
       view: "passthrough"
-    path_pattern: /tmp/out.%04d.dpx
+    path_pattern: "/tmp/out.%04d.dpx"
     format_options:
       bit_depth: 8
 )");
@@ -304,15 +304,15 @@ TEST(Parse, ParseOutput_ExrLevelWithPiz_ReturnsJobUserError94) {
   const YAML::Node node = YAML::Load(R"(
 videos: []
 image_sequences:
-  - id: archive
+  - id: "archive"
     enabled: true
     display_view:
       display: "passthrough"
       view: "passthrough"
-    path_pattern: /tmp/out.%04d.exr
+    path_pattern: "/tmp/out.%04d.exr"
     format_options:
-      bit_depth: h16
-      compression: piz
+      bit_depth: "h16"
+      compression: "piz"
       compression_level: 4
 )");
 
@@ -334,12 +334,12 @@ TEST(Parse, ParseOutput_JpegFormatOptions_SetsQualityAndSubsampling) {
   const YAML::Node node = YAML::Load(R"(
 videos: []
 image_sequences:
-  - id: review
+  - id: "review"
     enabled: true
     display_view:
       display: "passthrough"
       view: "passthrough"
-    path_pattern: /tmp/out.%04d.jpg
+    path_pattern: "/tmp/out.%04d.jpg"
     format_options:
       bit_depth: 8
       compression_level: 85

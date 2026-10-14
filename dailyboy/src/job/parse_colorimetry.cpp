@@ -31,7 +31,6 @@ StatusOr<JobColorimetry> parse_colorimetry(const YAML::Node& node) {
 
   const YAML::Node ctx_map = map["context"];
   if (ctx_map) {
-    DAILYBOY_RETURN_IF_ERROR(expect_map(ctx_map, "color.context").status());
     std::map<std::string, std::string> context;
     DAILYBOY_ASSIGN_OR_RETURN(context, read_ocio_context(ctx_map));
     out.set_context(std::move(context));

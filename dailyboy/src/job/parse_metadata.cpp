@@ -19,8 +19,9 @@ StatusOr<JobMetadata> parse_metadata(const YAML::Node& node) {
   if (!sub_map) {
     return Status::User(with_job_error(USER_ERROR_JOB_5));
   }
-  DAILYBOY_RETURN_IF_ERROR(
-      expect_map(sub_map, "metadata.substitutions").status());
+  if (!sub_map.IsMap()) {
+    return Status::User(with_job_error(USER_ERROR_JOB_4));
+  }
   if (sub_map.size() == 0) {
     return Status::User(with_job_error(USER_ERROR_JOB_6));
   }

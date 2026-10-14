@@ -509,6 +509,7 @@ if(BUILD_TESTING)
             PROPERTIES
                 LABELS unit
                 ENVIRONMENT "${_env}"
+                WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
             DISCOVERY_MODE PRE_TEST
         )
     endfunction()

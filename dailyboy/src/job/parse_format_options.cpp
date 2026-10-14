@@ -93,6 +93,55 @@ Status reject_unknown_keys(const YAML::Node& map, const std::string& field,
   return Status::Ok();
 }
 
+StatusOr<std::string> read_optional_quoted(const YAML::Node& map,
+                                           const char* key,
+                                           std::string_view error,
+                                           const std::string& loc,
+                                           const std::string& fallback) {
+  const YAML::Node node = map[key];
+  if (!node || node.IsNull()) {
+    return fallback;
+  }
+  if (!is_yaml_quoted_string(node)) {
+    return Status::User(
+        with_job_error(error, loc + " is " + describe_yaml_value(node) + "."));
+  }
+  return node.as<std::string>();
+}
+
+StatusOr<int> read_optional_int_in_range(const YAML::Node& map, const char* key,
+                                         int fallback, int min_value,
+                                         int max_value, std::string_view error,
+                                         const std::string& loc) {
+  const YAML::Node node = map[key];
+  if (!node || node.IsNull()) {
+    return fallback;
+  }
+  DAILYBOY_ASSIGN_OR_RETURN(const int value,
+                            read_yaml_integer(node, error, loc));
+  if (value < min_value || value > max_value) {
+    return Status::User(with_job_error(
+        error, loc + " (got integer " + std::to_string(value) + ")."));
+  }
+  return value;
+}
+
+StatusOr<bool> read_optional_bool_field(const YAML::Node& map, const char* key,
+                                        bool fallback, std::string_view error,
+                                        const std::string& loc) {
+  const YAML::Node node = map[key];
+  if (!node || node.IsNull()) {
+    return fallback;
+  }
+  bool value = false;
+  if (!node.IsScalar() || is_yaml_quoted_string(node) ||
+      !parse_bool_scalar(node.as<std::string>(), value)) {
+    return Status::User(
+        with_job_error(error, loc + " is " + describe_yaml_value(node) + "."));
+  }
+  return value;
+}
+
 StatusOr<JobOutputImageSequencePng> parse_png_options(
     const YAML::Node& map, const std::string& field) {
   static const char* kKeys[] = {"bit_depth", "compression", "compression_level",
@@ -100,41 +149,40 @@ StatusOr<JobOutputImageSequencePng> parse_png_options(
   DAILYBOY_RETURN_IF_ERROR(
       reject_unknown_keys(map, field, kKeys, std::size(kKeys)));
   JobOutputImageSequencePng options;
-  DAILYBOY_ASSIGN_OR_RETURN(
-      int bit_depth,
-      as_optional<int>(map, "bit_depth",
-                       JobOutputImageSequencePng::kDefaultBitDepth, field));
-  if (bit_depth != 8 && bit_depth != 16) {
-    return Status::User(with_job_error(
-        USER_ERROR_JOB_25,
-        field + ".bit_depth '" + std::to_string(bit_depth) + "'."));
+  const YAML::Node bit_depth_node = map["bit_depth"];
+  int bit_depth = JobOutputImageSequencePng::kDefaultBitDepth;
+  if (bit_depth_node && !bit_depth_node.IsNull()) {
+    DAILYBOY_ASSIGN_OR_RETURN(
+        bit_depth, read_yaml_integer(bit_depth_node, USER_ERROR_JOB_216,
+                                     field + ".bit_depth"));
+    if (bit_depth != 8 && bit_depth != 16) {
+      return Status::User(with_job_error(USER_ERROR_JOB_216,
+                                         field + ".bit_depth (got integer " +
+                                             std::to_string(bit_depth) + ")."));
+    }
   }
   options.set_bit_depth(bit_depth);
   DAILYBOY_ASSIGN_OR_RETURN(
       const std::string compression,
-      as_optional<std::string>(map, "compression", "default", field));
+      read_optional_quoted(map, "compression", USER_ERROR_JOB_217,
+                           field + ".compression", "default"));
   if (!is_png_compression(compression)) {
     return Status::User(with_job_error(
-        USER_ERROR_JOB_25, field + ".compression '" + compression + "'."));
+        USER_ERROR_JOB_218, field + ".compression '" + compression + "'."));
   }
   options.set_compression(compression);
   DAILYBOY_ASSIGN_OR_RETURN(
-      int level,
-      as_optional<int>(map, "compression_level",
-                       JobOutputImageSequencePng::kDefaultCompressionLevel,
-                       field));
-  if (level < 0 || level > 6) {
-    return Status::User(
-        with_job_error(USER_ERROR_JOB_25, field + ".compression_level."));
-  }
+      const int level,
+      read_optional_int_in_range(
+          map, "compression_level",
+          JobOutputImageSequencePng::kDefaultCompressionLevel, 0, 6,
+          USER_ERROR_JOB_219, field + ".compression_level"));
   options.set_compression_level(level);
   DAILYBOY_ASSIGN_OR_RETURN(
-      int filter,
-      as_optional<int>(map, "filter", JobOutputImageSequencePng::kDefaultFilter,
-                       field));
-  if (filter < 0 || filter > 4) {
-    return Status::User(with_job_error(USER_ERROR_JOB_25, field + ".filter."));
-  }
+      const int filter,
+      read_optional_int_in_range(map, "filter",
+                                 JobOutputImageSequencePng::kDefaultFilter, 0,
+                                 4, USER_ERROR_JOB_220, field + ".filter"));
   options.set_filter(filter);
   return options;
 }
@@ -147,34 +195,31 @@ StatusOr<JobOutputImageSequenceJpeg> parse_jpeg_options(
       reject_unknown_keys(map, field, kKeys, std::size(kKeys)));
   JobOutputImageSequenceJpeg options;
   DAILYBOY_ASSIGN_OR_RETURN(
-      int bit_depth,
-      as_optional<int>(map, "bit_depth",
-                       JobOutputImageSequenceJpeg::kDefaultBitDepth, field));
-  if (bit_depth != 8) {
-    return Status::User(
-        with_job_error(USER_ERROR_JOB_25, field + ".bit_depth (must be 8)."));
-  }
+      const int bit_depth,
+      read_optional_int_in_range(
+          map, "bit_depth", JobOutputImageSequenceJpeg::kDefaultBitDepth, 8, 8,
+          USER_ERROR_JOB_221, field + ".bit_depth"));
   options.set_bit_depth(bit_depth);
   DAILYBOY_ASSIGN_OR_RETURN(
-      int level,
-      as_optional<int>(map, "compression_level",
-                       JobOutputImageSequenceJpeg::kDefaultCompressionLevel,
-                       field));
-  if (level < 1 || level > 100) {
-    return Status::User(
-        with_job_error(USER_ERROR_JOB_25, field + ".compression_level."));
-  }
+      const int level,
+      read_optional_int_in_range(
+          map, "compression_level",
+          JobOutputImageSequenceJpeg::kDefaultCompressionLevel, 1, 100,
+          USER_ERROR_JOB_222, field + ".compression_level"));
   options.set_compression_level(level);
   DAILYBOY_ASSIGN_OR_RETURN(
       const std::string subsampling,
-      as_optional<std::string>(map, "subsampling", "", field));
+      read_optional_quoted(map, "subsampling", USER_ERROR_JOB_223,
+                           field + ".subsampling", ""));
   if (!subsampling.empty() && !is_jpeg_subsampling(subsampling)) {
     return Status::User(with_job_error(
-        USER_ERROR_JOB_25, field + ".subsampling '" + subsampling + "'."));
+        USER_ERROR_JOB_224, field + ".subsampling '" + subsampling + "'."));
   }
   options.set_subsampling(subsampling);
   DAILYBOY_ASSIGN_OR_RETURN(
-      bool progressive, as_optional<bool>(map, "progressive", false, field));
+      const bool progressive,
+      read_optional_bool_field(map, "progressive", false, USER_ERROR_JOB_225,
+                               field + ".progressive"));
   options.set_progressive(progressive);
   return options;
 }
@@ -190,30 +235,30 @@ StatusOr<JobOutputImageSequenceTiff> parse_tiff_options(
     const std::string depth = tiff_bit_depth_string(map["bit_depth"]);
     if (!is_tiff_bit_depth(depth)) {
       return Status::User(with_job_error(
-          USER_ERROR_JOB_25, field + ".bit_depth '" + depth + "'."));
+          USER_ERROR_JOB_226, field + ".bit_depth '" + depth + "'."));
     }
     options.set_bit_depth(depth);
   }
-  DAILYBOY_ASSIGN_OR_RETURN(bool bigtiff,
-                            as_optional<bool>(map, "bigtiff", false, field));
+  DAILYBOY_ASSIGN_OR_RETURN(
+      const bool bigtiff,
+      read_optional_bool_field(map, "bigtiff", false, USER_ERROR_JOB_227,
+                               field + ".bigtiff"));
   options.set_bigtiff(bigtiff);
   DAILYBOY_ASSIGN_OR_RETURN(
       const std::string compression,
-      as_optional<std::string>(map, "compression", "zip", field));
+      read_optional_quoted(map, "compression", USER_ERROR_JOB_228,
+                           field + ".compression", "zip"));
   if (!is_tiff_compression(compression)) {
     return Status::User(with_job_error(
-        USER_ERROR_JOB_25, field + ".compression '" + compression + "'."));
+        USER_ERROR_JOB_229, field + ".compression '" + compression + "'."));
   }
   options.set_compression(compression);
   DAILYBOY_ASSIGN_OR_RETURN(
-      int level,
-      as_optional<int>(map, "compression_level",
-                       JobOutputImageSequenceTiff::kDefaultCompressionLevel,
-                       field));
-  if (level < 1 || level > 9) {
-    return Status::User(
-        with_job_error(USER_ERROR_JOB_25, field + ".compression_level."));
-  }
+      const int level,
+      read_optional_int_in_range(
+          map, "compression_level",
+          JobOutputImageSequenceTiff::kDefaultCompressionLevel, 1, 9,
+          USER_ERROR_JOB_230, field + ".compression_level"));
   options.set_compression_level(level);
   return options;
 }
@@ -221,6 +266,33 @@ StatusOr<JobOutputImageSequenceTiff> parse_tiff_options(
 bool exr_level_allowed(const std::string& compression) {
   return compression == "zip" || compression == "zips" ||
          compression == "dwaa" || compression == "dwab";
+}
+
+StatusOr<int> parse_exr_compression_level(const YAML::Node& map,
+                                          const std::string& compression,
+                                          const std::string& field) {
+  if (!map["compression_level"]) {
+    return -1;
+  }
+  if (!exr_level_allowed(compression)) {
+    return Status::User(with_job_error(USER_ERROR_JOB_94, field + "."));
+  }
+  const std::string loc = field + ".compression_level";
+  const bool zip = compression == "zip" || compression == "zips";
+  const std::string_view error = zip ? USER_ERROR_JOB_235 : USER_ERROR_JOB_236;
+  DAILYBOY_ASSIGN_OR_RETURN(
+      const int level, read_yaml_integer(map["compression_level"], error, loc));
+  if (zip && (level < 1 || level > 9)) {
+    return Status::User(
+        with_job_error(USER_ERROR_JOB_235,
+                       loc + " (got integer " + std::to_string(level) + ")."));
+  }
+  if (!zip && level < 0) {
+    return Status::User(
+        with_job_error(USER_ERROR_JOB_236,
+                       loc + " (got integer " + std::to_string(level) + ")."));
+  }
+  return level;
 }
 
 StatusOr<JobOutputImageSequenceExr> parse_exr_options(
@@ -232,35 +304,25 @@ StatusOr<JobOutputImageSequenceExr> parse_exr_options(
   JobOutputImageSequenceExr options;
   DAILYBOY_ASSIGN_OR_RETURN(
       const std::string bit_depth,
-      as_optional<std::string>(map, "bit_depth", "h16", field));
+      read_optional_quoted(map, "bit_depth", USER_ERROR_JOB_231,
+                           field + ".bit_depth", "h16"));
   if (bit_depth != "h16" && bit_depth != "f32") {
     return Status::User(with_job_error(
-        USER_ERROR_JOB_25, field + ".bit_depth '" + bit_depth + "'."));
+        USER_ERROR_JOB_232, field + ".bit_depth '" + bit_depth + "'."));
   }
   options.set_bit_depth(bit_depth);
   DAILYBOY_ASSIGN_OR_RETURN(
       const std::string compression,
-      as_optional<std::string>(map, "compression", "zip", field));
+      read_optional_quoted(map, "compression", USER_ERROR_JOB_233,
+                           field + ".compression", "zip"));
   if (!is_exr_compression(compression)) {
     return Status::User(with_job_error(
-        USER_ERROR_JOB_25, field + ".compression '" + compression + "'."));
+        USER_ERROR_JOB_234, field + ".compression '" + compression + "'."));
   }
   options.set_compression(compression);
-  if (map["compression_level"]) {
-    if (!exr_level_allowed(compression)) {
-      return Status::User(with_job_error(USER_ERROR_JOB_94, field + "."));
-    }
-    DAILYBOY_ASSIGN_OR_RETURN(
-        int level, as_required<int>(map, "compression_level", field));
-    if ((compression == "zip" || compression == "zips") &&
-        (level < 1 || level > 9)) {
-      return Status::User(
-          with_job_error(USER_ERROR_JOB_25, field + ".compression_level."));
-    }
-    if (level < 0) {
-      return Status::User(
-          with_job_error(USER_ERROR_JOB_25, field + ".compression_level."));
-    }
+  DAILYBOY_ASSIGN_OR_RETURN(
+      const int level, parse_exr_compression_level(map, compression, field));
+  if (level >= 0) {
     options.set_compression_level(level);
   }
   return options;
@@ -274,35 +336,30 @@ StatusOr<JobOutputImageSequenceHeif> parse_heif_options(
       reject_unknown_keys(map, field, kKeys, std::size(kKeys)));
   JobOutputImageSequenceHeif options;
   DAILYBOY_ASSIGN_OR_RETURN(
-      int bit_depth,
-      as_optional<int>(map, "bit_depth",
-                       JobOutputImageSequenceHeif::kDefaultBitDepth, field));
-  if (bit_depth != 8) {
-    return Status::User(
-        with_job_error(USER_ERROR_JOB_25, field + ".bit_depth (must be 8)."));
-  }
+      const int bit_depth,
+      read_optional_int_in_range(
+          map, "bit_depth", JobOutputImageSequenceHeif::kDefaultBitDepth, 8, 8,
+          USER_ERROR_JOB_237, field + ".bit_depth"));
   options.set_bit_depth(bit_depth);
   const std::string default_comp = (ext == ".avif") ? "avif" : "heic";
   DAILYBOY_ASSIGN_OR_RETURN(
       std::string compression,
-      as_optional<std::string>(map, "compression", default_comp, field));
+      read_optional_quoted(map, "compression", USER_ERROR_JOB_238,
+                           field + ".compression", default_comp));
   if (compression == "hevc") {
     compression = "heic";
   }
   if (compression != "heic" && compression != "avif") {
     return Status::User(with_job_error(
-        USER_ERROR_JOB_25, field + ".compression '" + compression + "'."));
+        USER_ERROR_JOB_239, field + ".compression '" + compression + "'."));
   }
   options.set_compression(std::move(compression));
   DAILYBOY_ASSIGN_OR_RETURN(
-      int level,
-      as_optional<int>(map, "compression_level",
-                       JobOutputImageSequenceHeif::kDefaultCompressionLevel,
-                       field));
-  if (level < 0 || level > 100) {
-    return Status::User(
-        with_job_error(USER_ERROR_JOB_25, field + ".compression_level."));
-  }
+      const int level,
+      read_optional_int_in_range(
+          map, "compression_level",
+          JobOutputImageSequenceHeif::kDefaultCompressionLevel, 0, 100,
+          USER_ERROR_JOB_240, field + ".compression_level"));
   options.set_compression_level(level);
   return options;
 }
@@ -341,6 +398,9 @@ parse_image_sequence_format_options(const YAML::Node& node,
     return Status::User(with_job_error(USER_ERROR_JOB_93, field + "."));
   }
   DAILYBOY_ASSIGN_OR_RETURN(const YAML::Node map, expect_map(node, field));
+  if (map.size() == 0) {
+    return Status::User(with_job_error(USER_ERROR_JOB_215, field + "."));
+  }
   if (format == "png") {
     DAILYBOY_ASSIGN_OR_RETURN(JobOutputImageSequencePng options,
                               parse_png_options(map, field));

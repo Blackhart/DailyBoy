@@ -121,7 +121,7 @@
         "path": {
           "type": "string",
           "minLength": 1,
-          "description": "Video file path (e.g. QuickTime .mov container with H.264)."
+          "description": "Video file path. Must end with .mov (case-insensitive) after resolving {token} / $VAR substitutions; QuickTime mov muxer."
         },
         "fps": {
           "type": "integer",
@@ -219,7 +219,8 @@
         "gop": {
           "type": "integer",
           "minimum": 1,
-          "description": "Keyframe interval (FFmpeg -g). Omit for the x264 default."
+          "default": 250,
+          "description": "Keyframe interval (FFmpeg -g). Omit for 250."
         },
         "pix_fmt": {
           "type": "string",
@@ -260,7 +261,27 @@
           "default": true,
           "description": "MOV muxer movflags +faststart."
         }
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "profile": { "const": "high422" } },
+            "required": ["profile"]
+          },
+          "then": {
+            "properties": { "pix_fmt": { "const": "yuv422p" } }
+          }
+        },
+        {
+          "if": {
+            "properties": { "pix_fmt": { "const": "yuv422p" } },
+            "required": ["pix_fmt"]
+          },
+          "then": {
+            "properties": { "profile": { "const": "high422" } }
+          }
+        }
+      ]
     },
     "dnxhdCodecOptions": {
       "type": "object",
@@ -415,7 +436,7 @@
           "minLength": 4,
           "maxLength": 4,
           "default": "apl0",
-          "description": "Four-character ProRes vendor ID (e.g. apl0, Lavc)."
+          "description": "Quoted YAML string. Four-character ProRes vendor ID (e.g. apl0, Lavc)."
         },
         "faststart": {
           "type": "boolean",
@@ -499,7 +520,8 @@
             "pngfast",
             "none"
           ],
-          "default": "default"
+          "default": "default",
+          "description": "Quoted YAML string. zlib strategy for PNG."
         },
         "compression_level": {
           "type": "integer",
@@ -552,7 +574,8 @@
         "compression": {
           "type": "string",
           "enum": ["none", "lzw", "zip", "ccittrle", "packbits"],
-          "default": "zip"
+          "default": "zip",
+          "description": "Quoted YAML string. TIFF compression."
         },
         "compression_level": {
           "type": "integer",
@@ -585,7 +608,8 @@
             "dwaa",
             "dwab"
           ],
-          "default": "zip"
+          "default": "zip",
+          "description": "Quoted YAML string. OpenEXR compression."
         },
         "compression_level": {
           "type": "integer",
@@ -603,7 +627,7 @@
           "type": "string",
           "enum": ["heic", "avif", "hevc"],
           "default": "heic",
-          "description": "hevc is accepted as an alias for heic. Default is avif when path_pattern ends with .avif."
+          "description": "Quoted YAML string. hevc is accepted as an alias for heic. Default is avif when path_pattern ends with .avif."
         },
         "compression_level": {
           "type": "integer",
@@ -693,7 +717,7 @@
           "type": "string",
           "enum": ["fill", "outline"],
           "default": "fill",
-          "description": "fill = solid surface; outline = box stroke (width from engine if not overridden)."
+          "description": "Quoted YAML string. fill = solid surface; outline = box stroke (width from engine if not overridden)."
         },
         "color": {
           "type": "object",
@@ -744,7 +768,7 @@
         "path": {
           "type": "string",
           "minLength": 1,
-          "description": "Quoted YAML string. Path to a .ttf or .otf file."
+          "description": "Quoted YAML string. Path to an existing .ttf or .otf file (checked after substitutions resolve; skip check while tokens remain)."
         },
         "size_px": {
           "type": "integer",
@@ -831,6 +855,8 @@
         "duration_frames": { "type": "integer", "minimum": 0 },
         "lines": {
           "type": "array",
+          "minItems": 1,
+          "description": "At least one line when slate is present. Omit the whole slate block to skip the slate.",
           "items": {
             "type": "object",
             "additionalProperties": false,
@@ -838,7 +864,7 @@
             "properties": {
               "text": {
                 "type": "string",
-                "description": "Text or template (same convention as burn-ins)."
+                "description": "Quoted YAML text or template (same convention as burn-ins)."
               },
               "position": {
                 "$ref": "#/$defs/burnInPosition",
@@ -846,7 +872,7 @@
               },
               "font": {
                 "$ref": "#/$defs/burnInFont",
-                "description": "Same structure as layout.burn_ins[].font."
+                "description": "Same structure as layout.burn_ins[].font. path must exist after resolving substitutions."
               }
             }
           }

@@ -177,44 +177,45 @@ DailyBoy provides certain automatic tokens that can be used in templates for sla
 The `plans` section defines which shot(s) will be processed in this job. Currently, one plan (shot) per job is supported, specified as a single item in a YAML list.
 
 Each plan is required to specify:
-- a unique identifier (`id`)
-- the colorspace of its images (`input_colorspace`)
-- the image sequence location and range (`sequence`)
+- a unique identifier (`id`) — quoted non-empty string
+- the colorspace of its images (`input_colorspace`) — quoted non-empty string
+- the image sequence location and range (`sequence`), with `sequence.path` as a quoted non-empty string
 
-You may also add audio and handles for more advanced cases.
+Optional `audio.path` (when the `audio` block is present) must also be a quoted non-empty string. You may also add handles and timecode for more advanced cases.
 
 <a id="plans-id"></a>
 
 ### 4.1 `id`
 
-| Field | Required | Type               | Description                                 |
-| ----- | -------- | ------------------ | ------------------------------------------- |
-| `id`  | yes      | string (non-empty) | Unique, non-empty identifier for this shot. |
+| Field | Required | Type                              | Description                                 |
+| ----- | -------- | --------------------------------- | ------------------------------------------- |
+| `id`  | yes      | quoted string (non-empty)         | Unique, non-empty identifier for this shot. |
 
-The `id` is required, must not be empty, and is used for `{plan_id}` substitution tokens.
+The `id` is required, must be a **quoted** non-empty YAML string (e.g. `"plate"`), and is used for `{plan_id}` substitution tokens. Unquoted or empty values fail with `plans[].id: must be a quoted non-empty string (e.g. "plate").`.
 
 <a id="plans-input-colorspace"></a>
 
 ### 4.2 `input_colorspace`
 
-| Field              | Required | Type                                     | Description                                                       |
-| ------------------ | -------- | ---------------------------------------- | ----------------------------------------------------------------- |
-| `input_colorspace` | yes      | string (OCIO colorspace name, non-empty) | Plate image colorspace as defined in your OCIO config.            |
+| Field              | Required | Type                                              | Description                                                       |
+| ------------------ | -------- | ------------------------------------------------- | ----------------------------------------------------------------- |
+| `input_colorspace` | yes      | quoted string (OCIO colorspace name, non-empty)   | Plate image colorspace as defined in your OCIO config.            |
 
-This must exactly match one of the colorspaces in your OCIO configuration (e.g. `ACEScg`, `Linear Rec.709 (sRGB)`, `AlexaV3LogC`).
+Must be a **quoted** non-empty YAML string that exactly matches a colorspace in your OCIO configuration (e.g. `"ACEScg"`, `"Linear Rec.709 (sRGB)"`, `"AlexaV3LogC"`). Invalid values fail with `plans[].input_colorspace: must be a quoted non-empty string (e.g. "ACEScg").`.
 
 <a id="plans-sequence"></a>
 
 ### 4.3 `sequence`
 
-| Sub-field     | Required | Type               | Description                                                 |
-| ------------- | -------- | ------------------ | ----------------------------------------------------------- |
-| `path`        | yes      | string (non-empty) | File pattern for the image sequence.                        |
-| `frame_start` | yes      | integer            | First hero frame (inclusive, used for overlays/tokens).     |
-| `frame_end`   | yes      | integer            | Last hero frame (inclusive).                                |
-| `handles`     | no       | object             | Optional extra source frames before/after hero range.       |
+| Sub-field     | Required | Type                      | Description                                                 |
+| ------------- | -------- | ------------------------- | ----------------------------------------------------------- |
+| `path`        | yes      | quoted string (non-empty) | File pattern for the image sequence.                        |
+| `frame_start` | yes      | integer                   | First hero frame (inclusive, used for overlays/tokens).     |
+| `frame_end`   | yes      | integer                   | Last hero frame (inclusive).                                |
+| `handles`     | no       | object                    | Optional extra source frames before/after hero range.       |
 
 **Sequence Paths:**
+- `path` must be a **quoted** non-empty YAML string (e.g. `"plate.%04d.png"`). Unquoted or empty values fail with `plans[].sequence.path: must be a quoted non-empty string (e.g. "plate.%04d.png").`.
 - Patterns (`%04d`, `####`, `@@@@`, `$F4`, or explicit ranges like `file.1001-1050.exr`) are supported.
 - You can embed substitutions like `{dailies_root}` in the path.
 - `frame_start` and `frame_end` are the main (hero) range. Slate/burn-in tokens `{frame_start}` and `{frame_end}` use these values.
@@ -229,19 +230,21 @@ Optional `handles` allow including additional plates before the first and/or aft
 | `head`              | no       | integer ≥ 0   | `0`     | Frames before `frame_start` to include (`frame_start - head` ... `frame_start - 1`).   |
 | `tail`              | no       | integer ≥ 0   | `0`     | Frames after `frame_end` to include (`frame_end + 1` ... `frame_end + tail`).          |
 
-- If handles are omitted, the job processes only the hero range.
+- If `handles` is omitted, or a side is omitted, that side defaults to `0` (hero range only for that side).
 - If handles are set, **the processed range becomes** `frame_start - handles.head` through `frame_end + handles.tail`.
 - If any frame in this full range is missing, that is a hard error.
+- `head` / `tail` must be unquoted integers ≥ 0. Invalid values fail with `plans[].sequence.handles.head: must be an unquoted integer >= 0 (e.g. 8).` or the matching `…handles.tail…` message. A non-object `handles` value fails with `plans[].sequence.handles: must be a map; head and tail must be unquoted integers >= 0.`.
 
 <a id="plans-audio"></a>
 
 ### 4.4 `audio`
 
-| Sub-field | Required | Type               | Description                                                                                                            |
-| --------- | -------- | ------------------ | ---------------------------------------------------------------------------------------------------------------------- |
-| `path`    | yes      | string (non-empty) | Path to a guide audio track (WAV PCM, AAC in `.wav` / `.aac` / `.m4a`, or audio-only `.mov`). Metadata tokens allowed.  |
+| Sub-field | Required | Type                      | Description                                                                                                            |
+| --------- | -------- | ------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `path`    | yes      | quoted string (non-empty) | Path to a guide audio track (WAV PCM, AAC in `.wav` / `.aac` / `.m4a`, or audio-only `.mov`). Metadata tokens allowed.  |
 
 **Audio is optional.**  
+When present, `path` must be a **quoted** non-empty YAML string. Unquoted or empty values fail with `plans[].audio.path: must be a quoted non-empty string (e.g. "/audio/guide.wav").`.  
 If present for any plan, _all_ generated MOVs for this job include a shared AAC-LC stereo 48 kHz guide track at **192 kbps**.  
 Audio behavior per plan:
 1. **Slate duration**: MOVs always begin with silence for `layout.slate.duration_frames`, regardless of audio.
@@ -257,7 +260,7 @@ The `timecode` block is optional. It specifies a SMPTE timecode clock for overla
 | Field        | Required (if `timecode` is present) | Type | Default | Description |
 | ------------ | ----------------------------------- | ---- | ------- | ----------- |
 | `start`      | yes | string `HH:MM:SS:FF` **or** integer ≥ 0 | — | The timecode at the hero `sequence.frame_start`. Strings are SMPTE format, e.g. `01:00:00:00`. Integers specify the frame count from `00:00:00:00` at the resolved frame rate. If `drop_frame` is `true`, use a semicolon before the frame number (`;FF`) as per SMPTE practice. |
-| `drop_frame` | no  | boolean | `false` | Whether to use drop-frame timecode counting. **Must only be `true` at `30` or `60` fps.** |
+| `drop_frame` | no  | boolean | `false` | Drop-frame counting. Omit for `false`. Must be a YAML boolean (`true` / `false`); other types fail with `plans[].timecode.drop_frame: must be a boolean (true or false).`. **`true` is valid only when the resolved fps is `30` or `60`**; otherwise DailyBoy rejects the job with `plans[].timecode.drop_frame: true requires resolved fps 30 or 60.`. |
 
 **Frame Rate Resolution (How the timecode "fps" is chosen):**
 - There is *no* explicit `rate` field in the job.
@@ -275,14 +278,14 @@ The `timecode` block is optional. It specifies a SMPTE timecode clock for overla
 
 ```yaml
 plans:
-  - id: sh010_bg
+  - id: "sh010_bg"
     input_colorspace: "ACEScg"
     timecode:
       start: "01:00:00:00"
       # drop_frame: false
       # You can also use: start: 86400   # (frame count at 24 fps)
     sequence:
-      path: /shots/sh010/renders/v003/bg.%04d.png
+      path: "/shots/sh010/renders/v003/bg.%04d.png"
       frame_start: 1001
       frame_end: 1048
       handles:
@@ -364,7 +367,7 @@ Defines the output image size.
 | `width`   | yes      | even integer (≥ 2) | Width of the output image, in pixels. Must be even so video codecs can encode the canvas as-is. |
 | `height`  | yes      | even integer (≥ 2) | Height of the output image, in pixels. Must be even so video codecs can encode the canvas as-is. |
 
-Common sizes: `1920x1080` (HD), `2048x1080` (2K DCI), `2560x1350` (QHD+), `2840x2160` (UHD), `4096x1716` (4K DCI), `4096x2160` (full 4K), `1024x768` (XGA), `1280x720` (HD 720p), `2560x1440` (1440p/QHD).
+Common sizes: `1920x1080` (HD), `2048x1080` (2K DCI), `2560x1350` (QHD+), `3840x2160` (UHD), `4096x1716` (4K DCI), `4096x2160` (full 4K), `1024x768` (XGA), `1280x720` (HD 720p), `2560x1440` (1440p/QHD).
 
 <a id="layout-pixel-aspect"></a>
 
@@ -372,9 +375,9 @@ Common sizes: `1920x1080` (HD), `2048x1080` (2K DCI), `2560x1350` (QHD+), `2840x
 
 | Field          | Required | Type                        | Description |
 | -------------- | -------- | --------------------------- | ----------- |
-| `pixel_aspect` | no       | number (> 0, default `1.0`) | Pixel aspect ratio. Default is square pixels (`1.0`). |
+| `pixel_aspect` | no       | number (> 0, default `1.0`) | Pixel aspect ratio. Must be strictly greater than 0 (`exclusiveMinimum: 0`). Default when omitted is square pixels (`1.0`). |
 
-You can leave out the `pixel_aspect` field unless your output images use non-square pixels (for example, if you are matching legacy formats or anamorphic material). For most modern workflows, the default value `1.0` (square pixels) is correct and you do not need to include this field.
+You can leave out the `pixel_aspect` field unless your output images use non-square pixels (for example, if you are matching legacy formats or anamorphic material). For most modern workflows, the default value `1.0` (square pixels) is correct and you do not need to include this field. Zero or negative values fail with `layout.pixel_aspect: must be a number > 0 (e.g. 1.0).`.
 
 <a id="layout-image"></a>
 
@@ -442,7 +445,7 @@ Each entry:
 
 | Sub-field | Required | Type               | Description             |
 | --------- | -------- | ------------------ | ----------------------- |
-| `path`    | yes      | quoted string (non-empty) | Font file path.         |
+| `path`    | yes      | quoted string (non-empty) | Path to an existing `.ttf` or `.otf` file. After substitutions resolve, the file must exist on disk. Existence is **not** checked while the path still contains `{` or `$` substitution tokens (those resolve later). Missing resolved files fail with `layout.font.path: file not found. Set a path to an existing .ttf or .otf file (after resolving substitutions).`. |
 | `size_px` | yes      | integer (≥ 4)      | Font size in pixels.    |
 | `color`   | no       | object (r, g, b in `[0, 1]`) | Text color in display RGB. Omitted block or channel defaults to `1` (white). If present, keys must be only `r`, `g`, and `b`. |
 
@@ -450,7 +453,7 @@ Each entry:
 
 | Sub-field | Required | Type            | Default   | Description                  |
 | --------- | -------- | --------------- | --------- | ---------------------------- |
-| `mode`    | no       | string          | `fill`    | Fill or outline              |
+| `mode`    | no       | quoted `"fill"` or `"outline"` | `fill` | Box style. Must be a quoted YAML string when set (e.g. `mode: "fill"`). |
 | `color`   | no       | object (r,g,b)  | black     | Color (display RGB)|
 | `opacity` | no       | number (0–1)    | `1`       | Alpha transparency           |
 | `margin`  | no       | int or object   | `0`       | Padding around text          |
@@ -459,20 +462,20 @@ Each entry:
 
 ### 6.6 `slate` (optional)
 
-Defines a title card prepended to each enabled movie and image sequence. Omit the whole block to skip the slate. Sequence files use frame numbers immediately before the first processed plate (`plans[].sequence.frame_start - plans[].sequence.handles.head`, or `frame_start` when handles are omitted); plate files keep source numbers.
+Defines a title card prepended to each enabled movie and image sequence. **Omit the whole `slate` block to skip the slate** — do not use `lines: []`. When `slate` is present, `lines` must contain **at least one** entry (`minItems: 1`); an empty list fails with `layout.slate.lines: add at least one line, or omit the slate block.`. Sequence files use frame numbers immediately before the first processed plate (`plans[].sequence.frame_start - plans[].sequence.handles.head`, or `frame_start` when handles are omitted); plate files keep source numbers.
 
-| Field             | Required | Type             | Description                  |
-| ----------------- | -------- | ---------------- | ---------------------------- |
-| `duration_frames` | yes      | integer (≥ 0)    | Number of identical head frames to write. `0` writes none. |
-| `lines`           | yes      | array of objects | Text lines for the slate. Empty keeps the background canvas only. |
+| Field             | Required | Type                          | Description                  |
+| ----------------- | -------- | ----------------------------- | ---------------------------- |
+| `duration_frames` | yes      | integer (≥ 0)                 | Number of identical head frames to write. `0` writes none. |
+| `lines`           | yes      | array of objects (min 1 item) | Text lines for the slate. At least one line when the block is present. |
 
 Each `lines[]` entry:
 
 | Sub-field  | Required | Type   | Description                                                      |
 | ---------- | -------- | ------ | ---------------------------------------------------------------- |
-| `text`     | yes      | string | Text for the line, substitutions and tokens allowed.             |
+| `text`     | yes      | quoted string | Text for the line, substitutions and tokens allowed.      |
 | `position` | yes      | object | Positioning; same as for burn-ins.                               |
-| `font`     | yes      | object | Font declaration; same as for burn-ins.                          |
+| `font`     | yes      | object | Font declaration; same as for burn-ins (including `font.path` existence rules). |
 
 <a id="layout-example"></a>
 
@@ -505,7 +508,7 @@ layout:
         path: "dailyboy/tests/data/fonts/DejaVuSans.ttf"
         size_px: 22
       box:
-        mode: fill
+        mode: "fill"
         color:
           r: 0
           g: 0
@@ -554,14 +557,20 @@ Each entry specifies one movie output.
 
 | Field           | Required | Values                        | Default if omitted | Description                    |
 | --------------- | -------- | ----------------------------- | ------------------ | ------------------------------ |
-| `id`            | yes      | string (non-empty)            | —                  | Unique identifier for this movie|
+| `id`            | yes      | quoted string (non-empty)     | —                  | Unique identifier for this movie|
 | `enabled`       | yes      | boolean                       | —                  | Whether to write this output    |
 | `display_view`  | yes      | object (`display`, `view`)    | —                  | OCIO DisplayView for review     |
 | `signal`        | yes      | object — see [§7.2.0](#output-signal) | —                  | Encode color tags + YCbCr matrix|
-| `path`          | yes      | string (non-empty)            | —                  | Output file path (QuickTime `.mov`; muxer is always `mov`) |
-| `fps`           | no       | integer ≥ 1                   | `24`               | Frames per second. When `plans[].timecode` is set, every enabled video must share the same `fps` (see §4.5). |
-| `codec`         | yes      | `h264`, `mjpeg`, `dnxhd`, `prores` | —                  | Output codec                    |
+| `path`          | yes      | quoted string (non-empty)     | —                  | Output file path (QuickTime `.mov`; muxer is always `mov`) |
+| `fps`           | no       | unquoted integer ≥ 1          | `24`               | Frames per second. When `plans[].timecode` is set, every enabled video must share the same `fps` (see §4.5). |
+| `codec`         | yes      | quoted `h264`, `mjpeg`, `dnxhd`, or `prores` | —                  | Output codec                    |
 | `codec_options` | no       | object                        | codec defaults     | Codec parameters (optional)     |
+
+Required keys and supported enum values on `videos[]` entries use **field-specific** parse errors (`output.videos[].<field>: …`, and `output.videos[].codec_options.<key>: …` for H.264 options), not the generic `job: a required key is missing…` or `job: unsupported value…` messages.
+
+- `id`, `path`, and `codec` must be **quoted** non-empty YAML strings (e.g. `"review_h264"`, `"{dailies_root}/review.mov"`, `"h264"`).
+- `path` must end with `.mov` (case-insensitive) **after** `{token}` / `$VAR` substitutions are applied. While the path still contains `{` or `$`, that suffix check is skipped (tokens may supply the extension). A resolved non-`.mov` path fails with `output.videos[].path: must end with .mov (case-insensitive) after resolving tokens.` plus the entry location (e.g. `output.videos[0].path '/out/review.mp4'.`).
+- `fps`, when set, must be an **unquoted** integer ≥ 1.
 
 See the documentation for details regarding available `codec_options` per codec.
 
@@ -571,12 +580,14 @@ See the documentation for details regarding available `codec_options` per codec.
 
 Required on every `videos[]` entry. Tags written into the bitstream / container and the RGB→YCbCr matrix used by swscale. Only BT.709 is supported today.
 
-| Field        | Required | Values     | Description |
-| ------------ | -------- | ---------- | ----------- |
-| `range`      | yes      | `tv`, `pc` | Limited (`tv`) or full (`pc`) luma/chroma range |
-| `matrix`     | yes      | `bt709`    | YCbCr matrix (AVCOL_SPC) and swscale RGB→YUV matrix |
-| `primaries`  | yes      | `bt709`    | Color primaries metadata |
-| `transfer`   | yes      | `bt709`    | Transfer characteristic metadata |
+| Field        | Required | Values              | Description |
+| ------------ | -------- | ------------------- | ----------- |
+| `range`      | yes      | quoted `"tv"`, `"pc"` | Limited (`tv`) or full (`pc`) luma/chroma range |
+| `matrix`     | yes      | quoted `"bt709"`    | YCbCr matrix (AVCOL_SPC) and swscale RGB→YUV matrix |
+| `primaries`  | yes      | quoted `"bt709"`    | Color primaries metadata |
+| `transfer`   | yes      | quoted `"bt709"`    | Transfer characteristic metadata |
+
+Each `signal` key must be a **quoted** string. Missing keys, wrong types, and unsupported values fail with dedicated `output.videos[].signal.<field>:` messages (for example `output.videos[].signal.range: unsupported value. Use "tv" or "pc".`). If the whole `signal` block is omitted, parse fails with `output.videos[].signal: missing required key. Set range, matrix, primaries, and transfer.`
 
 `display_view` selects the OCIO DisplayView that produces the review RGB sent to the encoder; `signal` describes how that RGB is tagged and converted to YCbCr. They are independent fields.
 
@@ -584,18 +595,18 @@ Required on every `videos[]` entry. Tags written into the bitstream / container 
 
 #### 7.2.1 `codec_options` for `h264`
 
-Optional. If not specified, defaults are used. Only set either `crf` or `bitrate_kbps`, not both.
+Optional. If not specified, defaults are used. Only set either `crf` or `bitrate_kbps`, not both. Invalid H.264 `codec_options` keys use `output.videos[].codec_options.<key>:` error messages (quoted-string enums must be quoted in YAML; `crf`, `bitrate_kbps`, `gop`, and `level` use unquoted numbers).
 
 | Field          | Required | Values                                                                 | Default                  | Description                                 |
 | -------------- | -------- | ---------------------------------------------------------------------- | ------------------------ | ------------------------------------------- |
-| `preset`       | no       | `ultrafast`, `superfast`, `veryfast`, `faster`, `fast`, `medium`, `slow` | `medium`                | Encoding speed / efficiency tradeoff.       |
+| `preset`       | no       | quoted `"ultrafast"`, `"superfast"`, `"veryfast"`, `"faster"`, `"fast"`, `"medium"`, `"slow"` | `medium` | Encoding speed / efficiency tradeoff. |
 | `crf`          | no       | number 0–51                                                            | `23` (if bitrate omitted)| Constant Rate Factor (quality).             |
 | `bitrate_kbps` | no       | integer ≥ 1                                                            | unused                   | Target bitrate (alternative to crf).        |
-| `gop`          | no       | integer ≥ 1                                                            | encoder default (~250)   | Keyframe interval.                          |
-| `pix_fmt`      | no       | `yuv420p`, `yuv422p`                                                   | `yuv420p`                | Pixel format.                               |
-| `tune`         | no       | `film`, `animation`, `grain`, `stillimage`, `fastdecode`, `zerolatency` | not set                  | Optional encoder hint.                      |
-| `profile`      | no       | `baseline`, `main`, `high`, `high422`                                  | auto based on pix_fmt    | H.264 feature set.                          |
-| `level`        | no       | `3.0`, `3.1`, `4.0`, `4.1`, `4.2`, `5.0`, `5.1`, `5.2`               | auto                     | Decoder limits (resolution, bitrate).       |
+| `gop`          | no       | unquoted integer ≥ 1                                                   | `250`                    | Keyframe interval (FFmpeg `-g`).            |
+| `pix_fmt`      | no       | quoted `"yuv420p"`, `"yuv422p"`                                        | `yuv420p`                | Pixel format.                               |
+| `tune`         | no       | quoted `"film"`, `"animation"`, `"grain"`, `"stillimage"`, `"fastdecode"`, `"zerolatency"` | not set | Optional encoder hint. |
+| `profile`      | no       | quoted `"baseline"`, `"main"`, `"high"`, `"high422"`                   | auto based on pix_fmt    | H.264 feature set (`high422` requires `pix_fmt: "yuv422p"`). |
+| `level`        | no       | quoted `"3.0"`…`"5.2"` (YAML number also accepted)                     | auto                     | Decoder limits (resolution, bitrate).       |
 | `faststart`    | no       | `true`, `false`                                                        | `true`                   | Store moov atom at file head.               |
 
 <a id="output-codec-options-mjpeg"></a>
@@ -607,8 +618,8 @@ Optional. If not specified, defaults are used.
 | Field         | Required | Values                          | Default    | Description                                  |
 | ------------- | -------- | ------------------------------- | ---------- | -------------------------------------------- |
 | `qscale`      | no       | integer 1–31                    | `3`        | JPEG quality (lower is better quality/larger)|
-| `pix_fmt`     | no       | `yuv420p`, `yuv422p`, `yuv444p` | `yuv422p`  | Pixel format                                 |
-| `huffman`     | no       | `default`, `optimal`            | `optimal`  | JPEG table type                              |
+| `pix_fmt`     | no       | quoted `"yuv420p"`, `"yuv422p"`, `"yuv444p"` | `yuv422p` | Pixel format |
+| `huffman`     | no       | quoted `"default"`, `"optimal"` | `optimal`  | JPEG table type                              |
 | `faststart`   | no       | `true`, `false`                 | `true`     | Store moov atom at file head                 |
 
 <a id="output-codec-options-dnxhd"></a>
@@ -621,9 +632,9 @@ Optional. If not specified, defaults are used.
 
 | Field           | Required                    | Values                                                              | Default      | Description                                |
 | --------------- | -------------------------- | ------------------------------------------------------------------- | ------------ | ------------------------------------------ |
-| `profile`       | no                         | `dnxhd`, `dnxhr_lb`, `dnxhr_sq`, `dnxhr_hq`, `dnxhr_hqx`, `dnxhr_444` | `dnxhr_hq`  | Codec profile                              |
-| `pix_fmt`       | no                         | `yuv422p`, `yuv422p10`, `yuv444p10`                                | by profile   | Pixel format                               |
-| `bitrate_kbps`  | yes if `profile: dnxhd`    | integer ≥ 1                                                         | N/A          | Bitrate (DNxHD only)                       |
+| `profile`       | no                         | quoted `"dnxhd"`, `"dnxhr_lb"`, `"dnxhr_sq"`, `"dnxhr_hq"`, `"dnxhr_hqx"`, `"dnxhr_444"` | `dnxhr_hq` | Codec profile |
+| `pix_fmt`       | no                         | quoted `"yuv422p"`, `"yuv422p10"`, `"yuv444p10"`                    | by profile   | Pixel format                               |
+| `bitrate_kbps`  | yes if `profile: "dnxhd"`  | integer ≥ 1                                                         | N/A          | Bitrate (DNxHD only)                       |
 | `interlaced`    | no                         | `true`, `false`                                                     | `false`      | Interlacing (DNxHD only)                   |
 | `nitris_compat` | no                         | `true`, `false`                                                     | `false`      | Nitris compatibility (padding)             |
 | `faststart`     | no                         | `true`, `false`                                                     | `true`       | Store moov atom at file head               |
@@ -634,17 +645,17 @@ Optional. If not specified, defaults are used.
 
 Optional. If not specified, defaults are used. Encoding uses FFmpeg `prores_ks`. Source images have no alpha plane; `yuva444p10` / `alpha_bits` are not accepted.
 
-- Profiles `proxy` / `lt` / `standard` / `hq` require `pix_fmt: yuv422p10`.
-- Profiles `4444` / `4444xq` use `yuv444p10`.
+- Profiles `proxy` / `lt` / `standard` / `hq` require `pix_fmt: "yuv422p10"`.
+- Profiles `4444` / `4444xq` use `pix_fmt: "yuv444p10"`.
 
 | Field           | Required | Values                                                          | Default      | Description                                      |
 | --------------- | -------- | --------------------------------------------------------------- | ------------ | ------------------------------------------------ |
-| `profile`       | no       | `proxy`, `lt`, `standard`, `hq`, `4444`, `4444xq`               | `hq`         | ProRes profile (YAML `4444` may be unquoted) |
-| `pix_fmt`       | no       | `yuv422p10`, `yuv444p10`                                        | by profile   | Pixel format (10-bit); float ImageBuf → RGB48 → YUV |
-| `quant_mat`     | no       | `auto`, `proxy`, `lt`, `standard`, `hq`, `default`              | `auto`       | Quantization matrix                              |
+| `profile`       | no       | quoted `"proxy"`, `"lt"`, `"standard"`, `"hq"`, `"4444"`, `"4444xq"` | `hq` | ProRes profile (YAML `4444` may be unquoted) |
+| `pix_fmt`       | no       | quoted `"yuv422p10"`, `"yuv444p10"`                             | by profile   | Pixel format (10-bit); float ImageBuf → RGB48 → YUV |
+| `quant_mat`     | no       | quoted `"auto"`, `"proxy"`, `"lt"`, `"standard"`, `"hq"`, `"default"` | `auto` | Quantization matrix |
 | `bits_per_mb`   | no       | integer 0–8192                                                  | `0`          | Bits per macroblock (`0` = encoder default)      |
 | `mbs_per_slice` | no       | integer 1–8                                                     | `8`          | Macroblocks per slice                            |
-| `vendor`        | no       | exactly 4 ASCII characters                                      | `apl0`       | ProRes vendor ID in the bitstream                |
+| `vendor`        | no       | quoted string, exactly 4 ASCII characters                       | `apl0`       | ProRes vendor ID in the bitstream. Must be a quoted YAML string when set (e.g. `vendor: "apl0"`). |
 | `faststart`     | no       | `true`, `false`                                                 | `true`       | Store moov atom at file head                     |
 
 <a id="output-image-sequences"></a>
@@ -655,11 +666,13 @@ Defines per-frame image outputs. Required fields:
 
 | Field             | Required | Type                                                                      | Description                                    |
 | ----------------- | -------- | ------------------------------------------------------------------------- | ---------------------------------------------- |
-| `id`              | yes      | string (non-empty)                                                        | Unique identifier for the output.              |
+| `id`              | yes      | quoted string (non-empty)                                                 | Unique among all videos and image sequences    |
 | `enabled`         | yes      | boolean                                                                   | Whether to write this output                   |
-| `display_view`    | yes      | object (`display`, `view`)                                                | OCIO DisplayView for this sequence             |
-| `path_pattern`    | yes      | string ([fileseq](https://github.com/shotgunsoftware/fileseq) syntax)     | Output file pattern; extension picks file type |
-| `format_options`  | no       | object                                                                    | Writer settings; keys depend on the extension  |
+| `display_view`    | yes      | object (`display`, `view` quoted non-empty)                               | OCIO DisplayView for this sequence             |
+| `path_pattern`    | yes      | quoted string ([fileseq](https://github.com/shotgunsoftware/fileseq) syntax) | Output file pattern; extension picks file type |
+| `format_options`  | no       | non-empty object                                                          | Writer settings; keys depend on the extension  |
+
+Required keys and enum / range checks on `image_sequences[]` and `format_options` use **field-specific** errors (`output.image_sequences[].<field>: …`, `output.image_sequences[].format_options.<key>: …`), not the generic missing-key / unsupported-value messages. Omit `format_options` for writer defaults; an empty `format_options: {}` is rejected.
 
 The file extension of `path_pattern` selects the OpenImageIO writer and which `format_options` keys are valid. Supported extensions: `.png`, `.jpg` / `.jpeg`, `.tif` / `.tiff`, `.exr`, `.heif` / `.heic` / `.avif`.
 
@@ -670,7 +683,7 @@ The file extension of `path_pattern` selects the OpenImageIO writer and which `f
 | Field | Required | Values | Default | Description |
 | ----- | -------- | ------ | ------- | ----------- |
 | `bit_depth` | no | `8`, `16` | `8` | Pixel bit depth |
-| `compression` | no | `default`, `filtered`, `huffman`, `rle`, `fixed`, `pngfast`, `none` | `default` | zlib strategy |
+| `compression` | no | quoted `"default"`, `"filtered"`, `"huffman"`, `"rle"`, `"fixed"`, `"pngfast"`, `"none"` | `default` | zlib strategy. Must be a quoted YAML string when set. |
 | `compression_level` | no | 0–6 | `6` | zlib level (`png:compressionLevel`) |
 | `filter` | no | 0–4 | `0` | PNG filter (0=none … 4=paeth) |
 
@@ -682,7 +695,7 @@ The file extension of `path_pattern` selects the OpenImageIO writer and which `f
 | ----- | -------- | ------ | ------- | ----------- |
 | `bit_depth` | no | `8` | `8` | Pixel bit depth |
 | `compression_level` | no | 1–100 | `98` | JPEG quality (`CompressionQuality`) |
-| `subsampling` | no | `4:4:4`, `4:2:2`, `4:2:0`, `4:1:1` | libjpeg default | Chroma subsampling |
+| `subsampling` | no | quoted `"4:4:4"`, `"4:2:2"`, `"4:2:0"`, `"4:1:1"` | libjpeg default | Chroma subsampling |
 | `progressive` | no | `true`, `false` | `false` | Progressive JPEG |
 
 <a id="output-format-options-tiff"></a>
@@ -693,7 +706,7 @@ The file extension of `path_pattern` selects the OpenImageIO writer and which `f
 | ----- | -------- | ------ | ------- | ----------- |
 | `bit_depth` | no | `1`,`2`,`4`,`6`,`8`,`10`,`12`,`14`,`16`,`24`,`32`,`64`,`h16`,`f32` | `8` | Sample depth (`h16` = half) |
 | `bigtiff` | no | `true`, `false` | `false` | Force BigTIFF |
-| `compression` | no | `none`, `lzw`, `zip`, `ccittrle`, `packbits` | `zip` | TIFF compression |
+| `compression` | no | quoted `"none"`, `"lzw"`, `"zip"`, `"ccittrle"`, `"packbits"` | `zip` | TIFF compression. Must be a quoted YAML string when set. |
 | `compression_level` | no | 1–9 | `6` | zip quality |
 
 <a id="output-format-options-exr"></a>
@@ -703,7 +716,7 @@ The file extension of `path_pattern` selects the OpenImageIO writer and which `f
 | Field | Required | Values | Default | Description |
 | ----- | -------- | ------ | ------- | ----------- |
 | `bit_depth` | no | `h16`, `f32` | `h16` | HALF or FLOAT |
-| `compression` | no | `none`, `rle`, `zips`, `zip`, `piz`, `pxr24`, `b44`, `b44a`, `dwaa`, `dwab` | `zip` | OpenEXR compression |
+| `compression` | no | quoted `"none"`, `"rle"`, `"zips"`, `"zip"`, `"piz"`, `"pxr24"`, `"b44"`, `"b44a"`, `"dwaa"`, `"dwab"` | `zip` | OpenEXR compression. Must be a quoted YAML string when set. |
 | `compression_level` | no | zip/zips: 1–9; dwaa/dwab: ≥0 | `4` (zip/zips) | Forbidden for other compressions |
 
 <a id="output-format-options-heif"></a>
@@ -713,7 +726,7 @@ The file extension of `path_pattern` selects the OpenImageIO writer and which `f
 | Field | Required | Values | Default | Description |
 | ----- | -------- | ------ | ------- | ----------- |
 | `bit_depth` | no | `8` | `8` | OIIO writes uint8 only |
-| `compression` | no | `heic`, `avif` (`hevc` alias → `heic`) | `heic` (or `avif` if `.avif`) | Codec |
+| `compression` | no | quoted `"heic"`, `"avif"` (`"hevc"` alias → `heic`) | `heic` (or `avif` if `.avif`) | Codec. Must be a quoted YAML string when set. |
 | `compression_level` | no | 0–100 | `75` | Quality |
 
 Examples:
@@ -725,38 +738,38 @@ Examples:
 ```yaml
 output:
   videos:
-    - id: review_h264
+    - id: "review_h264"
       enabled: true
       display_view:
         display: "Rec.1886 Rec.709 - Display"
         view: "ACES 2.0 - SDR 100 nits (Rec.709)"
       signal:
-        range: tv
-        matrix: bt709
-        primaries: bt709
-        transfer: bt709
-      path: /out/sh010_review.mov
+        range: "tv"
+        matrix: "bt709"
+        primaries: "bt709"
+        transfer: "bt709"
+      path: "/out/sh010_review.mov"
       fps: 24
-      codec: h264
+      codec: "h264"
       codec_options:
-        preset: medium
+        preset: "medium"
         crf: 20
         gop: 12
-        pix_fmt: yuv420p
-        tune: film
-        profile: high
+        pix_fmt: "yuv420p"
+        tune: "film"
+        profile: "high"
         level: 4.1
         faststart: true
   image_sequences:
-    - id: archive_acescg
+    - id: "archive_acescg"
       enabled: true
       display_view:
         display: "passthrough"
         view: "passthrough"
-      path_pattern: /out/sh010_archive.%04d.png
+      path_pattern: "/out/sh010_archive.%04d.png"
       format_options:
         bit_depth: 8
-        compression: default
+        compression: "default"
         compression_level: 6
         filter: 0
 ```
@@ -787,14 +800,14 @@ metadata:
     dailies_root: "/path/to/output/folder"
 
 plans:
-  - id: my_shot
+  - id: "my_shot"
     input_colorspace: "ACEScg"   # CHANGE_ME: OCIO input colorspace
     timecode:
       start: "01:00:00:00"       # optional; omit block if unused
     sequence:
-      path: /path/to/frames/plate.%04d.png   # CHANGE_ME
-      frame_start: 1001                      # CHANGE_ME
-      frame_end: 1048                        # CHANGE_ME
+      path: "/path/to/frames/plate.%04d.png"   # CHANGE_ME
+      frame_start: 1001                         # CHANGE_ME
+      frame_end: 1048                           # CHANGE_ME
     # audio:                               # optional guide track for MOVs
     #   path: "{dailies_root}/audio/guide.wav"
 
@@ -813,30 +826,28 @@ layout:
     g: 0
     b: 0
   # burn_ins: omit this key if none; if present, at least one item
-  slate:
-    duration_frames: 0
-    lines: []
+  # slate: omit this block to skip the slate; if present, lines needs ≥ 1 item
 
 output:
   videos:
-    - id: review_h264
+    - id: "review_h264"
       enabled: true
       display_view:
         display: "Rec.1886 Rec.709 - Display"
         view: "ACES 2.0 - SDR 100 nits (Rec.709)"
       signal:
-        range: tv
-        matrix: bt709
-        primaries: bt709
-        transfer: bt709
+        range: "tv"
+        matrix: "bt709"
+        primaries: "bt709"
+        transfer: "bt709"
       path: "{dailies_root}/review.mov"   # CHANGE_ME
       fps: 24
-      codec: h264
+      codec: "h264"
       # codec_options:   # optional; omit for defaults
 ```
 
 - To add overlays (burn-ins), populate `burn_ins` with template(s) from the example above.
-- To add a slate page, present `layout.slate` with `duration_frames` greater than 0 and the desired `lines`.
+- To add a slate page, add `layout.slate` with `duration_frames` and at least one `lines[]` entry (see §6.6). To skip the slate, omit the whole `slate` block — never use `lines: []`.
 - To output image sequences (in addition to or instead of a movie), add `image_sequences` similarly to the example in §7.3, ensuring that at least one output is `enabled: true`.
 
 A more complete example is available per year: [cy2026](../../examples/job.mvp.example.cy2026.yaml), [cy2025](../../examples/job.mvp.example.cy2025.yaml), [cy2024](../../examples/job.mvp.example.cy2024.yaml).

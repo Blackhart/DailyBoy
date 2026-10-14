@@ -55,7 +55,7 @@ bool write_pipeline_yaml(const std::filesystem::path& yaml_path,
       << "      font: {path: \"" << dailyboy::test::kDejaVuSans
       << "\", size_px: 18}\n"
       << "      box:\n"
-      << "        mode: fill\n"
+      << "        mode: \"fill\"\n"
       << "        color: {r: 0, g: 0, b: 0}\n"
       << "        opacity: 0.45\n"
       << "        margin: 6\n"
@@ -64,7 +64,7 @@ bool write_pipeline_yaml(const std::filesystem::path& yaml_path,
       << "      font: {path: \"" << dailyboy::test::kDejaVuSans
       << "\", size_px: 18}\n"
       << "      box:\n"
-      << "        mode: fill\n"
+      << "        mode: \"fill\"\n"
       << "        color: {r: 0, g: 0, b: 0}\n"
       << "        opacity: 0.45\n"
       << "        margin: 6\n"
@@ -73,7 +73,7 @@ bool write_pipeline_yaml(const std::filesystem::path& yaml_path,
       << "      font: {path: \"" << dailyboy::test::kDejaVuSans
       << "\", size_px: 18}\n"
       << "      box:\n"
-      << "        mode: outline\n"
+      << "        mode: \"outline\"\n"
       << "        color: {r: 1, g: 1, b: 1}\n"
       << "        opacity: 0.85\n"
       << "        margin: 6\n"
@@ -89,13 +89,10 @@ bool write_pipeline_yaml(const std::filesystem::path& yaml_path,
       << "      position: {mode: \"layout\", anchor: \"bottom_center\"}\n"
       << "      font: {path: \"" << dailyboy::test::kDejaVuSans
       << "\", size_px: 16}\n"
-      << "  slate:\n"
-      << "    duration_frames: 0\n"
-      << "    lines: []\n"
       << "output:\n";
   if (output == PipelineOutput::Png) {
     out << "  image_sequences:\n"
-        << "    - id: archive\n"
+        << "    - id: \"archive\"\n"
         << "      enabled: true\n"
         << "      display_view:\n"
            "        display: \"passthrough\"\n"
@@ -104,26 +101,26 @@ bool write_pipeline_yaml(const std::filesystem::path& yaml_path,
         << "\"\n";
   } else {
     out << "  videos:\n"
-        << "    - id: review_h264\n"
+        << "    - id: \"review_h264\"\n"
         << "      enabled: true\n"
         << "      display_view:\n"
            "        display: \"passthrough\"\n"
            "        view: \"passthrough\"\n"
            "      signal:\n"
-           "        range: tv\n"
-           "        matrix: bt709\n"
-           "        primaries: bt709\n"
-           "        transfer: bt709\n"
+           "        range: \"tv\"\n"
+           "        matrix: \"bt709\"\n"
+           "        primaries: \"bt709\"\n"
+           "        transfer: \"bt709\"\n"
         << "      path: \"" << (out_dir / "out.mov").string() << "\"\n"
         << "      fps: 24\n"
-        << "      codec: h264\n"
+        << "      codec: \"h264\"\n"
         << "      codec_options:\n"
-        << "        preset: ultrafast\n"
+        << "        preset: \"ultrafast\"\n"
         << "        faststart: false\n";
   }
   out << "plans:\n"
-      << "  - id: sh010_bg\n"
-      << "    input_colorspace: ACES - ACEScg\n"
+      << "  - id: \"sh010_bg\"\n"
+      << "    input_colorspace: \"ACES - ACEScg\"\n"
       << "    sequence:\n"
       << "      path: \"" << (plate_dir / "plate.%04d.png").string() << "\"\n"
       << "      frame_start: " << dailyboy::test::kPerfPlateFrameStart << "\n"

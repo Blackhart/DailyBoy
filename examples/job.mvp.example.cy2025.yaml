@@ -47,7 +47,7 @@ layout:
         path: "dailyboy/tests/data/fonts/DejaVuSans.ttf"
         size_px: 18
       box:
-        mode: fill
+        mode: "fill"
         color:
           r: 0
           g: 0
@@ -66,7 +66,7 @@ layout:
           g: 0.85
           b: 0.2
       box:
-        mode: fill
+        mode: "fill"
         color:
           r: 0
           g: 0
@@ -81,7 +81,7 @@ layout:
         path: "dailyboy/tests/data/fonts/DejaVuSans.ttf"
         size_px: 18
       box:
-        mode: outline
+        mode: "outline"
         color:
           r: 1
           g: 1
@@ -96,7 +96,7 @@ layout:
         path: "dailyboy/tests/data/fonts/DejaVuSans.ttf"
         size_px: 18
       box:
-        mode: fill
+        mode: "fill"
         color:
           r: 0
           g: 0
@@ -118,7 +118,7 @@ layout:
         path: "dailyboy/tests/data/fonts/DejaVuSans.ttf"
         size_px: 18
       box:
-        mode: fill
+        mode: "fill"
         color:
           r: 0
           g: 0
@@ -155,104 +155,104 @@ layout:
 
 output:
   videos:
-    - id: review_mjpeg
+    - id: "review_mjpeg"
       enabled: true
       display_view:
         display: "Rec.1886 Rec.709 - Display"
         view: "ACES 1.0 - SDR Video"
       signal:
-        range: pc
-        matrix: bt709
-        primaries: bt709
-        transfer: bt709
+        range: "pc"
+        matrix: "bt709"
+        primaries: "bt709"
+        transfer: "bt709"
       path: "{dailies_root}/sh010_review_mjpeg.mov"
       fps: 24
-      codec: mjpeg
+      codec: "mjpeg"
       codec_options:
         qscale: 3
-        pix_fmt: yuv422p
-        huffman: optimal
+        pix_fmt: "yuv422p"
+        huffman: "optimal"
         faststart: true
-    - id: review_h264
+    - id: "review_h264"
       enabled: true
       display_view:
         display: "Rec.1886 Rec.709 - Display"
         view: "ACES 1.0 - SDR Video"
       signal:
-        range: tv
-        matrix: bt709
-        primaries: bt709
-        transfer: bt709
+        range: "tv"
+        matrix: "bt709"
+        primaries: "bt709"
+        transfer: "bt709"
       path: "{dailies_root}/sh010_review_h264.mov"
       fps: 24
-      codec: h264
+      codec: "h264"
       codec_options:
-        preset: medium
+        preset: "medium"
         crf: 20
         gop: 12
-        pix_fmt: yuv420p
-        tune: film
-        profile: high
+        pix_fmt: "yuv420p"
+        tune: "film"
+        profile: "high"
         level: 4.1
         faststart: true
-    - id: review_dnxhr
+    - id: "review_dnxhr"
       enabled: true
       display_view:
         display: "Rec.1886 Rec.709 - Display"
         view: "ACES 1.0 - SDR Video"
       signal:
-        range: tv
-        matrix: bt709
-        primaries: bt709
-        transfer: bt709
+        range: "tv"
+        matrix: "bt709"
+        primaries: "bt709"
+        transfer: "bt709"
       path: "{dailies_root}/sh010_review_dnxhr.mov"
       fps: 24
-      codec: dnxhd
+      codec: "dnxhd"
       codec_options:
-        profile: dnxhr_hq
-        pix_fmt: yuv422p
+        profile: "dnxhr_hq"
+        pix_fmt: "yuv422p"
         nitris_compat: false
         faststart: true
-    - id: review_dnxhd
+    - id: "review_dnxhd"
       enabled: true
       display_view:
         display: "Rec.1886 Rec.709 - Display"
         view: "ACES 1.0 - SDR Video"
       signal:
-        range: tv
-        matrix: bt709
-        primaries: bt709
-        transfer: bt709
+        range: "tv"
+        matrix: "bt709"
+        primaries: "bt709"
+        transfer: "bt709"
       path: "{dailies_root}/sh010_review_dnxhd.mov"
       fps: 24
-      codec: dnxhd
+      codec: "dnxhd"
       codec_options:
-        profile: dnxhd
+        profile: "dnxhd"
         bitrate_kbps: 36000
-        pix_fmt: yuv422p
+        pix_fmt: "yuv422p"
         interlaced: false
         nitris_compat: false
         faststart: true
-    - id: review_prores
+    - id: "review_prores"
       enabled: true
       display_view:
         display: "Rec.1886 Rec.709 - Display"
         view: "ACES 1.0 - SDR Video"
       signal:
-        range: tv
-        matrix: bt709
-        primaries: bt709
-        transfer: bt709
+        range: "tv"
+        matrix: "bt709"
+        primaries: "bt709"
+        transfer: "bt709"
       path: "{dailies_root}/sh010_review_prores.mov"
       fps: 24
-      codec: prores
+      codec: "prores"
       codec_options:
-        profile: hq
-        pix_fmt: yuv422p10
-        vendor: apl0
+        profile: "hq"
+        pix_fmt: "yuv422p10"
+        vendor: "apl0"
         faststart: true
   image_sequences:
-    - id: archive_acescg
+    - id: "archive_acescg"
       enabled: true
       display_view:
         display: "Rec.1886 Rec.709 - Display"
@@ -260,10 +260,10 @@ output:
       path_pattern: "{dailies_root}/archive/sh010_archive.%04d.png"
       format_options:
         bit_depth: 8
-        compression: default
+        compression: "default"
         compression_level: 6
         filter: 0
-    - id: share_srgb
+    - id: "share_srgb"
       enabled: true
       display_view:
         display: "Rec.1886 Rec.709 - Display"
@@ -271,17 +271,17 @@ output:
       path_pattern: "{dailies_root}/share/sh010_share.%04d.tiff"
       format_options:
         bit_depth: 8
-        compression: zip
+        compression: "zip"
         compression_level: 6
 
 plans:
-  - id: sh010_bg
+  - id: "sh010_bg"
     input_colorspace: "ACEScg"
     timecode:
       start: 101
     sequence:
-      path: examples/frames/2048x1080/plate.%04d.png
+      path: "examples/frames/2048x1080/plate.%04d.png"
       frame_start: 1001
       frame_end: 1048
     audio:
-      path: examples/audio/sh010_bg_guide.wav
+      path: "examples/audio/sh010_bg_guide.wav"
