@@ -1,5 +1,6 @@
 # libheif — HEIF/AVIF for OpenImageIO (libde265 + x265 + libaom)
 # https://github.com/strukturag/libheif
+# Prefer CMAKE_PREFIX_PATH over PKG_CONFIG_PATH (Windows-safe).
 
 if(TARGET heif::heif)
     return()
@@ -9,16 +10,11 @@ dailyboy_bundled_install_prefix(libheif DAILYBOY_LIBHEIF_PREFIX)
 set(DAILYBOY_LIBHEIF_PREFIX "${DAILYBOY_LIBHEIF_PREFIX}" CACHE INTERNAL "bundled libheif prefix")
 file(MAKE_DIRECTORY "${DAILYBOY_LIBHEIF_PREFIX}/include")
 file(MAKE_DIRECTORY "${DAILYBOY_LIBHEIF_PREFIX}/lib")
+if(WIN32)
+    file(MAKE_DIRECTORY "${DAILYBOY_LIBHEIF_PREFIX}/bin")
+endif()
 dailyboy_bundled_shared_lib_path("${DAILYBOY_LIBHEIF_PREFIX}/lib" heif _dailyboy_heif_lib)
 
-dailyboy_join_pkg_config_path(
-    _dailyboy_heif_pc
-    "${DAILYBOY_ZLIB_PREFIX}"
-    "${DAILYBOY_JPEG_TURBO_PREFIX}"
-    "${DAILYBOY_LIBDE265_PREFIX}"
-    "${DAILYBOY_X265_PREFIX}"
-    "${DAILYBOY_AOM_PREFIX}"
-)
 dailyboy_ep_cmake_args(_dailyboy_heif_args "${DAILYBOY_LIBHEIF_PREFIX}")
 list(APPEND _dailyboy_heif_args
     -DWITH_LIBDE265=ON
@@ -38,6 +34,8 @@ list(APPEND _dailyboy_heif_args
     -DCMAKE_PREFIX_PATH=${DAILYBOY_ZLIB_PREFIX}|${DAILYBOY_JPEG_TURBO_PREFIX}|${DAILYBOY_LIBDE265_PREFIX}|${DAILYBOY_X265_PREFIX}|${DAILYBOY_AOM_PREFIX}
 )
 
+dailyboy_ep_imported_byproducts(_dailyboy_ep_byproducts "${_dailyboy_heif_lib}")
+
 ExternalProject_Add(
     dailyboy_libheif
     DEPENDS dailyboy_zlib dailyboy_jpeg_turbo dailyboy_libde265 dailyboy_x265 dailyboy_aom
@@ -46,13 +44,10 @@ ExternalProject_Add(
     GIT_SHALLOW FALSE
     UPDATE_DISCONNECTED TRUE
     LIST_SEPARATOR |
-    CONFIGURE_COMMAND
-        ${CMAKE_COMMAND} -E env PKG_CONFIG_PATH=${_dailyboy_heif_pc}
-        ${CMAKE_COMMAND} -S <SOURCE_DIR> -B <BINARY_DIR> ${_dailyboy_heif_args}
-    BUILD_COMMAND
-        ${CMAKE_COMMAND} --build <BINARY_DIR> --parallel ${DAILYBOY_EP_JOBS}
+    CMAKE_ARGS ${_dailyboy_heif_args}
+    BUILD_COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR> --parallel ${DAILYBOY_EP_JOBS}
     INSTALL_COMMAND ${CMAKE_COMMAND} --install <BINARY_DIR>
-    BUILD_BYPRODUCTS "${_dailyboy_heif_lib}"
+    BUILD_BYPRODUCTS ${_dailyboy_ep_byproducts}
     USES_TERMINAL_BUILD TRUE
 )
 
@@ -64,4 +59,4 @@ dailyboy_install_bundled_libs("${DAILYBOY_LIBHEIF_PREFIX}" "${CMAKE_SHARED_LIBRA
 message(STATUS "deps: libheif ${DAILYBOY_LIBHEIF_GIT_TAG}")
 unset(_dailyboy_heif_lib)
 unset(_dailyboy_heif_args)
-unset(_dailyboy_heif_pc)
+unset(_dailyboy_ep_byproducts)

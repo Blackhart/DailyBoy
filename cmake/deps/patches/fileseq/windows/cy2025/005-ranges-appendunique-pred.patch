@@ -1,0 +1,18 @@
+--- a/cpp/ranges/ranges.cpp
++++ b/cpp/ranges/ranges.cpp
+@@ -446,9 +446,12 @@ void Ranges::appendUnique(long start, long end, long step) {
+     long last = start;
+     size_t pending = 0;
+ 
+-    bool (*pred)(long, long) = (start <= end)
+-        ? [](long val, long end) -> bool { return val <= end; }
+-        : [](long val, long end) -> bool { return val >= end; };
++    bool (*pred)(long, long);
++    if (start <= end) {
++        pred = [](long val, long end) -> bool { return val <= end; };
++    } else {
++        pred = [](long val, long end) -> bool { return val >= end; };
++    }
+ 
+     for ( ; pred(subEnd, end); subEnd += step ) {
+ 

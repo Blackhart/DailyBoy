@@ -1,7 +1,13 @@
 # LibRaw — camera RAW for OpenImageIO (autotools)
 # https://github.com/LibRaw/LibRaw
+# Windows: no official CMake; OIIO builds with ENABLE_LibRaw=OFF (see openimageio.cmake).
 
 if(TARGET LibRaw::LibRaw)
+    return()
+endif()
+
+if(WIN32)
+    message(STATUS "deps: LibRaw skipped on Windows (no official CMake; OIIO RAW disabled)")
     return()
 endif()
 
@@ -16,6 +22,8 @@ file(MAKE_DIRECTORY "${DAILYBOY_LIBRAW_PREFIX}/lib")
 dailyboy_bundled_shared_lib_path("${DAILYBOY_LIBRAW_PREFIX}/lib" raw _dailyboy_libraw_lib)
 
 dailyboy_join_pkg_config_path(_dailyboy_libraw_pc "${DAILYBOY_JPEG_TURBO_PREFIX}")
+
+dailyboy_ep_imported_byproducts(_dailyboy_ep_byproducts "${_dailyboy_libraw_lib}")
 
 ExternalProject_Add(
     dailyboy_libraw
@@ -34,7 +42,7 @@ ExternalProject_Add(
         bash -c "cd <SOURCE_DIR> && ${DAILYBOY_MAKE_EXECUTABLE} -j${DAILYBOY_EP_JOBS}"
     INSTALL_COMMAND bash -c "cd <SOURCE_DIR> && ${DAILYBOY_MAKE_EXECUTABLE} install"
     BUILD_IN_SOURCE 1
-    BUILD_BYPRODUCTS "${_dailyboy_libraw_lib}"
+    BUILD_BYPRODUCTS ${_dailyboy_ep_byproducts}
     USES_TERMINAL_BUILD TRUE
 )
 
@@ -46,3 +54,4 @@ dailyboy_install_bundled_libs("${DAILYBOY_LIBRAW_PREFIX}" "${CMAKE_SHARED_LIBRAR
 message(STATUS "deps: LibRaw ${DAILYBOY_LIBRAW_GIT_TAG}")
 unset(_dailyboy_libraw_lib)
 unset(_dailyboy_libraw_pc)
+unset(_dailyboy_ep_byproducts)

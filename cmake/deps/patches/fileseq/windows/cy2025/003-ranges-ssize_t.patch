@@ -1,0 +1,14 @@
+--- a/cpp/ranges/ranges.h
++++ b/cpp/ranges/ranges.h
+@@ -6,6 +6,11 @@
+ #include <string>
+ #include <vector>
+ 
++#if defined(_MSC_VER)
++#include <BaseTsd.h>
++typedef SSIZE_T ssize_t;
++#endif
++
+ namespace fileseq {
+ 
+ // Fwd Decl
