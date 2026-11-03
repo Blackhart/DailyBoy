@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Sequence handles before and after the frame range (#19)
 - Add SMPTE timecode on plans for burn-ins and MOV metadata (#21)
 
+### Fixed
+
+- *(core)* Make optional access visible to clang-tidy
+
 ## [1.1.0] - 2026-09-24
 
 ### Added
