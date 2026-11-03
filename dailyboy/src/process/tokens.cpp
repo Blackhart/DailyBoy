@@ -77,10 +77,7 @@ std::optional<std::string> lookup_builtin(const std::string& key,
     return context.plan_id;
   }
   if (key == "timecode") {
-    if (context.timecode.has_value()) {
-      return *context.timecode;
-    }
-    return std::nullopt;
+    return context.timecode;
   }
   return std::nullopt;
 }

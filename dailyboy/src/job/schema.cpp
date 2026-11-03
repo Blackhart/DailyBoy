@@ -334,7 +334,7 @@ Status validate_timecode_contract(const YAML::Node& job_root) {
           continue;
         }
       }
-      if (fps.has_value() && *fps != video_fps) {
+      if (fps.value_or(video_fps) != video_fps) {
         return Status::User(std::string(USER_ERROR_JOB_104));
       }
       fps = video_fps;

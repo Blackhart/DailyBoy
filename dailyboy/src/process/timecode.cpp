@@ -74,6 +74,23 @@ const JobPlan* first_plan(const Job& job) {
   return &job.plans().plans().front();
 }
 
+/*!
+ * \brief Returns the first plan timecode, or nullptr when the job has none.
+ *
+ * The pointer addresses storage owned by \a job.
+ */
+const JobPlanTimecode* first_plan_timecode(const Job& job) {
+  const JobPlan* plan = first_plan(job);
+  if (plan == nullptr) {
+    return nullptr;
+  }
+  const std::optional<JobPlanTimecode>& timecode = plan->timecode();
+  if (!timecode.has_value()) {
+    return nullptr;
+  }
+  return &*timecode;
+}
+
 }  // namespace
 
 StatusOr<std::string> frames_to_smpte(std::int64_t frames, int fps,
@@ -102,8 +119,7 @@ StatusOr<std::int64_t> smpte_to_frames(const std::string& text, int fps,
 }
 
 StatusOr<int> resolve_timecode_fps(const Job& job) {
-  const JobPlan* plan = first_plan(job);
-  const bool has_timecode = plan != nullptr && plan->timecode().has_value();
+  const JobPlanTimecode* timecode = first_plan_timecode(job);
   std::optional<int> fps;
   for (const JobOutputVideo& video : job.output().videos().videos()) {
     if (!video.enabled()) {
@@ -113,12 +129,12 @@ StatusOr<int> resolve_timecode_fps(const Job& job) {
       fps = video.fps();
       continue;
     }
-    if (*fps != video.fps() && has_timecode) {
+    if (*fps != video.fps() && timecode != nullptr) {
       return Status::User(std::string(USER_ERROR_JOB_104));
     }
   }
   const int resolved = fps.value_or(VideoWriter::kDefaultFps);
-  if (has_timecode && plan->timecode()->drop_frame() && resolved != 30 &&
+  if (timecode != nullptr && timecode->drop_frame() && resolved != 30 &&
       resolved != 60) {
     return Status::User(std::string(USER_ERROR_JOB_103));
   }
@@ -126,29 +142,28 @@ StatusOr<int> resolve_timecode_fps(const Job& job) {
 }
 
 StatusOr<std::int64_t> resolve_timecode_start_frames(const Job& job, int fps) {
-  const JobPlan* plan = first_plan(job);
-  if (plan == nullptr || !plan->timecode().has_value()) {
+  const JobPlanTimecode* timecode = first_plan_timecode(job);
+  if (timecode == nullptr) {
     return Status::User(std::string(USER_ERROR_JOB_101));
   }
-  const JobPlanTimecode& timecode = *plan->timecode();
-  if (std::holds_alternative<int>(timecode.start())) {
-    return static_cast<std::int64_t>(std::get<int>(timecode.start()));
+  if (std::holds_alternative<int>(timecode->start())) {
+    return static_cast<std::int64_t>(std::get<int>(timecode->start()));
   }
-  return smpte_to_frames(std::get<std::string>(timecode.start()), fps,
-                         timecode.drop_frame());
+  return smpte_to_frames(std::get<std::string>(timecode->start()), fps,
+                         timecode->drop_frame());
 }
 
 StatusOr<std::string> format_overlay_timecode(const Job& job, int frame) {
   const JobPlan* plan = first_plan(job);
-  if (plan == nullptr || !plan->timecode().has_value()) {
+  const JobPlanTimecode* timecode = first_plan_timecode(job);
+  if (plan == nullptr || timecode == nullptr) {
     return std::string{};
   }
   DAILYBOY_ASSIGN_OR_RETURN(const int fps, resolve_timecode_fps(job));
   DAILYBOY_ASSIGN_OR_RETURN(const std::int64_t start_frames,
                             resolve_timecode_start_frames(job, fps));
   const int offset = frame - plan->sequence().frame_start();
-  return frames_to_smpte(start_frames + offset, fps,
-                         plan->timecode()->drop_frame());
+  return frames_to_smpte(start_frames + offset, fps, timecode->drop_frame());
 }
 
 StatusOr<std::string> format_mov_timecode(const Job& job) {
